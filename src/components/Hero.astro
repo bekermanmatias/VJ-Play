@@ -1,0 +1,120 @@
+---
+interface Props {
+  eyebrow?: string;
+  titleStart?: string;
+  titlePill?: string;
+  subtitle?: string;
+  imageUrl?: string;
+  imageAlt?: string;
+}
+
+const {
+  eyebrow = "Actividades para socios/as",
+  titleStart = "Disfrutá",
+  titlePill = "El Club",
+  subtitle = "Todo el año",
+  imageUrl = "https://images.unsplash.com/photo-1526232761682-d26e03ac148e?auto=format&fit=crop&w=1920&q=80",
+  imageAlt = "Chicos y chicas entrenando en el Club Social Varela Junior",
+} = Astro.props;
+---
+
+<section
+  class="relative w-full min-h-[60vh] md:min-h-[70vh] overflow-hidden bg-slate-900"
+  aria-label="Banner principal"
+>
+  <!-- Imagen de fondo -->
+  <img
+    src={imageUrl}
+    alt={imageAlt}
+    class="absolute inset-0 h-full w-full object-cover"
+    loading="eager"
+    decoding="async"
+  />
+
+  <!-- Overlay con gradiente: más oscuro a la izquierda, transparente a la derecha -->
+  <div
+    class="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/10"
+    aria-hidden="true"
+  >
+  </div>
+  <!-- Velo verde sutil para reforzar identidad -->
+  <div
+    class="absolute inset-0 bg-gradient-to-tr from-vj-green/25 via-transparent to-transparent mix-blend-multiply"
+    aria-hidden="true"
+  >
+  </div>
+
+  <!-- Contenido -->
+  <div
+    class="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 min-h-[60vh] md:min-h-[70vh] flex items-center"
+  >
+    <div class="max-w-2xl text-white py-16">
+      <p
+        class="text-xl sm:text-2xl md:text-3xl font-medium uppercase tracking-[0.12em] text-white/95"
+      >
+        {eyebrow}
+      </p>
+
+      <h1
+        class="mt-4 font-display uppercase leading-none tracking-tight"
+      >
+        <span
+          class="block text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-extrabold drop-shadow-md"
+        >
+          {titleStart}
+        </span>
+        <span
+          class="mt-4 inline-flex items-center rounded-3xl bg-white px-6 py-2 text-4xl sm:text-5xl md:text-6xl text-slate-900 shadow-lg"
+        >
+          {titlePill}
+        </span>
+      </h1>
+
+      <p
+        class="mt-6 text-4xl sm:text-5xl md:text-6xl font-medium uppercase tracking-wide text-white/95"
+      >
+        {subtitle}
+      </p>
+    </div>
+  </div>
+
+  <!-- Flechas del carrusel -->
+  <button
+    type="button"
+    aria-label="Slide anterior"
+    class="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-10 grid place-items-center w-10 h-10 sm:w-12 sm:h-12 rounded-full text-white/90 hover:text-white hover:bg-white/10 transition-colors"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="w-7 h-7"
+      aria-hidden="true"
+    >
+      <path d="m15 18-6-6 6-6"></path>
+    </svg>
+  </button>
+  <button
+    type="button"
+    aria-label="Slide siguiente"
+    class="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-10 grid place-items-center w-10 h-10 sm:w-12 sm:h-12 rounded-full text-white/90 hover:text-white hover:bg-white/10 transition-colors"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="w-7 h-7"
+      aria-hidden="true"
+    >
+      <path d="m9 6 6 6-6 6"></path>
+    </svg>
+  </button>
+</section>
