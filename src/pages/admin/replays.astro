@@ -1,0 +1,17 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import AdminSidebar from "@/components/admin/AdminSidebar.astro";
+import AdminReplaysModeration from "@/components/admin/AdminReplaysModeration";
+---
+
+<Layout title="Admin Replays | VJ Play" description="Moderacion de replays en panel admin.">
+  <main class="min-h-screen bg-slate-100">
+    <div class="grid min-h-screen grid-cols-1 lg:grid-cols-[280px_1fr]">
+      <AdminSidebar currentPath={Astro.url.pathname} />
+
+      <section class="px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
+        <AdminReplaysModeration client:load />
+      </section>
+    </div>
+  </main>
+</Layout>

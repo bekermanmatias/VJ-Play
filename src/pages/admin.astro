@@ -1,0 +1,198 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import AdminSidebar from "@/components/admin/AdminSidebar.astro";
+
+type StatusTone = "ok" | "error";
+
+type StatusCard = {
+  title: string;
+  value: string;
+  detail: string;
+  tone: StatusTone;
+};
+
+type CameraSnapshot = {
+  id: string;
+  court: string;
+  status: "Activa" | "Sin senal";
+  lastUpdate: string;
+  imageUrl: string;
+  tone: StatusTone;
+};
+
+type ActivityEvent = {
+  at: string;
+  event: string;
+  court: string;
+  source: string;
+};
+
+const statusCards: StatusCard[] = [
+  {
+    title: "Estado de Red",
+    value: "En funcionamiento",
+    detail: "Conexion correcta en este momento.",
+    tone: "ok",
+  },
+  {
+    title: "Almacenamiento",
+    value: "En funcionamiento",
+    detail: "Espacio controlado y limpieza automatica activa.",
+    tone: "ok",
+  },
+];
+
+const cameraSnapshots: CameraSnapshot[] = [
+  {
+    id: "cam-3",
+    court: "Cancha Padel",
+    status: "Activa",
+    lastUpdate: "10:35:00",
+    imageUrl: "/images/padel.png",
+    tone: "ok",
+  },
+  {
+    id: "cam-4",
+    court: "Cancha F5",
+    status: "Activa",
+    lastUpdate: "10:34:58",
+    imageUrl: "/images/f5.png",
+    tone: "ok",
+  },
+];
+
+const activityLog: ActivityEvent[] = [
+  { at: "17:12", event: "Video de partido procesado", court: "Cancha Padel", source: "Supabase" },
+  { at: "16:48", event: "Subida de segmento completada", court: "Cancha F5", source: "Supabase" },
+  { at: "16:20", event: "Snapshot de respaldo", court: "Cancha Padel", source: "Supabase" },
+  { at: "15:54", event: "Foto tomada", court: "Cancha F5", source: "Supabase" },
+];
+---
+
+<Layout title="Admin | VJ Play" description="Panel de estado operativo para recepcion y soporte.">
+  <main class="min-h-screen bg-slate-100">
+    <div class="grid min-h-screen grid-cols-1 lg:grid-cols-[280px_1fr]">
+      <AdminSidebar currentPath={Astro.url.pathname} />
+
+      <section class="px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
+        <section class="py-1">
+          <h2 class="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
+            Dashboard Principal
+          </h2>
+          <p class="mt-2 max-w-3xl text-base text-slate-700">
+            Estado general del sistema para resolver rapido cualquier reclamo en recepcion.
+          </p>
+        </section>
+
+        <section class="mt-6">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 class="text-sm font-black uppercase tracking-wider text-slate-700">
+                Estado de Camaras (Snapshots)
+              </h3>
+              <p class="mt-1 text-sm text-slate-600">
+                Imagen reciente de cada cancha (actualizacion aproximada cada 5 a 10 segundos).
+              </p>
+            </div>
+          </div>
+          <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-4">
+            {
+              cameraSnapshots.map((cam) => (
+                <article class="overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
+                  <div class="relative aspect-video w-full overflow-hidden bg-slate-100">
+                    <img
+                      src={cam.imageUrl}
+                      alt={`Snapshot ${cam.court}`}
+                      class="h-full w-full object-cover"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    <span
+                      class:list={[
+                        "absolute left-2 top-2 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wide ring-1",
+                        cam.tone === "ok"
+                          ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                          : "bg-rose-50 text-rose-700 ring-rose-200",
+                      ]}
+                    >
+                      <span
+                        class:list={[
+                          "inline-block h-1.5 w-1.5 rounded-full",
+                          cam.tone === "ok" ? "bg-emerald-500" : "bg-rose-500",
+                        ]}
+                      ></span>
+                      {cam.status}
+                    </span>
+                  </div>
+                  <div class="p-3">
+                    <p class="text-sm font-black text-slate-900">{cam.court}</p>
+                    <p class="mt-1 text-xs text-slate-600">Ultima actualizacion: {cam.lastUpdate}</p>
+                  </div>
+                </article>
+              ))
+            }
+          </div>
+        </section>
+
+        <section class="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-2">
+          {
+            statusCards.map((card) => (
+              <article class="rounded-xl border border-slate-300 bg-white p-5 shadow-sm">
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <p class="text-xs font-bold uppercase tracking-wider text-slate-500">{card.title}</p>
+                    <p class="mt-2 text-xl font-black tracking-tight text-slate-900">{card.value}</p>
+                  </div>
+                  <span
+                    class:list={[
+                      "inline-flex h-3.5 w-3.5 shrink-0 rounded-full ring-2 ring-offset-2 ring-offset-white",
+                      card.tone === "ok" ? "bg-emerald-500 ring-emerald-100" : "bg-rose-500 ring-rose-100",
+                    ]}
+                    aria-label={card.tone === "ok" ? "Estado correcto" : "Estado critico"}
+                  ></span>
+                </div>
+                <p class="mt-3 text-sm text-slate-600">{card.detail}</p>
+              </article>
+            ))
+          }
+        </section>
+
+        <section class="mt-6">
+          <div class="px-1 pb-3">
+            <h3 class="text-sm font-black uppercase tracking-wider text-slate-700">Log de Actividad Reciente</h3>
+            <p class="mt-1 text-sm text-slate-600">Ultimos movimientos registrados por el sistema.</p>
+          </div>
+
+          <div class="overflow-x-auto rounded-xl border border-slate-300 bg-white shadow-sm">
+            <table class="min-w-full border-collapse text-sm">
+              <thead class="bg-slate-50 text-left">
+                <tr>
+                  <th class="px-5 py-3 font-bold uppercase tracking-wider text-slate-500">Hora</th>
+                  <th class="px-5 py-3 font-bold uppercase tracking-wider text-slate-500">Evento</th>
+                  <th class="px-5 py-3 font-bold uppercase tracking-wider text-slate-500">Cancha</th>
+                  <th class="px-5 py-3 font-bold uppercase tracking-wider text-slate-500">Origen</th>
+                </tr>
+              </thead>
+              <tbody>
+                {
+                  activityLog.map((row) => (
+                    <tr class="border-t border-slate-200">
+                      <td class="px-5 py-3 font-bold tabular-nums text-slate-700">{row.at}</td>
+                      <td class="px-5 py-3 text-slate-800">{row.event}</td>
+                      <td class="px-5 py-3 text-slate-700">{row.court}</td>
+                      <td class="px-5 py-3">
+                        <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">
+                          {row.source}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </div>
+  </main>
+</Layout>

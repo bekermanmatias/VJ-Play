@@ -13,7 +13,6 @@ import {
   Maximize2,
   Minimize2,
   Minus,
-  Pause,
   Play,
   Plus,
   Rewind,
@@ -295,22 +294,20 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
           {clockLabel}
         </div>
 
-        <button
-          type="button"
-          onClick={togglePlay}
-          className={
-            ghost
-              ? "pointer-events-auto absolute left-1/2 top-1/2 grid h-16 w-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white/15 text-white ring-2 ring-white/45 backdrop-blur-[2px] transition hover:bg-white/25 [filter:drop-shadow(0_4px_20px_rgba(0,0,0,0.6))]"
-              : "pointer-events-auto absolute left-1/2 top-1/2 grid h-14 w-14 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white/20 text-white ring-2 ring-white/50 backdrop-blur-sm transition hover:bg-white/30"
-          }
-          aria-label={playing ? "Pausar" : "Reproducir"}
-        >
-          {playing ? (
-            <Pause size={30} strokeWidth={3.2} />
-          ) : (
+        {!playing && (
+          <button
+            type="button"
+            onClick={togglePlay}
+            className={
+              ghost
+                ? "pointer-events-auto absolute left-1/2 top-1/2 grid h-16 w-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white/15 text-white ring-2 ring-white/45 backdrop-blur-[2px] transition hover:bg-white/25 [filter:drop-shadow(0_4px_20px_rgba(0,0,0,0.6))]"
+                : "pointer-events-auto absolute left-1/2 top-1/2 grid h-14 w-14 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white/20 text-white ring-2 ring-white/50 backdrop-blur-sm transition hover:bg-white/30"
+            }
+            aria-label="Reproducir"
+          >
             <Play size={30} strokeWidth={3.2} className="ml-0.5" />
-          )}
-        </button>
+          </button>
+        )}
 
         <div
           ref={settingsAnchorRef}
