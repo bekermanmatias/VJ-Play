@@ -32,10 +32,18 @@ body {
     transform: translateX(0);
   }
   to {
-    transform: translateX(-50%);
+    transform: translateX(-100%);
   }
 }
 
+.vj-marquee {
+  display: flex;
+  width: max-content;
+}
+
 .vj-marquee-track {
+  display: flex;
+  flex-shrink: 0;
+  min-width: max-content;
   animation: vj-marquee 30s linear infinite;
 }

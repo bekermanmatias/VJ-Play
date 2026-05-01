@@ -15,7 +15,6 @@ const {
   ],
 } = Astro.props;
 
-const loop = [...items, ...items];
 ---
 
 <div
@@ -24,13 +23,19 @@ const loop = [...items, ...items];
 >
   <div class="skew-y-2">
     <div class="overflow-hidden whitespace-nowrap py-3 sm:py-4">
-      <div class="vj-marquee-track inline-flex w-max">
+      <div class="vj-marquee">
         {
-          loop.map((sport) => (
-            <span class="inline-flex items-center px-4 sm:px-6 font-display text-2xl sm:text-3xl uppercase tracking-wider text-slate-900">
-              {sport}
-              <span class="ml-4 sm:ml-6 inline-block h-2 w-2 rounded-full bg-vj-green" />
-            </span>
+          [0, 1].map((trackIdx) => (
+            <div class="vj-marquee-track" aria-hidden={trackIdx === 1}>
+              {
+                items.map((sport) => (
+                  <span class="inline-flex items-center px-4 sm:px-6 font-display text-2xl sm:text-3xl uppercase tracking-wider text-slate-900">
+                    {sport}
+                    <span class="ml-4 sm:ml-6 inline-block h-2 w-2 rounded-full bg-vj-green" />
+                  </span>
+                ))
+              }
+            </div>
           ))
         }
       </div>

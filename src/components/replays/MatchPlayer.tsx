@@ -51,6 +51,18 @@ type Props = {
   hudPortalTarget?: HTMLElement | null;
 };
 
+type PendingClip = {
+  start: number;
+  end: number;
+  duration: number;
+};
+
+type SavedClipNotice = {
+  name: string;
+  start: number;
+  end: number;
+};
+
 function formatTime(seconds: number) {
   if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
   const s = Math.floor(seconds);
@@ -100,6 +112,9 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
   const [speed, setSpeed] = useState(1);
   const [isClipRecording, setIsClipRecording] = useState(false);
   const [clipStart, setClipStart] = useState<number | null>(null);
+  const [pendingClip, setPendingClip] = useState<PendingClip | null>(null);
+  const [clipDraftName, setClipDraftName] = useState("");
+  const [savedClipNotice, setSavedClipNotice] = useState<SavedClipNotice | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [uncontrolledClipsOpen, setUncontrolledClipsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -270,8 +285,33 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
       setClipStart(v.currentTime);
       return;
     }
+    const end = v.currentTime;
+    const start = clipStart ?? Math.max(0, end - 10);
+    const duration = Math.max(0, end - start);
     setIsClipRecording(false);
     setClipStart(null);
+    setClipDraftName("");
+    setPendingClip({ start, end, duration });
+  };
+
+  const closeClipModal = () => {
+    setPendingClip(null);
+    setClipDraftName("");
+  };
+
+  const saveClipDraft = () => {
+    if (!pendingClip) return;
+    const fallback = `Clip ${new Date().toLocaleTimeString("es-AR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })}`;
+    const clipName = clipDraftName.trim() || fallback;
+    setSavedClipNotice({
+      name: clipName,
+      start: pendingClip.start,
+      end: pendingClip.end,
+    });
+    closeClipModal();
   };
 
   const hud = (
@@ -628,6 +668,88 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
             <span className="w-14 shrink-0 text-right">{formatTime(duration)}</span>
           </div>
         </div>
+        {pendingClip && (
+          <div className="pointer-events-auto absolute inset-0 z-40 grid place-items-center bg-black/55 p-3">
+            <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-4 shadow-2xl">
+              <h4 className="text-sm font-black uppercase tracking-wide text-slate-800">
+                Guardar clip
+              </h4>
+              <p className="mt-1 text-xs text-slate-600">
+                Tu recorte termino correctamente. Podes guardarlo con nombre opcional.
+              </p>
+
+              <div className="mt-3 grid grid-cols-3 gap-2 rounded-lg bg-slate-50 p-2 text-[11px] font-semibold text-slate-700">
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-slate-500">Inicio</p>
+                  <p>{formatTime(pendingClip.start)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-slate-500">Fin</p>
+                  <p>{formatTime(pendingClip.end)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-slate-500">Duracion</p>
+                  <p>{formatTime(pendingClip.duration)}</p>
+                </div>
+              </div>
+
+              <label className="mt-3 block">
+                <span className="mb-1 inline-block text-[11px] font-bold uppercase tracking-wide text-slate-600">
+                  Nombre del clip (opcional)
+                </span>
+                <input
+                  type="text"
+                  value={clipDraftName}
+                  onChange={(e) => setClipDraftName(e.target.value)}
+                  placeholder="Ej: Punto final set 2"
+                  className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
+                />
+              </label>
+
+              <div className="mt-4 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={closeClipModal}
+                  className="rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-700 transition hover:bg-slate-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={saveClipDraft}
+                  className="rounded-md bg-vj-green px-3 py-2 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-vj-green-600"
+                >
+                  Guardar clip
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {savedClipNotice && (
+          <div className="pointer-events-auto absolute inset-0 z-50 grid place-items-center bg-black/60 p-3">
+            <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-4 shadow-2xl">
+              <h4 className="text-sm font-black uppercase tracking-wide text-slate-800">
+                Clip guardado
+              </h4>
+              <p className="mt-2 text-sm text-slate-700">
+                Se guardo como:
+                <span className="ml-1 font-black text-slate-900">{savedClipNotice.name}</span>
+              </p>
+              <p className="mt-1 text-xs text-slate-600">
+                Rango: {formatTime(savedClipNotice.start)} - {formatTime(savedClipNotice.end)}
+              </p>
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setSavedClipNotice(null)}
+                  className="rounded-md bg-vj-green px-3 py-2 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-vj-green-600"
+                >
+                  Aceptar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
     </>
   );
 

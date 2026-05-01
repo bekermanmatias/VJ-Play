@@ -1,0 +1,17 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import AdminSidebar from "@/components/admin/AdminSidebar.astro";
+import AdminSystemSettings from "@/components/admin/AdminSystemSettings";
+---
+
+<Layout title="Admin Configuracion | VJ Play" description="Gestion del sistema y personalizacion del club.">
+  <main class="min-h-screen bg-slate-100">
+    <div class="grid min-h-screen grid-cols-1 lg:grid-cols-[280px_1fr]">
+      <AdminSidebar currentPath={Astro.url.pathname} />
+
+      <section class="px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
+        <AdminSystemSettings client:load />
+      </section>
+    </div>
+  </main>
+</Layout>
