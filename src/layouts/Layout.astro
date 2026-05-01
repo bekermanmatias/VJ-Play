@@ -1,0 +1,48 @@
+---
+import "@/styles/global.css";
+import Footer from "@/components/Footer.astro";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = "Club Social Varela Junior",
+  description = "Sitio oficial del Club Social Varela Junior. Deportes, socios, actividades y más.",
+} = Astro.props;
+
+const isAdminPage = Astro.url.pathname.startsWith("/admin");
+const isCinemaReplay = Astro.url.pathname === "/replays/partido" && Astro.url.searchParams.get("cinema") === "1";
+const showPublicFooter = !isAdminPage && !isCinemaReplay;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content={description} />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="icon" type="image/png" href="/images/escudo-varela-junior.png" />
+    <link rel="apple-touch-icon" href="/images/escudo-varela-junior.png" />
+    <link
+      rel="preconnect"
+      href="https://fonts.googleapis.com"
+    />
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <title>{title}</title>
+  </head>
+  <body class="min-h-screen bg-white text-slate-900">
+    <slot />
+    {showPublicFooter && <Footer />}
+  </body>
+</html>

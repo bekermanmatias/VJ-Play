@@ -1,0 +1,220 @@
+---
+interface Props {
+  eyebrow?: string;
+  titleStart?: string;
+  titlePill?: string;
+  subtitle?: string;
+  imageUrl?: string;
+  imageAlt?: string;
+}
+
+const {
+  eyebrow = "Actividades para socios/as",
+  titleStart = "Disfrutá",
+  titlePill = "El Club",
+  subtitle = "Todo el año",
+  imageUrl = "https://images.unsplash.com/photo-1526232761682-d26e03ac148e?auto=format&fit=crop&w=1920&q=80",
+  imageAlt = "Chicos y chicas entrenando en el Club Social Varela Junior",
+} = Astro.props;
+
+const slides = [
+  {
+    eyebrow,
+    titleStart,
+    titlePill,
+    subtitle,
+    imageUrl,
+    imageAlt,
+  },
+  {
+    eyebrow: "Replays",
+    showPlayIcon: true,
+    titleStart: "Revivi tus",
+    titlePill: "Partidos",
+    subtitle: "",
+    imageUrl: "/images/padel.png",
+    imageAlt: "Cancha de padel del Club Social Varela Junior",
+  },
+];
+---
+
+<section
+  class="relative w-full min-h-[60vh] overflow-hidden bg-slate-900 md:min-h-[70vh]"
+  aria-label="Banner principal"
+  data-hero
+>
+  {
+    slides.map((slide, index) => (
+      <div
+        class:list={[
+          "absolute inset-0 transition-opacity duration-700",
+          index === 0 ? "opacity-100" : "pointer-events-none opacity-0",
+        ]}
+        data-hero-slide
+        aria-hidden={index === 0 ? "false" : "true"}
+      >
+        <img
+          src={slide.imageUrl}
+          alt={slide.imageAlt}
+          class="absolute inset-0 h-full w-full object-cover"
+          loading={index === 0 ? "eager" : "lazy"}
+          decoding="async"
+        />
+
+        <div
+          class="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/10"
+          aria-hidden="true"
+        ></div>
+        <div
+          class="absolute inset-0 bg-gradient-to-tr from-vj-green/25 via-transparent to-transparent mix-blend-multiply"
+          aria-hidden="true"
+        ></div>
+
+        <div class="relative mx-auto flex min-h-[60vh] max-w-7xl items-center px-4 sm:px-6 lg:px-8 md:min-h-[70vh]">
+          <div class="max-w-2xl text-white">
+            <p class="inline-flex items-center gap-2 text-xl font-medium uppercase tracking-[0.12em] text-white/95 sm:gap-3 sm:text-2xl md:text-3xl">
+              {
+                slide.showPlayIcon && (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    class="h-4 w-4 text-vj-green sm:h-5 sm:w-5"
+                    aria-hidden="true"
+                  >
+                    <path d="M8 6.82v10.36c0 .79.87 1.27 1.54.84l8.14-5.18a1 1 0 0 0 0-1.68L9.54 5.98A1 1 0 0 0 8 6.82Z"></path>
+                  </svg>
+                )
+              }
+              {slide.eyebrow}
+            </p>
+
+            <h1 class="mt-4 font-display uppercase leading-none tracking-tight">
+              <span class="block text-6xl font-extrabold drop-shadow-md sm:text-7xl md:text-8xl lg:text-9xl">
+                {slide.titleStart}
+              </span>
+              <span class="mt-4 inline-flex items-center rounded-3xl bg-white px-6 py-2 text-4xl text-slate-900 shadow-lg sm:text-5xl md:text-6xl">
+                {slide.titlePill}
+              </span>
+            </h1>
+
+            {
+              slide.subtitle && (
+                <p class="mt-6 text-4xl font-medium uppercase tracking-wide text-white/95 sm:text-5xl md:text-6xl">
+                  {slide.subtitle}
+                </p>
+              )
+            }
+          </div>
+        </div>
+      </div>
+    ))
+  }
+
+  <div class="relative mx-auto flex min-h-[60vh] max-w-7xl items-center px-4 sm:px-6 lg:px-8 md:min-h-[70vh]">
+    <div class="py-16">
+      <p class="sr-only">Hero con rotacion automatica de imagenes.</p>
+    </div>
+  </div>
+
+  <!-- Flechas del carrusel -->
+  <button
+    type="button"
+    aria-label="Slide anterior"
+    class="absolute left-2 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 place-items-center rounded-full text-white/90 transition-colors hover:bg-white/10 hover:text-white sm:left-4 sm:grid sm:h-12 sm:w-12"
+    data-hero-prev
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="w-7 h-7"
+      aria-hidden="true"
+    >
+      <path d="m15 18-6-6 6-6"></path>
+    </svg>
+  </button>
+  <button
+    type="button"
+    aria-label="Slide siguiente"
+    class="absolute right-2 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 place-items-center rounded-full text-white/90 transition-colors hover:bg-white/10 hover:text-white sm:right-4 sm:grid sm:h-12 sm:w-12"
+    data-hero-next
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="w-7 h-7"
+      aria-hidden="true"
+    >
+      <path d="m9 6 6 6-6 6"></path>
+    </svg>
+  </button>
+</section>
+
+<script>
+  (() => {
+    const root = document.querySelector("[data-hero]");
+    if (!root) return;
+
+    const slides = Array.from(root.querySelectorAll("[data-hero-slide]"));
+    const prevBtn = root.querySelector("[data-hero-prev]");
+    const nextBtn = root.querySelector("[data-hero-next]");
+
+    if (slides.length < 2 || !prevBtn || !nextBtn) return;
+
+    let currentIndex = 0;
+    let intervalId = 0;
+    const intervalMs = 8000;
+
+    const render = () => {
+      slides.forEach((slide, index) => {
+        const active = index === currentIndex;
+        slide.classList.toggle("opacity-100", active);
+        slide.classList.toggle("opacity-0", !active);
+        slide.classList.toggle("pointer-events-none", !active);
+        slide.setAttribute("aria-hidden", active ? "false" : "true");
+      });
+    };
+
+    const goTo = (nextIndex) => {
+      currentIndex = (nextIndex + slides.length) % slides.length;
+      render();
+    };
+
+    const restartAuto = () => {
+      window.clearInterval(intervalId);
+      intervalId = window.setInterval(() => {
+        goTo(currentIndex + 1);
+      }, intervalMs);
+    };
+
+    prevBtn.addEventListener("click", () => {
+      goTo(currentIndex - 1);
+      restartAuto();
+    });
+
+    nextBtn.addEventListener("click", () => {
+      goTo(currentIndex + 1);
+      restartAuto();
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        window.clearInterval(intervalId);
+        return;
+      }
+      restartAuto();
+    });
+
+    restartAuto();
+  })();
+</script>

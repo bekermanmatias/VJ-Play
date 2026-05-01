@@ -1,0 +1,364 @@
+---
+interface NavLink {
+  label: string;
+  href: string;
+}
+
+const links: NavLink[] = [
+  { label: "El Club", href: "/el-club" },
+  { label: "Replays", href: "/replays" },
+  { label: "Socios", href: "/socios" },
+  { label: "Contacto", href: "/contacto" },
+];
+
+const deportes = [
+  { label: "Pádel", href: "/deportes/padel" },
+  { label: "Básquet", href: "/deportes/basquet" },
+  { label: "Vóley", href: "/deportes/voley" },
+  { label: "Fútbol", href: "/deportes/futbol" },
+  { label: "Hockey", href: "/deportes/hockey" },
+  { label: "Natación", href: "/deportes/natacion" },
+  { label: "Tenis", href: "/deportes/tenis" },
+];
+
+const currentPath = Astro.url.pathname;
+const isActive = (href: string) =>
+  href === "/" ? currentPath === "/" : currentPath.startsWith(href);
+---
+
+<header class="sticky top-0 z-40 bg-white shadow-sm" data-mobile-nav>
+  <nav
+    class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-20 flex items-center gap-4"
+    aria-label="Navegación principal"
+  >
+    <!-- Marca: escudo + nombre -->
+    <a
+      href="/"
+      class="flex items-center gap-3 shrink-0"
+      aria-label="Club Social Varela Junior - Inicio"
+    >
+      <img
+        src="/images/escudo-varela-junior.png"
+        alt="Escudo Club Social Varela Junior"
+        class="h-12 w-auto shrink-0 object-contain"
+        loading="eager"
+        decoding="async"
+      />
+
+      <span class="hidden sm:flex flex-col leading-none antialiased">
+        <span class="text-[0.95rem] font-extrabold uppercase tracking-[0.03em] text-slate-900"
+          >Club Social</span
+        >
+        <span class="mt-1 text-[1.6rem] font-black uppercase tracking-tight text-vj-green"
+          >Varela Junior</span
+        >
+      </span>
+    </a>
+
+    <!-- Links centrales -->
+    <ul class="hidden lg:flex items-center gap-1 ml-auto">
+      <li class="relative group">
+        <button
+          type="button"
+          class:list={[
+            "px-3 py-2 rounded-md text-sm font-bold uppercase tracking-wide transition-colors inline-flex items-center gap-1",
+            currentPath.startsWith("/deportes")
+              ? "bg-slate-100 text-slate-900"
+              : "text-slate-700 hover:text-vj-green hover:bg-slate-50",
+          ]}
+          aria-haspopup="true"
+          aria-expanded="false"
+        >
+          Deportes
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="w-4 h-4"
+            aria-hidden="true"
+          >
+            <path d="m6 9 6 6 6-6"></path>
+          </svg>
+        </button>
+
+        <div
+          class="invisible opacity-0 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 transition-all duration-150 absolute left-0 top-full pt-2 z-50"
+        >
+          <ul class="min-w-48 border border-slate-300 bg-white shadow-lg p-1">
+            {
+              deportes.map((deporte) => (
+                <li>
+                  <a
+                    href={deporte.href}
+                    class="block px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-vj-green hover:text-white"
+                  >
+                    {deporte.label}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+      </li>
+
+      {
+        links.map((link) => {
+          const active = isActive(link.href);
+          const isReplays = link.label === "Replays";
+          return (
+            <li>
+              <a
+                href={link.href}
+                class:list={[
+                  "px-3 py-2 rounded-md text-sm font-bold uppercase tracking-wide transition-colors inline-flex items-center gap-1.5",
+                  active
+                    ? "bg-slate-100 text-slate-900"
+                    : "text-slate-700 hover:text-vj-green hover:bg-slate-50",
+                ]}
+                aria-current={active ? "page" : undefined}
+                title={link.label === "El Club"
+                  ? "Información institucional, historia y estatuto"
+                  : link.label === "Socios"
+                    ? "Cuota social, beneficios y reglamentos"
+                    : link.label === "Contacto"
+                      ? "Formulario, ubicación y horarios"
+                      : undefined}
+              >
+                {
+                  isReplays && (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      class="w-4 h-4 text-vj-green"
+                      aria-hidden="true"
+                    >
+                      <path d="M8 6.82v10.36c0 .79.87 1.27 1.54.84l8.14-5.18a1 1 0 0 0 0-1.68L9.54 5.98A1 1 0 0 0 8 6.82Z"></path>
+                    </svg>
+                  )
+                }
+                {link.label}
+              </a>
+            </li>
+          );
+        })
+      }
+    </ul>
+
+    <!-- Herramientas -->
+    <div class="ml-auto flex items-center gap-1 sm:gap-2 lg:ml-3">
+      <!-- Toggle del menú mobile -->
+      <button
+        type="button"
+        class="lg:hidden p-2 rounded-md text-slate-700 hover:text-vj-green hover:bg-slate-50 transition-colors"
+        aria-label="Abrir menú"
+        aria-expanded="false"
+        aria-controls="mobile-menu-panel"
+        data-mobile-menu-toggle
+      >
+        <svg
+          data-mobile-menu-icon-open
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="w-6 h-6"
+          aria-hidden="true"
+        >
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+        <svg
+          data-mobile-menu-icon-close
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="hidden w-6 h-6"
+          aria-hidden="true"
+        >
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <div
+    id="mobile-menu-panel"
+    class="max-h-0 translate-y-[-8px] overflow-hidden border-t border-transparent bg-white px-4 py-0 opacity-0 pointer-events-none transition-[max-height,opacity,transform,padding,border-color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] lg:hidden"
+    data-mobile-menu-panel
+  >
+    <nav aria-label="Menu movil principal">
+      <ul class="space-y-1">
+        {
+          links.map((link) => {
+            const active = isActive(link.href);
+            const isReplays = link.label === "Replays";
+            return (
+              <li>
+                <a
+                  href={link.href}
+                  class:list={[
+                    "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-bold uppercase tracking-wide transition-colors",
+                    active
+                      ? "bg-slate-100 text-slate-900"
+                      : "text-slate-700 hover:bg-slate-50 hover:text-vj-green",
+                  ]}
+                  aria-current={active ? "page" : undefined}
+                  data-mobile-menu-link
+                >
+                  {
+                    isReplays && (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                        class="h-4 w-4 text-vj-green"
+                        aria-hidden="true"
+                      >
+                        <path d="M8 6.82v10.36c0 .79.87 1.27 1.54.84l8.14-5.18a1 1 0 0 0 0-1.68L9.54 5.98A1 1 0 0 0 8 6.82Z"></path>
+                      </svg>
+                    )
+                  }
+                  {link.label}
+                </a>
+              </li>
+            );
+          })
+        }
+      </ul>
+    </nav>
+
+    <div class="mt-4 border-t border-slate-200 pt-3">
+      <p class="px-3 text-xs font-black uppercase tracking-[0.15em] text-slate-500">Deportes</p>
+      <ul class="mt-2 grid grid-cols-2 gap-1">
+        {
+          deportes.map((deporte) => (
+            <li>
+              <a
+                href={deporte.href}
+                class="block rounded-md px-3 py-2 text-sm font-bold uppercase tracking-wide text-slate-700 transition-colors hover:bg-slate-50 hover:text-vj-green"
+                data-mobile-menu-link
+              >
+                {deporte.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </div>
+</header>
+
+<script>
+  (() => {
+    const root = document.querySelector("[data-mobile-nav]");
+    if (!root) return;
+
+    const toggle = root.querySelector("[data-mobile-menu-toggle]");
+    const panel = root.querySelector("[data-mobile-menu-panel]");
+    const links = root.querySelectorAll("[data-mobile-menu-link]");
+    const openIcon = root.querySelector("[data-mobile-menu-icon-open]");
+    const closeIcon = root.querySelector("[data-mobile-menu-icon-close]");
+    if (!toggle || !panel) return;
+
+    const setGlobalOffset = () => {
+      const expanded = toggle.getAttribute("aria-expanded") === "true";
+      const offset = expanded ? `${Math.round(root.getBoundingClientRect().height)}px` : "0px";
+      document.documentElement.style.setProperty("--mobile-nav-offset", offset);
+    };
+
+    const closeMenu = () => {
+      panel.classList.add(
+        "max-h-0",
+        "opacity-0",
+        "translate-y-[-6px]",
+        "py-0",
+        "pointer-events-none",
+        "border-transparent",
+      );
+      panel.classList.remove(
+        "max-h-[75vh]",
+        "opacity-100",
+        "translate-y-0",
+        "py-3",
+        "pointer-events-auto",
+        "border-slate-200",
+      );
+      toggle.setAttribute("aria-expanded", "false");
+      toggle.setAttribute("aria-label", "Abrir menú");
+      openIcon?.classList.remove("hidden");
+      closeIcon?.classList.add("hidden");
+      setGlobalOffset();
+    };
+
+    const openMenu = () => {
+      panel.classList.remove(
+        "max-h-0",
+        "opacity-0",
+        "translate-y-[-6px]",
+        "py-0",
+        "pointer-events-none",
+        "border-transparent",
+      );
+      panel.classList.add(
+        "max-h-[75vh]",
+        "opacity-100",
+        "translate-y-0",
+        "py-3",
+        "pointer-events-auto",
+        "border-slate-200",
+      );
+      toggle.setAttribute("aria-expanded", "true");
+      toggle.setAttribute("aria-label", "Cerrar menú");
+      openIcon?.classList.add("hidden");
+      closeIcon?.classList.remove("hidden");
+      setGlobalOffset();
+    };
+
+    toggle.addEventListener("click", () => {
+      const isOpen = toggle.getAttribute("aria-expanded") === "true";
+      if (isOpen) {
+        closeMenu();
+        return;
+      }
+      openMenu();
+    });
+
+    links.forEach((link) => {
+      link.addEventListener("click", closeMenu);
+    });
+
+    document.addEventListener("mobile-nav:close", closeMenu);
+
+    document.addEventListener("pointerdown", (event) => {
+      const isOpen = toggle.getAttribute("aria-expanded") === "true";
+      if (!isOpen) return;
+      if (!(event.target instanceof Node)) return;
+      if (root.contains(event.target)) return;
+      closeMenu();
+    });
+
+    window.addEventListener("resize", () => {
+      if (window.innerWidth >= 1024) {
+        closeMenu();
+        return;
+      }
+      setGlobalOffset();
+    });
+
+    setGlobalOffset();
+  })();
+</script>

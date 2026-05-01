@@ -1,0 +1,82 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import TopBar from "@/components/TopBar.astro";
+import Navbar from "@/components/Navbar.astro";
+import ReplaysVerPartido from "@/components/replays/ReplaysVerPartido";
+---
+
+<Layout title="Replays | Club Social Varela Junior">
+  <TopBar />
+  <Navbar />
+
+  <main class="bg-slate-50 min-h-[calc(100vh-7rem)]">
+    <!-- Hero minimalista -->
+    <section class="border-b border-slate-200/80">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-7">
+        <h1 class="text-4xl sm:text-5xl font-black tracking-tight text-slate-900">
+          Reviví tu partido
+        </h1>
+        <p class="mt-3 max-w-3xl text-base sm:text-lg text-slate-600">
+          Busca tu turno, descarga el partido completo o recorta tus mejores clips gratis.
+        </p>
+      </div>
+    </section>
+
+    <!-- Buscador inteligente -->
+    <section class="py-2 sm:py-3">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="rounded-xl border border-slate-200 bg-white shadow-lg p-5 sm:p-6 lg:p-8">
+          <ReplaysVerPartido client:load />
+
+          <p class="mt-4 text-xs text-slate-500">
+            Nota: solo podes buscar partidos de los ultimos 7 dias.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Muro de la comunidad -->
+    <section id="muro" class="pt-6 sm:pt-8 pb-12 sm:pb-16">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <h2 class="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+          Ultimas postales
+        </h2>
+        <p class="mt-2 text-sm text-slate-600">
+          Vos tambien podes ser parte.
+        </p>
+
+        <div class="mt-6 columns-1 sm:columns-2 lg:columns-3 gap-4 [column-fill:_balance]">
+          <img class="mb-4 w-full border border-slate-200" src="/images/padel.png" alt="Postales del club - cancha padel" loading="lazy" decoding="async" />
+          <img class="mb-4 w-full border border-slate-200" src="/images/f5.png" alt="Postales del club - cancha futbol 5" loading="lazy" decoding="async" />
+          <img class="mb-4 w-full border border-slate-200" src="https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=900&q=70" alt="Postales del club 1" loading="lazy" decoding="async" />
+          <img class="mb-4 w-full border border-slate-200" src="https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=900&q=70" alt="Postales del club 2" loading="lazy" decoding="async" />
+          <img class="mb-4 w-full border border-slate-200" src="https://images.unsplash.com/photo-1434648957308-5e6a859697e8?auto=format&fit=crop&w=900&q=70" alt="Postales del club 3" loading="lazy" decoding="async" />
+          <img class="mb-4 w-full border border-slate-200" src="https://images.unsplash.com/photo-1505250469679-203ad9ced0cb?auto=format&fit=crop&w=900&q=70" alt="Postales del club 4" loading="lazy" decoding="async" />
+          <img class="mb-4 w-full border border-slate-200" src="https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=900&q=70" alt="Postales del club 5" loading="lazy" decoding="async" />
+          <img class="mb-4 w-full border border-slate-200" src="https://images.unsplash.com/photo-1471295253337-3ceaaedca402?auto=format&fit=crop&w=900&q=70" alt="Postales del club 6" loading="lazy" decoding="async" />
+        </div>
+      </div>
+    </section>
+
+    <!-- Pie de sección -->
+    <section class="border-t border-slate-200 py-8 sm:py-10 bg-white">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="grid gap-4 sm:grid-cols-3">
+          <div class="border border-slate-200 p-4">
+            <p class="text-xs uppercase tracking-wider font-bold text-slate-500">Disponibilidad</p>
+            <p class="mt-2 text-sm text-slate-700">Los partidos estan disponibles a los 5 minutos de finalizado el turno.</p>
+          </div>
+          <div class="border border-slate-200 p-4">
+            <p class="text-xs uppercase tracking-wider font-bold text-slate-500">Privacidad y Espacio</p>
+            <p class="mt-2 text-sm text-slate-700">Por seguridad, las grabaciones se eliminan automaticamente a los 7 dias.</p>
+          </div>
+          <div class="border border-slate-200 p-4">
+            <p class="text-xs uppercase tracking-wider font-bold text-slate-500">100% Gratis</p>
+            <p class="mt-2 text-sm text-slate-700">Descargar y recortar tus jugadas no tiene costo extra.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+</Layout>

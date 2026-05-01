@@ -1,0 +1,22 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import AdminSidebar from "@/components/admin/AdminSidebar.astro";
+---
+
+<Layout title="Admin Usuarios | Bekerman Matias" description="Seccion de usuarios en desarrollo.">
+  <main class="min-h-screen bg-slate-100">
+    <div class="grid min-h-screen grid-cols-1 lg:grid-cols-[280px_1fr]">
+      <AdminSidebar currentPath={Astro.url.pathname} />
+
+      <section class="flex items-center justify-center px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
+        <section class="text-center">
+          <p class="text-xs font-bold uppercase tracking-[0.2em] text-vj-green">Admin / Usuarios</p>
+          <h1 class="mt-2 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">En desarrollo</h1>
+          <p class="mx-auto mt-3 max-w-2xl text-base text-slate-600">
+            Esta pantalla todavia esta en desarrollo. La administracion de usuarios se agregara proximamente.
+          </p>
+        </section>
+      </section>
+    </div>
+  </main>
+</Layout>

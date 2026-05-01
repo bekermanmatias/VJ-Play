@@ -1,0 +1,61 @@
+---
+interface Props {
+  currentPath: string;
+}
+
+const { currentPath } = Astro.props;
+
+const menuItems = [
+  { label: "Inicio", href: "/admin" },
+  { label: "Replays", href: "/admin/replays" },
+  { label: "Incidencias", href: "/admin/incidencias" },
+  { label: "Usuarios", href: "/admin/usuarios" },
+  { label: "Configuracion", href: "/admin/configuracion" },
+];
+
+const isActive = (href: string) =>
+  href === "/admin" ? currentPath === "/admin" : currentPath.startsWith(href);
+---
+
+<aside class="border-r border-slate-200 bg-slate-950 text-white">
+  <div class="border-b border-white/10 px-5 py-5">
+    <a href="/" class="flex items-center gap-3" aria-label="Club Social Varela Junior - Inicio">
+      <img
+        src="/images/escudo-varela-junior.png"
+        alt="Escudo Club Social Varela Junior"
+        class="h-11 w-auto shrink-0 object-contain"
+        loading="eager"
+        decoding="async"
+      />
+      <span class="flex flex-col leading-none antialiased">
+        <span class="text-[0.74rem] font-extrabold uppercase tracking-[0.03em] text-white/85">Club Social</span>
+        <span class="mt-1 text-[1.35rem] font-black uppercase tracking-tight text-vj-green">Varela Junior</span>
+      </span>
+    </a>
+    <p class="mt-3 text-xs font-bold uppercase tracking-[0.2em] text-white/60">Administracion</p>
+  </div>
+
+  <nav class="px-3 py-4" aria-label="Menu lateral admin">
+    <ul class="space-y-1.5">
+      {
+        menuItems.map((item) => {
+          const active = isActive(item.href);
+          return (
+            <li>
+              <a
+                href={item.href}
+                class:list={[
+                  "block rounded-md px-3 py-2.5 text-sm font-bold uppercase tracking-wide transition",
+                  active ? "bg-vj-green text-white" : "text-white/80 hover:bg-white/10 hover:text-white",
+                ]}
+                aria-current={active ? "page" : undefined}
+              >
+                {item.label}
+              </a>
+            </li>
+          );
+        })
+      }
+    </ul>
+  </nav>
+</aside>

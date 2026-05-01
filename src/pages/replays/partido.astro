@@ -1,0 +1,68 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import TopBar from "@/components/TopBar.astro";
+import Navbar from "@/components/Navbar.astro";
+import MatchPlayerZoom from "@/components/replays/MatchPlayerZoom";
+import ReplayMatchBlock from "@/components/replays/ReplayMatchBlock";
+
+const params = Astro.url.searchParams;
+const cinema = params.get("cinema") === "1";
+const canchaSlug = params.get("cancha") ?? "";
+const fechaRaw = params.get("fecha") ?? "";
+const horaRaw = params.get("hora") ?? "";
+
+const canchaLabels: Record<string, string> = {
+  "cancha-1": "Cancha 1 (Blindex)",
+  "cancha-2": "Cancha 2 (Muro)",
+};
+
+const canchaLabel = canchaLabels[canchaSlug] ?? (canchaSlug ? canchaSlug : "Cancha");
+
+let fechaDisplay = fechaRaw;
+if (/^\d{4}-\d{2}-\d{2}$/.test(fechaRaw)) {
+  const [y, m, d] = fechaRaw.split("-");
+  fechaDisplay = `${d}/${m}/${y}`;
+}
+
+const turnoLabel = horaRaw ? `${horaRaw} — ${fechaDisplay}` : fechaDisplay;
+const clockLabel =
+  horaRaw && /^\d{2}:\d{2}$/.test(horaRaw) ? `${horaRaw}:00` : horaRaw || "--:--:--";
+
+const videoSrc =
+  "https://archive.org/download/fourteenhours1951/Fourteen%20Hours%20(1951%2C%20USA)%20Featuring%20Richard%20Basehart%2C%20Paul%20Douglas%20-%20Film%20Noir%20Full%20Movie.mp4";
+const poster =
+  "https://images.unsplash.com/photo-1627615922102-6b7ef5f0ec55?auto=format&fit=crop&w=1400&q=70";
+---
+
+<Layout title={`Replay | ${canchaLabel}`}>
+  {
+    cinema ? (
+      <main class="fixed inset-0 z-50 m-0 min-h-[100dvh] w-full overflow-y-auto overflow-x-hidden bg-black p-0">
+        <MatchPlayerZoom client:load videoSrc={videoSrc} poster={poster} clockLabel={clockLabel} />
+      </main>
+    ) : (
+      <>
+        <TopBar />
+        <Navbar />
+
+        <main class="min-h-[calc(100vh-7rem)] bg-white">
+          <div class="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+            <div class="flex flex-wrap items-end gap-3 border-b border-slate-200 pb-4">
+              <div>
+                <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Replay</p>
+                <h1 class="mt-1 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
+                  {canchaLabel}
+                </h1>
+                <p class="mt-1 text-sm text-slate-600">{turnoLabel}</p>
+              </div>
+            </div>
+
+            <div class="mt-6">
+              <ReplayMatchBlock client:load videoSrc={videoSrc} poster={poster} clockLabel={clockLabel} />
+            </div>
+          </div>
+        </main>
+      </>
+    )
+  }
+</Layout>
