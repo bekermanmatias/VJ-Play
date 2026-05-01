@@ -3,7 +3,7 @@ import { X } from "lucide-react";
 import MatchPlayerZoom from "@/components/replays/MatchPlayerZoom";
 
 const VIDEO_SRC =
-  "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4";
+  "https://archive.org/download/fourteenhours1951/Fourteen%20Hours%20(1951%2C%20USA)%20Featuring%20Richard%20Basehart%2C%20Paul%20Douglas%20-%20Film%20Noir%20Full%20Movie.mp4";
 const POSTER =
   "https://images.unsplash.com/photo-1627615922102-6b7ef5f0ec55?auto=format&fit=crop&w=1400&q=70";
 

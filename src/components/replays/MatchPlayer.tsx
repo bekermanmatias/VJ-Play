@@ -23,6 +23,7 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
+import { createPortal } from "react-dom";
 import ClipsPanel from "@/components/replays/ClipsPanel";
 import { DEMO_CLIPS } from "@/components/replays/demo-clips";
 
@@ -47,6 +48,8 @@ type Props = {
   onClipsOpenChange?: (open: boolean) => void;
   /** UI tipo overlay: iconos sin cajas oscuras */
   chromeVariant?: "default" | "ghost";
+  /** Si se provee, el HUD se monta en este elemento via portal (queda fuera del zoom). */
+  hudPortalTarget?: HTMLElement | null;
 };
 
 function formatTime(seconds: number) {
@@ -75,6 +78,7 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
     clipsOpen: clipsOpenProp,
     onClipsOpenChange,
     chromeVariant = "default",
+    hudPortalTarget,
   },
   ref,
 ) {
@@ -109,7 +113,6 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
   const setClipsOpen = isClipsControlled
     ? onClipsOpenChange!
     : setUncontrolledClipsOpen;
-
   const syncTime = useCallback(() => {
     const v = videoRef.current;
     if (!v) return;
@@ -272,31 +275,8 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
     setClipStart(null);
   };
 
-  return (
+  const hud = (
     <>
-      <div
-        ref={shellRef}
-        className={[
-          "relative aspect-video w-full overflow-hidden bg-black",
-          rootClassName ?? "",
-        ]
-          .filter(Boolean)
-          .join(" ")}
-      >
-        <video
-          ref={videoRef}
-          className={videoClassName}
-          style={{
-            filter: `brightness(${brightnessPct / 100}) contrast(${contrastPct / 100})`,
-          }}
-          src={videoSrc}
-          poster={poster}
-          playsInline
-          preload="metadata"
-          controls={false}
-          onClick={togglePlay}
-        />
-
         <div
           className={
             ghost
@@ -651,7 +631,36 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
             <span className="w-14 shrink-0 text-right">{formatTime(duration)}</span>
           </div>
         </div>
+    </>
+  );
+
+  return (
+    <>
+      <div
+        ref={shellRef}
+        className={[
+          "relative aspect-video w-full overflow-hidden bg-black",
+          rootClassName ?? "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+      >
+        <video
+          ref={videoRef}
+          className={videoClassName}
+          style={{
+            filter: `brightness(${brightnessPct / 100}) contrast(${contrastPct / 100})`,
+          }}
+          src={videoSrc}
+          poster={poster}
+          playsInline
+          preload="metadata"
+          controls={false}
+          onClick={togglePlay}
+        />
+        {!hudPortalTarget && hud}
       </div>
+      {hudPortalTarget && createPortal(hud, hudPortalTarget)}
 
       {showClipsPanel && clipsOpen && (
         <ClipsPanel clips={DEMO_CLIPS} videoSrc={videoSrc} onSelectClip={seekTo} surface="page" />
