@@ -133,13 +133,13 @@ export default function ReplaysVerPartido() {
   const close = useCallback(() => setOpen(false), []);
 
   useEffect(() => {
-    const onPointerDown = (e: MouseEvent) => {
+    const onPointerDown = (e: PointerEvent) => {
       if (!(e.target instanceof Node)) return;
       if (formRef.current?.contains(e.target)) return;
       setOpenMenu(null);
     };
-    document.addEventListener("mousedown", onPointerDown);
-    return () => document.removeEventListener("mousedown", onPointerDown);
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
   }, []);
 
   useEffect(() => {
@@ -159,7 +159,7 @@ export default function ReplaysVerPartido() {
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!cancha || !fecha || !hora) {
-      window.alert("Completá cancha, fecha y turno para continuar.");
+      window.alert("Complet? cancha, fecha y turno para continuar.");
       return;
     }
     const label = /^\d{2}:\d{2}$/.test(hora) ? `${hora}:00` : hora || "--:--:--";
@@ -249,9 +249,13 @@ export default function ReplaysVerPartido() {
           role="dialog"
           aria-modal="true"
           aria-label="Reproductor de replay"
-          className="fixed inset-0 z-200 h-dvh max-h-dvh overflow-hidden bg-black"
+          className="fixed inset-x-0 bottom-0 z-50 overflow-hidden bg-black"
+          style={{
+            top: "var(--mobile-nav-offset, 0px)",
+            height: "calc(100dvh - var(--mobile-nav-offset, 0px))",
+          }}
         >
-          <div className="pointer-events-none absolute right-0 top-0 z-210 flex justify-end p-3 sm:p-4">
+          <div className="pointer-events-none absolute right-0 top-0 z-60 flex justify-end p-3 sm:p-4">
             <button
               type="button"
               onClick={close}
