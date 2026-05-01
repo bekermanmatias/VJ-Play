@@ -1,0 +1,98 @@
+---
+const year = new Date().getFullYear();
+
+const quickLinks = [
+  { label: "Inicio", href: "/" },
+  { label: "Replays", href: "/replays" },
+  { label: "El Club", href: "/el-club" },
+  { label: "Socios", href: "/socios" },
+  { label: "Contacto", href: "/contacto" },
+];
+
+const sportsLinks = [
+  { label: "Padel", href: "/deportes/padel" },
+  { label: "Futbol", href: "/deportes/futbol" },
+  { label: "Basquet", href: "/deportes/basquet" },
+  { label: "Voley", href: "/deportes/voley" },
+  { label: "Hockey", href: "/deportes/hockey" },
+  { label: "Tenis", href: "/deportes/tenis" },
+];
+---
+
+<footer class="border-t border-slate-800 bg-slate-950 text-slate-200">
+  <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-12">
+    <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+      <section>
+        <a href="/" class="inline-flex items-center gap-3" aria-label="Club Social Varela Junior - Inicio">
+          <img
+            src="/images/escudo-varela-junior.png"
+            alt="Escudo Club Social Varela Junior"
+            class="h-12 w-auto object-contain"
+            loading="lazy"
+            decoding="async"
+          />
+          <span class="flex flex-col leading-none">
+            <span class="text-xs font-extrabold uppercase tracking-[0.08em] text-white/80">Club Social</span>
+            <span class="mt-1 text-2xl font-black uppercase tracking-tight text-vj-green">Varela Junior</span>
+          </span>
+        </a>
+        <p class="mt-4 max-w-xs text-sm text-slate-400">
+          Sitio oficial del Club Social Varela Junior con informacion institucional, actividades deportivas y novedades para toda la comunidad.
+        </p>
+      </section>
+
+      <section>
+        <h3 class="text-xs font-black uppercase tracking-[0.16em] text-white/85">Accesos</h3>
+        <ul class="mt-3 space-y-2">
+          {
+            quickLinks.map((link) => (
+              <li>
+                <a href={link.href} class="text-sm font-semibold text-slate-300 transition hover:text-vj-green">
+                  {link.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+
+      <section>
+        <h3 class="text-xs font-black uppercase tracking-[0.16em] text-white/85">Deportes</h3>
+        <ul class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-1">
+          {
+            sportsLinks.map((link) => (
+              <li>
+                <a href={link.href} class="text-sm font-semibold text-slate-300 transition hover:text-vj-green">
+                  {link.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+
+      <section>
+        <h3 class="text-xs font-black uppercase tracking-[0.16em] text-white/85">Contacto</h3>
+        <ul class="mt-3 space-y-2 text-sm text-slate-300">
+          <li>
+            <a href="mailto:info@varelajunior.com.ar" class="font-semibold transition hover:text-vj-green">
+              info@varelajunior.com.ar
+            </a>
+          </li>
+          <li>
+            <a href="tel:+5491100000000" class="font-semibold transition hover:text-vj-green">
+              +54 9 11 0000-0000
+            </a>
+          </li>
+          <li class="text-slate-400">Varela, Buenos Aires, Argentina</li>
+        </ul>
+      </section>
+    </div>
+  </div>
+
+  <div class="border-t border-slate-800/90 bg-slate-950/80">
+    <div class="mx-auto max-w-7xl px-4 py-4 text-center text-xs text-slate-300 sm:px-6 lg:px-8">
+      Copyright © {year} Sitio oficial Club Social Varela Junior | Powered by <span class="font-bold text-white">Bekerman Matias</span>
+    </div>
+  </div>
+</footer>

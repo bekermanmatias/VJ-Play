@@ -1,5 +1,6 @@
 ---
 import "@/styles/global.css";
+import Footer from "@/components/Footer.astro";
 
 interface Props {
   title?: string;
@@ -10,6 +11,10 @@ const {
   title = "Club Social Varela Junior",
   description = "Sitio oficial del Club Social Varela Junior. Deportes, socios, actividades y más.",
 } = Astro.props;
+
+const isAdminPage = Astro.url.pathname.startsWith("/admin");
+const isCinemaReplay = Astro.url.pathname === "/replays/partido" && Astro.url.searchParams.get("cinema") === "1";
+const showPublicFooter = !isAdminPage && !isCinemaReplay;
 ---
 
 <!doctype html>
@@ -38,5 +43,6 @@ const {
   </head>
   <body class="min-h-screen bg-white text-slate-900">
     <slot />
+    {showPublicFooter && <Footer />}
   </body>
 </html>

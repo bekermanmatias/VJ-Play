@@ -164,6 +164,7 @@ export default function ReplaysVerPartido() {
     }
     const label = /^\d{2}:\d{2}$/.test(hora) ? `${hora}:00` : hora || "--:--:--";
     setClockLabel(label);
+    document.dispatchEvent(new CustomEvent("mobile-nav:close"));
     setOpen(true);
     setOpenMenu(null);
   };
@@ -249,10 +250,9 @@ export default function ReplaysVerPartido() {
           role="dialog"
           aria-modal="true"
           aria-label="Reproductor de replay"
-          className="fixed inset-x-0 bottom-0 z-50 overflow-hidden bg-black"
+          className="fixed inset-0 z-50 overflow-hidden bg-black"
           style={{
-            top: "var(--mobile-nav-offset, 0px)",
-            height: "calc(100dvh - var(--mobile-nav-offset, 0px))",
+            paddingTop: "var(--mobile-nav-offset, 0px)",
           }}
         >
           <div className="pointer-events-none absolute right-0 top-0 z-60 flex justify-end p-3 sm:p-4">
@@ -265,7 +265,7 @@ export default function ReplaysVerPartido() {
               <X size={26} strokeWidth={2.5} />
             </button>
           </div>
-          <div className="absolute inset-0 top-0 min-h-0 w-full">
+          <div className="relative h-full w-full min-h-0">
             <MatchPlayerZoom
               videoSrc={VIDEO_SRC}
               poster={POSTER}
