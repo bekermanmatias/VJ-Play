@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CalendarDays, ChevronDown, X } from "lucide-react";
 import MatchPlayerZoom from "@/components/replays/MatchPlayerZoom";
 
 const VIDEO_SRC =
@@ -7,33 +7,140 @@ const VIDEO_SRC =
 const POSTER =
   "https://images.unsplash.com/photo-1627615922102-6b7ef5f0ec55?auto=format&fit=crop&w=1400&q=70";
 
+type Option = { value: string; label: string };
+
+const CANCHAS: Option[] = [
+  { value: "cancha-padel", label: "Cancha Padel" },
+  { value: "cancha-f5", label: "Cancha F5" },
+];
+
 function buildTurnos() {
-  const out: { value: string; label: string }[] = [];
+  const out: Option[] = [];
   for (let h = 9; h <= 22; h++) {
     const value = `${h.toString().padStart(2, "0")}:00`;
     const end = h < 22 ? `${(h + 1).toString().padStart(2, "0")}:00` : "23:00";
-    out.push({ value, label: `${value} — ${end}` });
+    out.push({ value, label: `${value} - ${end}` });
   }
   return out;
 }
 
+function buildFechas() {
+  const now = new Date();
+  const out: Option[] = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(now);
+    d.setDate(now.getDate() - i);
+    const value = d.toISOString().split("T")[0] ?? "";
+    const label = d.toLocaleDateString("es-AR", {
+      weekday: "short",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+    out.push({ value, label });
+  }
+  return out;
+}
+
+type DropdownFieldProps = {
+  id: string;
+  label: string;
+  placeholder: string;
+  options: Option[];
+  value: string;
+  open: boolean;
+  showCalendarIcon?: boolean;
+  onToggle: () => void;
+  onPick: (value: string) => void;
+};
+
+function DropdownField({
+  id,
+  label,
+  placeholder,
+  options,
+  value,
+  open,
+  showCalendarIcon = false,
+  onToggle,
+  onPick,
+}: DropdownFieldProps) {
+  const selected = options.find((o) => o.value === value);
+
+  return (
+    <div className="relative">
+      <span className="mb-1.5 inline-block text-xs font-bold uppercase tracking-wider text-slate-600">
+        {label}
+      </span>
+      <button
+        id={id}
+        type="button"
+        onClick={onToggle}
+        className={`relative h-12 w-full rounded-md border border-slate-300 bg-white pl-3 text-left text-sm font-semibold text-slate-800 outline-none transition hover:border-slate-400 focus:border-vj-green ${showCalendarIcon ? "pr-14" : "pr-10"}`}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <span className={`block truncate ${selected ? "text-slate-800" : "text-slate-500"}`}>
+          {selected?.label ?? placeholder}
+        </span>
+        <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center gap-1.5">
+          {showCalendarIcon && <CalendarDays className="h-4 w-4 text-slate-400" aria-hidden />}
+          <ChevronDown
+            className={`h-4 w-4 text-slate-500 transition ${open ? "rotate-180" : ""}`}
+            aria-hidden
+          />
+        </span>
+      </button>
+
+      {open && (
+        <ul
+          role="listbox"
+          aria-labelledby={id}
+          className="absolute z-40 mt-2 max-h-64 w-full overflow-auto border border-slate-300 bg-white p-1 shadow-lg"
+        >
+          {options.map((opt) => (
+            <li key={opt.value}>
+              <button
+                type="button"
+                onClick={() => onPick(opt.value)}
+                className={`block w-full px-3 py-2 text-left text-sm font-semibold transition-colors ${
+                  value === opt.value
+                    ? "bg-vj-green text-white"
+                    : "text-slate-700 hover:bg-vj-green hover:text-white"
+                }`}
+              >
+                {opt.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export default function ReplaysVerPartido() {
   const turnos = useMemo(buildTurnos, []);
+  const fechas = useMemo(buildFechas, []);
   const [open, setOpen] = useState(false);
   const [clockLabel, setClockLabel] = useState("--:--:--");
-
-  useEffect(() => {
-    const input = document.getElementById("replays-fecha");
-    if (!(input instanceof HTMLInputElement)) return;
-    const now = new Date();
-    const minDate = new Date(now);
-    minDate.setDate(now.getDate() - 6);
-    const fmt = (d: Date) => d.toISOString().split("T")[0]!;
-    input.max = fmt(now);
-    input.min = fmt(minDate);
-  }, []);
+  const [cancha, setCancha] = useState("");
+  const [fecha, setFecha] = useState("");
+  const [hora, setHora] = useState("");
+  const [openMenu, setOpenMenu] = useState<"cancha" | "fecha" | "hora" | null>(null);
+  const formRef = useRef<HTMLFormElement | null>(null);
 
   const close = useCallback(() => setOpen(false), []);
+
+  useEffect(() => {
+    const onPointerDown = (e: MouseEvent) => {
+      if (!(e.target instanceof Node)) return;
+      if (formRef.current?.contains(e.target)) return;
+      setOpenMenu(null);
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -51,76 +158,82 @@ export default function ReplaysVerPartido() {
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const hora = String(fd.get("hora") ?? "");
-    const label =
-      hora && /^\d{2}:\d{2}$/.test(hora) ? `${hora}:00` : hora || "--:--:--";
+    if (!cancha || !fecha || !hora) {
+      window.alert("Complet� cancha, fecha y turno para continuar.");
+      return;
+    }
+    const label = /^\d{2}:\d{2}$/.test(hora) ? `${hora}:00` : hora || "--:--:--";
     setClockLabel(label);
     setOpen(true);
+    setOpenMenu(null);
   };
 
   return (
     <>
       <form
+        ref={formRef}
         id="replays-form"
         onSubmit={onSubmit}
         className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6"
       >
-        <label className="block lg:col-span-1">
-          <span className="mb-1.5 inline-block text-xs font-bold uppercase tracking-wider text-slate-600">
-            Cancha
-          </span>
-          <div className="relative">
-            <select
-              id="replays-cancha"
-              name="cancha"
-              required
-              className="h-12 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
-            >
-              <option value="">Selecciona cancha</option>
-              <option value="cancha-1">Cancha 1 (Blindex)</option>
-              <option value="cancha-2">Cancha 2 (Muro)</option>
-            </select>
-          </div>
-        </label>
+        <input type="hidden" name="cancha" value={cancha} />
+        <input type="hidden" name="fecha" value={fecha} />
+        <input type="hidden" name="hora" value={hora} />
+
+        <div className="block lg:col-span-1">
+          <DropdownField
+            id="replays-cancha"
+            label="Cancha"
+            placeholder="Selecciona cancha"
+            options={CANCHAS}
+            value={cancha}
+            open={openMenu === "cancha"}
+            onToggle={() => setOpenMenu((v) => (v === "cancha" ? null : "cancha"))}
+            onPick={(v) => {
+              setCancha(v);
+              setOpenMenu(null);
+            }}
+          />
+        </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:col-span-1">
-          <label className="block">
-            <span className="mb-1.5 inline-block text-xs font-bold uppercase tracking-wider text-slate-600">
-              Fecha
-            </span>
-            <input
+          <div className="block">
+            <DropdownField
               id="replays-fecha"
-              name="fecha"
-              type="date"
-              required
-              className="h-12 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
+              label="Fecha"
+              placeholder="Selecciona fecha"
+              options={fechas}
+              value={fecha}
+              open={openMenu === "fecha"}
+              showCalendarIcon
+              onToggle={() => setOpenMenu((v) => (v === "fecha" ? null : "fecha"))}
+              onPick={(v) => {
+                setFecha(v);
+                setOpenMenu(null);
+              }}
             />
-          </label>
+          </div>
 
-          <label className="block">
-            <span className="mb-1.5 inline-block text-xs font-bold uppercase tracking-wider text-slate-600">
-              Turno
-            </span>
-            <select
+          <div className="block">
+            <DropdownField
               id="replays-hora"
-              name="hora"
-              required
-              className="h-12 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
-            >
-              <option value="">Selecciona turno</option>
-              {turnos.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
-          </label>
+              label="Turno"
+              placeholder="Selecciona turno"
+              options={turnos}
+              value={hora}
+              open={openMenu === "hora"}
+              onToggle={() => setOpenMenu((v) => (v === "hora" ? null : "hora"))}
+              onPick={(v) => {
+                setHora(v);
+                setOpenMenu(null);
+              }}
+            />
+          </div>
         </div>
 
         <div className="block lg:col-span-2">
           <span className="mb-1.5 inline-block text-xs font-bold uppercase tracking-wider text-slate-600">
-            Acción
+            Accion
           </span>
           <button
             type="submit"
@@ -136,19 +249,18 @@ export default function ReplaysVerPartido() {
           role="dialog"
           aria-modal="true"
           aria-label="Reproductor de replay"
-          className="fixed inset-0 z-[200] h-[100dvh] max-h-[100dvh] overflow-hidden bg-black"
+          className="fixed inset-0 z-200 h-dvh max-h-dvh overflow-hidden bg-black"
         >
-          <div className="pointer-events-none absolute right-0 top-0 z-[210] flex justify-end p-3 sm:p-4">
+          <div className="pointer-events-none absolute right-0 top-0 z-210 flex justify-end p-3 sm:p-4">
             <button
               type="button"
               onClick={close}
-              className="pointer-events-auto grid size-11 place-items-center rounded-full text-white [filter:drop-shadow(0_2px_8px_rgba(0,0,0,0.85))] transition hover:bg-white/15"
+              className="pointer-events-auto grid size-11 place-items-center rounded-full text-white filter-[drop-shadow(0_2px_8px_rgba(0,0,0,0.85))] transition hover:bg-white/15"
               aria-label="Cerrar reproductor"
             >
               <X size={26} strokeWidth={2.5} />
             </button>
           </div>
-          {/* Altura explícita para que position:absolute bottom-* del player sea respecto al viewport */}
           <div className="absolute inset-0 top-0 min-h-0 w-full">
             <MatchPlayerZoom
               videoSrc={VIDEO_SRC}
