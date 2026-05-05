@@ -1,4 +1,11 @@
-import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  type FormEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import MatchPlayerZoom from "@/components/replays/MatchPlayerZoom";
 import ReplayMatchBlock from "@/components/replays/ReplayMatchBlock";
 
@@ -6,12 +13,23 @@ type Props = {
   matchKey: string;
   apiBase: string;
   cinema: boolean;
-  /** Dentro de un overlay/modal ya pantalla completa (no duplica capa fija extra). */
-  embedded?: boolean;
+  /** Dentro de un modal fullscreen ya existente (ej. Replays): evita otro `main` fixed a pantalla completa. */
+  embedCinema?: boolean;
   clockLabel: string;
   /** Poster por defecto (antes de resolver URL desde API). */
   posterFallback: string;
 };
+
+function wrapCinemaEmbed(embed: boolean, node: ReactNode): ReactNode {
+  if (!embed) {
+    return node;
+  }
+  return (
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto p-4">
+      {node}
+    </div>
+  );
+}
 
 function storageKeyFor(matchKey: string): string {
   return `vj_replay_sess:${matchKey}`;
@@ -21,11 +39,13 @@ export default function MatchReplayGate({
   matchKey,
   apiBase,
   cinema,
-  embedded = false,
+  embedCinema = false,
   clockLabel,
   posterFallback,
 }: Props) {
   const base = useMemo(() => apiBase.trim().replace(/\/$/, ""), [apiBase]);
+  const hasApi = base.length > 0;
+  const whatsappUrl = import.meta.env.PUBLIC_REPLAY_WHATSAPP_URL?.trim() ?? "";
 
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
@@ -113,7 +133,10 @@ export default function MatchReplayGate({
 
   const onSubmit = async (ev: FormEvent) => {
     ev.preventDefault();
-    if (!base) {
+    if (!hasApi) {
+      setError(
+        "Todavía no hay servidor configurado. Agregá PUBLIC_REPLAY_API_BASE en frontend/.env cuando tengas el backend, o pedí el código por WhatsApp.",
+      );
       return;
     }
     setVerifyLoading(true);
@@ -141,22 +164,6 @@ export default function MatchReplayGate({
     }
   };
 
-  if (!base) {
-    const box = (
-      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-        Falta configurar{" "}
-        <code className="rounded bg-amber-100 px-1 py-0.5 text-xs">PUBLIC_REPLAY_API_BASE</code> en{" "}
-        <code className="rounded bg-amber-100 px-1 py-0.5 text-xs">frontend/.env</code>.
-      </div>
-    );
-    if (embedded) {
-      return (
-        <div className="flex h-full min-h-0 w-full items-center justify-center bg-black p-4">{box}</div>
-      );
-    }
-    return box;
-  }
-
   const resolvedPoster = posterUrl ?? posterFallback;
 
   if (videoUrl) {
@@ -170,9 +177,9 @@ export default function MatchReplayGate({
           layout="fill"
         />
       );
-      if (embedded) {
+      if (embedCinema) {
         return (
-          <div className="flex h-full min-h-0 w-full flex-col bg-black">{player}</div>
+          <div className="flex h-full min-h-0 w-full flex-1 flex-col bg-black">{player}</div>
         );
       }
       return (
@@ -203,18 +210,50 @@ export default function MatchReplayGate({
       <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Acceso al replay</p>
       <h2 className="mt-2 text-xl font-black tracking-tight text-slate-900">Ingresá el código del club</h2>
       <p className="mt-2 text-sm text-slate-600">
-        El pago se coordina en el club (efectivo o alias). Cuando te habiliten, recibirás un código por WhatsApp o en recepción.
+        El acceso es con código que te damos después del pago (efectivo o alias). ¿No tenés código? Pedilo por
+        WhatsApp del club o en recepción.
       </p>
-      <p className="mt-3 text-sm font-semibold text-slate-700">
-        ¿No tenés código? Solicitalo en recepción o por el WhatsApp del club.
-      </p>
+
+      {!hasApi && (
+        <p className="mt-4 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-900">
+          Modo vista previa: podés pedir el código por WhatsApp abajo. Para validar el código y ver el video,
+          más adelante configurá{" "}
+          <code className="rounded bg-sky-100 px-1 py-0.5 font-mono text-[0.7rem]">PUBLIC_REPLAY_API_BASE</code>.
+        </p>
+      )}
+
+      <div className="mt-5">
+        {whatsappUrl ? (
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-md border border-[#25D366] bg-[#25D366] text-sm font-black uppercase tracking-wider text-white shadow-sm transition hover:bg-[#20bd5a]"
+          >
+            <span aria-hidden>💬</span>
+            Pedir código por WhatsApp
+          </a>
+        ) : (
+          <p className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-center text-xs font-semibold text-slate-600">
+            Para mostrar el botón de WhatsApp, agregá{" "}
+            <code className="rounded bg-white px-1 py-0.5 font-mono text-[0.65rem]">
+              PUBLIC_REPLAY_WHATSAPP_URL
+            </code>{" "}
+            en <code className="font-mono text-[0.65rem]">frontend/.env</code> (ver{" "}
+            <code className="font-mono text-[0.65rem]">.env.example</code>).
+          </p>
+        )}
+      </div>
 
       <form className="mt-6 space-y-4" onSubmit={onSubmit}>
         <label className="block">
           <span className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-600">Código</span>
           <input
             value={code}
-            onChange={(e) => setCode(e.target.value)}
+            onChange={(e) => {
+              setCode(e.target.value);
+              setError(null);
+            }}
             autoComplete="one-time-code"
             inputMode="text"
             placeholder="Ej: DEMO1234"
@@ -230,11 +269,17 @@ export default function MatchReplayGate({
 
         <button
           type="submit"
-          disabled={verifyLoading || streamLoading || code.trim().length < 4}
+          disabled={verifyLoading || streamLoading || code.trim().length < 4 || !hasApi}
           className="flex h-12 w-full items-center justify-center rounded-md bg-vj-green text-sm font-black uppercase tracking-wider text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {verifyLoading || streamLoading ? "Verificando…" : "Ver replay"}
+          {verifyLoading || streamLoading ? "Verificando…" : hasApi ? "Ver replay" : "Validar código (requiere API)"}
         </button>
+        {!hasApi && (
+          <p className="text-center text-xs font-medium text-slate-500">
+            El botón verde quedará activo cuando configures el backend y{" "}
+            <code className="rounded bg-slate-100 px-1 font-mono text-[0.65rem]">PUBLIC_REPLAY_API_BASE</code>.
+          </p>
+        )}
       </form>
 
       {sessionToken && streamLoading && (
@@ -243,13 +288,5 @@ export default function MatchReplayGate({
     </div>
   );
 
-  if (cinema && embedded) {
-    return (
-      <div className="flex h-full min-h-0 w-full items-center justify-center overflow-y-auto bg-black p-4">
-        {gateCard}
-      </div>
-    );
-  }
-
-  return gateCard;
+  return wrapCinemaEmbed(cinema && embedCinema, gateCard);
 }

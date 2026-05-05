@@ -3,8 +3,10 @@ import { CalendarDays, ChevronDown, X } from "lucide-react";
 import MatchReplayGate from "@/components/replays/MatchReplayGate";
 import { buildReplayMatchKey } from "@/utils/replay-match-key";
 
-const POSTER =
+const POSTER_FALLBACK =
   "https://images.unsplash.com/photo-1627615922102-6b7ef5f0ec55?auto=format&fit=crop&w=1400&q=70";
+
+const apiBase = import.meta.env.PUBLIC_REPLAY_API_BASE ?? "";
 
 type Option = { value: string; label: string };
 
@@ -155,13 +157,6 @@ export default function ReplaysVerPartido() {
     };
   }, [open, close]);
 
-  const matchKey = useMemo(
-    () => buildReplayMatchKey({ cancha, fecha, hora }),
-    [cancha, fecha, hora],
-  );
-
-  const apiBase = import.meta.env.PUBLIC_REPLAY_API_BASE ?? "";
-
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!cancha || !fecha || !hora) {
@@ -255,8 +250,8 @@ export default function ReplaysVerPartido() {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Reproductor de replay"
-          className="fixed inset-0 z-50 overflow-hidden bg-black"
+          aria-label="Acceso al replay"
+          className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-black"
           style={{
             paddingTop: "var(--mobile-nav-offset, 0px)",
           }}
@@ -266,20 +261,20 @@ export default function ReplaysVerPartido() {
               type="button"
               onClick={close}
               className="pointer-events-auto grid size-11 place-items-center rounded-full text-white filter-[drop-shadow(0_2px_8px_rgba(0,0,0,0.85))] transition hover:bg-white/15"
-              aria-label="Cerrar reproductor"
+              aria-label="Cerrar"
             >
               <X size={26} strokeWidth={2.5} />
             </button>
           </div>
-          <div className="relative h-full w-full min-h-0">
+          <div className="relative flex min-h-0 flex-1 flex-col">
             <MatchReplayGate
-              key={matchKey}
-              matchKey={matchKey}
+              key={buildReplayMatchKey({ cancha, fecha, hora })}
+              matchKey={buildReplayMatchKey({ cancha, fecha, hora })}
               apiBase={apiBase}
               cinema
-              embedded
+              embedCinema
               clockLabel={clockLabel}
-              posterFallback={POSTER}
+              posterFallback={POSTER_FALLBACK}
             />
           </div>
         </div>
