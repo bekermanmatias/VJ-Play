@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, ChevronDown, X } from "lucide-react";
-import MatchPlayerZoom from "@/components/replays/MatchPlayerZoom";
+import MatchReplayGate from "@/components/replays/MatchReplayGate";
+import { buildReplayMatchKey } from "@/utils/replay-match-key";
 
-const VIDEO_SRC =
-  "https://archive.org/download/fourteenhours1951/Fourteen%20Hours%20(1951%2C%20USA)%20Featuring%20Richard%20Basehart%2C%20Paul%20Douglas%20-%20Film%20Noir%20Full%20Movie.mp4";
-const POSTER =
+const POSTER_FALLBACK =
   "https://images.unsplash.com/photo-1627615922102-6b7ef5f0ec55?auto=format&fit=crop&w=1400&q=70";
+
+const apiBase = import.meta.env.PUBLIC_REPLAY_API_BASE ?? "";
 
 type Option = { value: string; label: string };
 
@@ -159,7 +160,7 @@ export default function ReplaysVerPartido() {
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!cancha || !fecha || !hora) {
-      window.alert("Complet? cancha, fecha y turno para continuar.");
+      window.alert("Completá cancha, fecha y turno para continuar.");
       return;
     }
     const label = /^\d{2}:\d{2}$/.test(hora) ? `${hora}:00` : hora || "--:--:--";
@@ -249,8 +250,8 @@ export default function ReplaysVerPartido() {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Reproductor de replay"
-          className="fixed inset-0 z-50 overflow-hidden bg-black"
+          aria-label="Acceso al replay"
+          className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-black"
           style={{
             paddingTop: "var(--mobile-nav-offset, 0px)",
           }}
@@ -260,18 +261,20 @@ export default function ReplaysVerPartido() {
               type="button"
               onClick={close}
               className="pointer-events-auto grid size-11 place-items-center rounded-full text-white filter-[drop-shadow(0_2px_8px_rgba(0,0,0,0.85))] transition hover:bg-white/15"
-              aria-label="Cerrar reproductor"
+              aria-label="Cerrar"
             >
               <X size={26} strokeWidth={2.5} />
             </button>
           </div>
-          <div className="relative h-full w-full min-h-0">
-            <MatchPlayerZoom
-              videoSrc={VIDEO_SRC}
-              poster={POSTER}
+          <div className="relative flex min-h-0 flex-1 flex-col">
+            <MatchReplayGate
+              key={buildReplayMatchKey({ cancha, fecha, hora })}
+              matchKey={buildReplayMatchKey({ cancha, fecha, hora })}
+              apiBase={apiBase}
+              cinema
+              embedCinema
               clockLabel={clockLabel}
-              chromeVariant="ghost"
-              layout="fill"
+              posterFallback={POSTER_FALLBACK}
             />
           </div>
         </div>
