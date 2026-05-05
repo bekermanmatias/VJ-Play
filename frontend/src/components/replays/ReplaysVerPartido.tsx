@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, ChevronDown, X } from "lucide-react";
-import MatchPlayerZoom from "@/components/replays/MatchPlayerZoom";
+import MatchReplayGate from "@/components/replays/MatchReplayGate";
+import { buildReplayMatchKey } from "@/utils/replay-match-key";
 
-const VIDEO_SRC =
-  "https://archive.org/download/fourteenhours1951/Fourteen%20Hours%20(1951%2C%20USA)%20Featuring%20Richard%20Basehart%2C%20Paul%20Douglas%20-%20Film%20Noir%20Full%20Movie.mp4";
 const POSTER =
   "https://images.unsplash.com/photo-1627615922102-6b7ef5f0ec55?auto=format&fit=crop&w=1400&q=70";
 
@@ -156,10 +155,17 @@ export default function ReplaysVerPartido() {
     };
   }, [open, close]);
 
+  const matchKey = useMemo(
+    () => buildReplayMatchKey({ cancha, fecha, hora }),
+    [cancha, fecha, hora],
+  );
+
+  const apiBase = import.meta.env.PUBLIC_REPLAY_API_BASE ?? "";
+
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!cancha || !fecha || !hora) {
-      window.alert("Complet? cancha, fecha y turno para continuar.");
+      window.alert("Completá cancha, fecha y turno para continuar.");
       return;
     }
     const label = /^\d{2}:\d{2}$/.test(hora) ? `${hora}:00` : hora || "--:--:--";
@@ -266,12 +272,14 @@ export default function ReplaysVerPartido() {
             </button>
           </div>
           <div className="relative h-full w-full min-h-0">
-            <MatchPlayerZoom
-              videoSrc={VIDEO_SRC}
-              poster={POSTER}
+            <MatchReplayGate
+              key={matchKey}
+              matchKey={matchKey}
+              apiBase={apiBase}
+              cinema
+              embedded
               clockLabel={clockLabel}
-              chromeVariant="ghost"
-              layout="fill"
+              posterFallback={POSTER}
             />
           </div>
         </div>
