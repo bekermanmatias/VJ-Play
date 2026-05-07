@@ -1,0 +1,25 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import TopBar from "@/components/TopBar.astro";
+import Navbar from "@/components/Navbar.astro";
+import DevReplayLab from "@/components/replays/DevReplayLab";
+---
+
+<Layout title="Dev Tools | Replays">
+  <TopBar />
+  <Navbar />
+
+  <main class="min-h-[calc(100vh-7rem)] bg-slate-50 py-6">
+    <section class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+      <div class="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4">
+        <p class="text-xs font-bold uppercase tracking-wider text-amber-700">Uso interno</p>
+        <h1 class="mt-1 text-2xl font-black text-slate-900">Laboratorio de pruebas de replays</h1>
+        <p class="mt-2 text-sm text-slate-700">
+          Herramienta para QA interno: crear codigos, validar access y probar stream contra backend.
+        </p>
+      </div>
+
+      <DevReplayLab client:load />
+    </section>
+  </main>
+</Layout>

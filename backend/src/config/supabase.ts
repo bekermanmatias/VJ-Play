@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import ws from 'ws';
 import { env } from './env.js';
 
 let client: SupabaseClient | null = null;
@@ -16,6 +17,8 @@ export function getSupabase(): SupabaseClient {
   if (!client) {
     client = createClient(env.supabaseUrl, env.supabaseKey, {
       auth: { persistSession: false, autoRefreshToken: false },
+      // Node.js 20 doesn't expose a native WebSocket globally; provide ws explicitly for Supabase Realtime initialization.
+      realtime: { transport: ws },
     });
   }
   return client;
