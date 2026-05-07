@@ -9,6 +9,7 @@ import {
   loadReplayShiftConfig,
   saveReplayShiftConfig,
 } from "@/utils/replay-shift-config-api";
+import { getReplayAdminSecret } from "@/utils/replay-admin-secret";
 import { buildLastSevenDaysOptions } from "@/utils/replay-date-options";
 import {
   buildReplayShiftTurnosFromConfig,
@@ -129,7 +130,6 @@ export default function AdminReplaysModeration() {
     () => getDefaultReplayShiftConfigFromEnv().windowStartHour,
   );
   const [formEnd, setFormEnd] = useState(() => getDefaultReplayShiftConfigFromEnv().windowEndHour);
-  const [adminSecret, setAdminSecret] = useState("");
   const [shiftSaveMsg, setShiftSaveMsg] = useState<string | null>(null);
   const [shiftSaving, setShiftSaving] = useState(false);
   const [courtsSaveMsg, setCourtsSaveMsg] = useState<string | null>(null);
@@ -212,8 +212,11 @@ export default function AdminReplaysModeration() {
       setCourtsSaveMsg("Configurá PUBLIC_REPLAY_API_BASE.");
       return;
     }
-    if (!adminSecret.trim()) {
-      setCourtsSaveMsg("Falta ADMIN_SECRET.");
+    const secret = getReplayAdminSecret();
+    if (!secret) {
+      setCourtsSaveMsg(
+        "Definí PUBLIC_REPLAY_ADMIN_SECRET en el .env del frontend (mismo valor que ADMIN_SECRET del API).",
+      );
       return;
     }
     const cleaned = courtRows
@@ -227,7 +230,7 @@ export default function AdminReplaysModeration() {
     try {
       const payload = await saveReplayCourts(
         apiBase,
-        adminSecret,
+        secret,
         cleaned.map((r, i) => ({ ...r, sortOrder: i })),
       );
       setCourtRows(payload.courts.map((c) => ({ slug: c.slug, label: c.label })));
@@ -250,8 +253,11 @@ export default function AdminReplaysModeration() {
       setShiftSaveMsg("Configurá PUBLIC_REPLAY_API_BASE para guardar en la base.");
       return;
     }
-    if (!adminSecret.trim()) {
-      setShiftSaveMsg("Falta ADMIN_SECRET (header x-admin-secret).");
+    const secret = getReplayAdminSecret();
+    if (!secret) {
+      setShiftSaveMsg(
+        "Definí PUBLIC_REPLAY_ADMIN_SECRET en el .env del frontend (mismo valor que ADMIN_SECRET del API).",
+      );
       return;
     }
     const sec = formDurMin * 60;
@@ -261,7 +267,7 @@ export default function AdminReplaysModeration() {
     }
     setShiftSaving(true);
     try {
-      const saved = await saveReplayShiftConfig(apiBase, adminSecret, {
+      const saved = await saveReplayShiftConfig(apiBase, secret, {
         shiftDurationSeconds: sec,
         windowStartHour: formStart,
         windowEndHour: formEnd,
@@ -374,7 +380,7 @@ export default function AdminReplaysModeration() {
           </span>
           .
         </p>
-        <form onSubmit={onSaveShiftConfig} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <form onSubmit={onSaveShiftConfig} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-3">
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
             Duración turno (min)
             <input
@@ -409,18 +415,7 @@ export default function AdminReplaysModeration() {
               className="mt-1.5 h-11 w-full rounded-md border border-slate-300 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
             />
           </label>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 sm:col-span-2 lg:col-span-1">
-            Admin secret
-            <input
-              type="password"
-              autoComplete="off"
-              value={adminSecret}
-              onChange={(e) => setAdminSecret(e.target.value)}
-              placeholder="ADMIN_SECRET del API"
-              className="mt-1.5 h-11 w-full rounded-md border border-slate-300 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
-            />
-          </label>
-          <div className="flex items-end sm:col-span-2 lg:col-span-4">
+          <div className="flex items-end sm:col-span-3 lg:col-span-3">
             <button
               type="submit"
               disabled={shiftSaving}

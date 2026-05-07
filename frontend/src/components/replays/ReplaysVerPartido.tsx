@@ -216,9 +216,6 @@ export default function ReplaysVerPartido() {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:col-span-1">
           <div className="block">
-            <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-              Día automático: hoy y los últimos 6 días
-            </p>
             <DropdownField
               id="replays-fecha"
               label="Día"
