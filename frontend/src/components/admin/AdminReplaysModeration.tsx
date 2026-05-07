@@ -1,6 +1,20 @@
-import { useMemo, useState } from "react";
-import { CalendarDays, ChevronDown, Eye, EyeOff, Star, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { CalendarDays, ChevronDown, Eye, EyeOff, Plus, Save, Star, Trash2 } from "lucide-react";
 import ReplayMatchBlock from "@/components/replays/ReplayMatchBlock";
+import {
+  loadReplayCourts,
+  saveReplayCourts,
+} from "@/utils/replay-courts-api";
+import {
+  loadReplayShiftConfig,
+  saveReplayShiftConfig,
+} from "@/utils/replay-shift-config-api";
+import { buildLastSevenDaysOptions } from "@/utils/replay-date-options";
+import {
+  buildReplayShiftTurnosFromConfig,
+  getDefaultReplayShiftConfigFromEnv,
+  type ReplayShiftConfig,
+} from "@/utils/replay-shift-turnos";
 
 type Option = { value: string; label: string };
 
@@ -8,40 +22,8 @@ type MatchResult = {
   court: string;
   date: string;
   time: string;
+  timeRangeLabel: string;
 };
-
-const COURTS: Option[] = [
-  { value: "cancha-padel", label: "Cancha Padel" },
-  { value: "cancha-f5", label: "Cancha F5" },
-];
-
-function buildTurnos() {
-  const out: Option[] = [];
-  for (let h = 9; h <= 22; h++) {
-    const value = `${h.toString().padStart(2, "0")}:00`;
-    const end = h < 22 ? `${(h + 1).toString().padStart(2, "0")}:00` : "23:00";
-    out.push({ value, label: `${value} - ${end}` });
-  }
-  return out;
-}
-
-function buildDates() {
-  const now = new Date();
-  const out: Option[] = [];
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(now);
-    d.setDate(now.getDate() - i);
-    const value = d.toISOString().split("T")[0] ?? "";
-    const label = d.toLocaleDateString("es-AR", {
-      weekday: "short",
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-    out.push({ value, label });
-  }
-  return out;
-}
 
 type DropdownFieldProps = {
   id: string;
@@ -122,12 +104,64 @@ const videoSrc =
 const poster =
   "https://images.unsplash.com/photo-1627615922102-6b7ef5f0ec55?auto=format&fit=crop&w=1400&q=70";
 
+const apiBase = import.meta.env.PUBLIC_REPLAY_API_BASE ?? "";
+
 export default function AdminReplaysModeration() {
-  const dates = useMemo(buildDates, []);
-  const turnos = useMemo(buildTurnos, []);
+  const dates = useMemo(buildLastSevenDaysOptions, []);
+  const [courtRows, setCourtRows] = useState<{ slug: string; label: string }[]>([
+    { slug: "cancha-padel", label: "Cancha Padel" },
+    { slug: "cancha-f5", label: "Cancha F5" },
+  ]);
+  const courtOptions = useMemo(
+    () => courtRows.map((r) => ({ value: r.slug, label: r.label })),
+    [courtRows],
+  );
+
+  const [shiftConfig, setShiftConfig] = useState<ReplayShiftConfig>(() =>
+    getDefaultReplayShiftConfigFromEnv(),
+  );
+  const turnos = useMemo(() => buildReplayShiftTurnosFromConfig(shiftConfig), [shiftConfig]);
+
+  const [formDurMin, setFormDurMin] = useState(() =>
+    Math.round(getDefaultReplayShiftConfigFromEnv().shiftDurationSeconds / 60),
+  );
+  const [formStart, setFormStart] = useState(
+    () => getDefaultReplayShiftConfigFromEnv().windowStartHour,
+  );
+  const [formEnd, setFormEnd] = useState(() => getDefaultReplayShiftConfigFromEnv().windowEndHour);
+  const [adminSecret, setAdminSecret] = useState("");
+  const [shiftSaveMsg, setShiftSaveMsg] = useState<string | null>(null);
+  const [shiftSaving, setShiftSaving] = useState(false);
+  const [courtsSaveMsg, setCourtsSaveMsg] = useState<string | null>(null);
+  const [courtsSaving, setCourtsSaving] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void loadReplayCourts(apiBase).then((p) => {
+      if (cancelled) return;
+      setCourtRows(p.courts.map((c) => ({ slug: c.slug, label: c.label })));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [apiBase]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void loadReplayShiftConfig(apiBase).then((c) => {
+      if (cancelled) return;
+      setShiftConfig(c);
+      setFormDurMin(Math.max(5, Math.round(c.shiftDurationSeconds / 60)));
+      setFormStart(c.windowStartHour);
+      setFormEnd(c.windowEndHour);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [apiBase]);
 
   const [court, setCourt] = useState("");
-  const [date, setDate] = useState("");
+  const [date, setDate] = useState(() => buildLastSevenDaysOptions()[0]?.value ?? "");
   const [time, setTime] = useState("");
   const [openMenu, setOpenMenu] = useState<"court" | "date" | "time" | null>(null);
 
@@ -136,24 +170,116 @@ export default function AdminReplaysModeration() {
   const [isDeleted, setIsDeleted] = useState(false);
   const [isFeatured, setIsFeatured] = useState(false);
 
+  useEffect(() => {
+    if (court && courtRows.length > 0 && !courtRows.some((r) => r.slug === court)) {
+      setCourt("");
+    }
+  }, [courtRows, court]);
+
+  useEffect(() => {
+    if (!time) return;
+    if (!turnos.some((t) => t.value === time)) {
+      setTime("");
+    }
+  }, [turnos, time]);
+
   const onSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!court || !date || !time) {
       window.alert("Selecciona cancha, fecha y horario para buscar el bloque.");
       return;
     }
-    const courtLabel = COURTS.find((c) => c.value === court)?.label ?? court;
+    const courtLabel = courtRows.find((c) => c.slug === court)?.label ?? court;
     const dateLabel = dates.find((d) => d.value === date)?.label ?? date;
+    const timeRangeLabel = turnos.find((t) => t.value === time)?.label ?? time;
 
     setResult({
       court: courtLabel,
       date: dateLabel,
       time,
+      timeRangeLabel,
     });
     setIsPublic(true);
     setIsDeleted(false);
     setIsFeatured(false);
     setOpenMenu(null);
+  };
+
+  const onSaveCourts = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCourtsSaveMsg(null);
+    if (!apiBase.trim()) {
+      setCourtsSaveMsg("Configurá PUBLIC_REPLAY_API_BASE.");
+      return;
+    }
+    if (!adminSecret.trim()) {
+      setCourtsSaveMsg("Falta ADMIN_SECRET.");
+      return;
+    }
+    const cleaned = courtRows
+      .map((r) => ({ slug: r.slug.trim(), label: r.label.trim() }))
+      .filter((r) => r.slug !== "" && r.label !== "");
+    if (cleaned.length === 0) {
+      setCourtsSaveMsg("Al menos una cancha con slug y nombre.");
+      return;
+    }
+    setCourtsSaving(true);
+    try {
+      const payload = await saveReplayCourts(
+        apiBase,
+        adminSecret,
+        cleaned.map((r, i) => ({ ...r, sortOrder: i })),
+      );
+      setCourtRows(payload.courts.map((c) => ({ slug: c.slug, label: c.label })));
+      setCourtsSaveMsg(
+        payload.source === "database"
+          ? "Canchas guardadas en la base."
+          : "Guardado con fallback de entorno.",
+      );
+    } catch (err) {
+      setCourtsSaveMsg(err instanceof Error ? err.message : "No se pudo guardar.");
+    } finally {
+      setCourtsSaving(false);
+    }
+  };
+
+  const onSaveShiftConfig = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setShiftSaveMsg(null);
+    if (!apiBase.trim()) {
+      setShiftSaveMsg("Configurá PUBLIC_REPLAY_API_BASE para guardar en la base.");
+      return;
+    }
+    if (!adminSecret.trim()) {
+      setShiftSaveMsg("Falta ADMIN_SECRET (header x-admin-secret).");
+      return;
+    }
+    const sec = formDurMin * 60;
+    if (sec < 300 || sec > 28_800) {
+      setShiftSaveMsg("Duración: entre 5 y 480 minutos.");
+      return;
+    }
+    setShiftSaving(true);
+    try {
+      const saved = await saveReplayShiftConfig(apiBase, adminSecret, {
+        shiftDurationSeconds: sec,
+        windowStartHour: formStart,
+        windowEndHour: formEnd,
+      });
+      setShiftConfig(saved);
+      setFormDurMin(Math.max(5, Math.round(saved.shiftDurationSeconds / 60)));
+      setFormStart(saved.windowStartHour);
+      setFormEnd(saved.windowEndHour);
+      setShiftSaveMsg(
+        saved.source === "database"
+          ? "Guardado en la base. La vista pública usa estos turnos (tras recargar)."
+          : "Guardado; el servidor sigue en fallback de entorno.",
+      );
+    } catch (err) {
+      setShiftSaveMsg(err instanceof Error ? err.message : "No se pudo guardar.");
+    } finally {
+      setShiftSaving(false);
+    }
   };
 
   return (
@@ -165,13 +291,158 @@ export default function AdminReplaysModeration() {
         </p>
       </section>
 
+      <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h3 className="text-sm font-black uppercase tracking-wider text-slate-700">Canchas</h3>
+        <p className="mt-1 text-sm text-slate-600">
+          El <span className="font-semibold">slug</span> se usa en el enlace interno del replay (minúsculas y guiones); el{" "}
+          <span className="font-semibold">nombre</span> es lo que ve el público.
+        </p>
+        <form onSubmit={onSaveCourts} className="mt-4 space-y-3">
+          {courtRows.map((row, idx) => (
+            <div key={idx} className="flex flex-wrap items-end gap-2">
+              <label className="block min-w-[140px] flex-1 text-xs font-bold uppercase tracking-wider text-slate-600">
+                Slug
+                <input
+                  type="text"
+                  value={row.slug}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setCourtRows((prev) => prev.map((r, i) => (i === idx ? { ...r, slug: v } : r)));
+                  }}
+                  className="mt-1.5 h-10 w-full rounded-md border border-slate-300 px-2 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
+                  spellCheck={false}
+                  autoCapitalize="off"
+                />
+              </label>
+              <label className="block min-w-[160px] flex-[2] text-xs font-bold uppercase tracking-wider text-slate-600">
+                Nombre visible
+                <input
+                  type="text"
+                  value={row.label}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setCourtRows((prev) => prev.map((r, i) => (i === idx ? { ...r, label: v } : r)));
+                  }}
+                  className="mt-1.5 h-10 w-full rounded-md border border-slate-300 px-2 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
+                />
+              </label>
+              <button
+                type="button"
+                disabled={courtRows.length <= 1}
+                onClick={() => setCourtRows((prev) => prev.filter((_, i) => i !== idx))}
+                className="inline-flex h-10 items-center gap-1 rounded-md border border-rose-200 bg-rose-50 px-3 text-xs font-bold text-rose-700 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <Trash2 size={14} />
+                Quitar
+              </button>
+            </div>
+          ))}
+          <div className="flex flex-wrap gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() =>
+                setCourtRows((prev) => [...prev, { slug: "", label: "" }])
+              }
+              className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-bold text-slate-700 hover:bg-slate-50"
+            >
+              <Plus size={16} />
+              Agregar cancha
+            </button>
+            <button
+              type="submit"
+              disabled={courtsSaving}
+              className="inline-flex h-10 items-center gap-2 rounded-md bg-emerald-800 px-4 text-sm font-bold text-white hover:bg-emerald-900 disabled:opacity-60"
+            >
+              <Save size={16} />
+              {courtsSaving ? "Guardando…" : "Guardar canchas"}
+            </button>
+          </div>
+        </form>
+        {courtsSaveMsg && (
+          <p className="mt-3 text-sm font-semibold text-slate-700">{courtsSaveMsg}</p>
+        )}
+      </section>
+
+      <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h3 className="text-sm font-black uppercase tracking-wider text-slate-700">
+          Turnos (base de datos)
+        </h3>
+        <p className="mt-1 text-sm text-slate-600">
+          Valores por defecto en entorno si la tabla no existe o falla Supabase. Fuente actual:{" "}
+          <span className="font-bold text-slate-800">
+            {shiftConfig.source === "database" ? "Base de datos" : "Variables de entorno"}
+          </span>
+          .
+        </p>
+        <form onSubmit={onSaveShiftConfig} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
+            Duración turno (min)
+            <input
+              type="number"
+              min={5}
+              max={480}
+              step={1}
+              value={formDurMin}
+              onChange={(e) => setFormDurMin(Number(e.target.value))}
+              className="mt-1.5 h-11 w-full rounded-md border border-slate-300 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
+            />
+          </label>
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
+            Inicio grabación (hora 0–23)
+            <input
+              type="number"
+              min={0}
+              max={23}
+              value={formStart}
+              onChange={(e) => setFormStart(Number(e.target.value))}
+              className="mt-1.5 h-11 w-full rounded-md border border-slate-300 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
+            />
+          </label>
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
+            Fin grabación (hora 1–24, 24 = medianoche)
+            <input
+              type="number"
+              min={1}
+              max={24}
+              value={formEnd}
+              onChange={(e) => setFormEnd(Number(e.target.value))}
+              className="mt-1.5 h-11 w-full rounded-md border border-slate-300 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
+            />
+          </label>
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 sm:col-span-2 lg:col-span-1">
+            Admin secret
+            <input
+              type="password"
+              autoComplete="off"
+              value={adminSecret}
+              onChange={(e) => setAdminSecret(e.target.value)}
+              placeholder="ADMIN_SECRET del API"
+              className="mt-1.5 h-11 w-full rounded-md border border-slate-300 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
+            />
+          </label>
+          <div className="flex items-end sm:col-span-2 lg:col-span-4">
+            <button
+              type="submit"
+              disabled={shiftSaving}
+              className="inline-flex h-11 items-center gap-2 rounded-md bg-slate-900 px-4 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-60"
+            >
+              <Save size={16} />
+              {shiftSaving ? "Guardando…" : "Guardar turnos en la base"}
+            </button>
+          </div>
+        </form>
+        {shiftSaveMsg && (
+          <p className="mt-3 text-sm font-semibold text-slate-700">{shiftSaveMsg}</p>
+        )}
+      </section>
+
       <section className="mt-6">
         <form onSubmit={onSearch} className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <DropdownField
             id="admin-court"
             label="Cancha"
             placeholder="Selecciona cancha"
-            options={COURTS}
+            options={courtOptions}
             value={court}
             open={openMenu === "court"}
             onToggle={() => setOpenMenu((v) => (v === "court" ? null : "court"))}
@@ -183,8 +454,8 @@ export default function AdminReplaysModeration() {
 
           <DropdownField
             id="admin-date"
-            label="Fecha"
-            placeholder="Selecciona fecha"
+            label="Día (últimos 7)"
+            placeholder="Selecciona día"
             options={dates}
             value={date}
             open={openMenu === "date"}
@@ -198,8 +469,8 @@ export default function AdminReplaysModeration() {
 
           <DropdownField
             id="admin-time"
-            label="Horario"
-            placeholder="Selecciona horario"
+            label="Turno (inicio · fin grabación)"
+            placeholder="Selecciona turno"
             options={turnos}
             value={time}
             open={openMenu === "time"}
@@ -229,7 +500,7 @@ export default function AdminReplaysModeration() {
                 {result.court}
               </h3>
               <p className="mt-1 text-sm text-slate-600">
-                {result.date} | Horario {result.time}
+                {result.date} | Grabación {result.timeRangeLabel}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -296,7 +567,7 @@ export default function AdminReplaysModeration() {
                 Este replay fue marcado como eliminado permanentemente.
               </div>
             ) : (
-              <ReplayMatchBlock videoSrc={videoSrc} poster={poster} clockLabel={`${result.time}:00`} />
+              <ReplayMatchBlock videoSrc={videoSrc} poster={poster} clockLabel={result.timeRangeLabel} />
             )}
           </div>
         </section>

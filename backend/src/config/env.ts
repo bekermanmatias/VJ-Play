@@ -48,6 +48,49 @@ function parseReplaySessionTtlSeconds(): number {
   return n;
 }
 
+/** Duración de cada grabación por turno (segmentación ingest / validaciones). Default 3600 s (1 h). */
+function parseRecordingShiftDurationSeconds(): number {
+  const raw = process.env.RECORDING_SHIFT_DURATION_SECONDS;
+  if (!raw || raw.trim() === '') {
+    return 3600;
+  }
+  const n = Number.parseInt(raw, 10);
+  if (!Number.isFinite(n) || n < 300 || n > 28_800) {
+    throw new Error(
+      'RECORDING_SHIFT_DURATION_SECONDS debe ser un entero entre 300 y 28800 (8 h)',
+    );
+  }
+  return n;
+}
+
+function parseRecordingShiftsWindowStartHour(): number {
+  const raw = process.env.RECORDING_SHIFTS_WINDOW_START_HOUR;
+  if (!raw || raw.trim() === '') {
+    return 8;
+  }
+  const n = Number.parseInt(raw, 10);
+  if (!Number.isFinite(n) || n < 0 || n > 23) {
+    throw new Error(
+      'RECORDING_SHIFTS_WINDOW_START_HOUR debe ser un entero entre 0 y 23',
+    );
+  }
+  return n;
+}
+
+function parseRecordingShiftsWindowEndHour(): number {
+  const raw = process.env.RECORDING_SHIFTS_WINDOW_END_HOUR;
+  if (!raw || raw.trim() === '') {
+    return 24;
+  }
+  const n = Number.parseInt(raw, 10);
+  if (!Number.isFinite(n) || n < 1 || n > 24) {
+    throw new Error(
+      'RECORDING_SHIFTS_WINDOW_END_HOUR debe ser un entero entre 1 y 24',
+    );
+  }
+  return n;
+}
+
 export const env = {
   port: Number.parseInt(process.env.PORT ?? '4000', 10),
   nodeEnv: process.env.NODE_ENV ?? 'development',
@@ -56,6 +99,11 @@ export const env = {
   adminSecret: optionalEnv('ADMIN_SECRET'),
   corsOrigins: parseCorsOrigins(optionalEnv('CORS_ORIGINS')),
   replaySessionTtlSeconds: parseReplaySessionTtlSeconds(),
+  /** Misma semántica que PUBLIC_REPLAY_SHIFT_DURATION_SECONDS en el front (alinear ingest con UI). */
+  recordingShiftDurationSeconds: parseRecordingShiftDurationSeconds(),
+  /** Fallback si no hay fila en replay_shift_settings (o sin Supabase). */
+  recordingShiftsWindowStartHour: parseRecordingShiftsWindowStartHour(),
+  recordingShiftsWindowEndHour: parseRecordingShiftsWindowEndHour(),
   devMatchAccessRaw: optionalEnv('DEV_MATCH_ACCESS'),
 
   supabaseUrl: optionalEnv('SUPABASE_URL'),

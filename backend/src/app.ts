@@ -11,7 +11,7 @@ export function createApp(): express.Express {
   app.use(
     cors({
       origin: env.corsOrigins,
-      methods: ['GET', 'HEAD', 'POST', 'OPTIONS'],
+      methods: ['GET', 'HEAD', 'POST', 'PUT', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-secret'],
       maxAge: 86_400,
     }),

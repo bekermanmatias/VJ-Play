@@ -1,7 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, ChevronDown, X } from "lucide-react";
 import MatchReplayGate from "@/components/replays/MatchReplayGate";
+import { loadReplayCourts } from "@/utils/replay-courts-api";
+import { buildLastSevenDaysOptions } from "@/utils/replay-date-options";
+import { loadReplayShiftConfig } from "@/utils/replay-shift-config-api";
 import { buildReplayMatchKey } from "@/utils/replay-match-key";
+import {
+  buildReplayShiftTurnosFromConfig,
+  getDefaultReplayShiftConfigFromEnv,
+  type ReplayShiftConfig,
+} from "@/utils/replay-shift-turnos";
 
 const POSTER_FALLBACK =
   "https://images.unsplash.com/photo-1627615922102-6b7ef5f0ec55?auto=format&fit=crop&w=1400&q=70";
@@ -9,39 +17,6 @@ const POSTER_FALLBACK =
 const apiBase = import.meta.env.PUBLIC_REPLAY_API_BASE ?? "";
 
 type Option = { value: string; label: string };
-
-const CANCHAS: Option[] = [
-  { value: "cancha-padel", label: "Cancha Padel" },
-  { value: "cancha-f5", label: "Cancha F5" },
-];
-
-function buildTurnos() {
-  const out: Option[] = [];
-  for (let h = 9; h <= 22; h++) {
-    const value = `${h.toString().padStart(2, "0")}:00`;
-    const end = h < 22 ? `${(h + 1).toString().padStart(2, "0")}:00` : "23:00";
-    out.push({ value, label: `${value} - ${end}` });
-  }
-  return out;
-}
-
-function buildFechas() {
-  const now = new Date();
-  const out: Option[] = [];
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(now);
-    d.setDate(now.getDate() - i);
-    const value = d.toISOString().split("T")[0] ?? "";
-    const label = d.toLocaleDateString("es-AR", {
-      weekday: "short",
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-    out.push({ value, label });
-  }
-  return out;
-}
 
 type DropdownFieldProps = {
   id: string;
@@ -121,17 +96,55 @@ function DropdownField({
 }
 
 export default function ReplaysVerPartido() {
-  const turnos = useMemo(buildTurnos, []);
-  const fechas = useMemo(buildFechas, []);
+  const [shiftConfig, setShiftConfig] = useState<ReplayShiftConfig>(() =>
+    getDefaultReplayShiftConfigFromEnv(),
+  );
+  const turnos = useMemo(() => buildReplayShiftTurnosFromConfig(shiftConfig), [shiftConfig]);
+  const fechas = useMemo(buildLastSevenDaysOptions, []);
+  const [courtOptions, setCourtOptions] = useState<Option[]>([]);
   const [open, setOpen] = useState(false);
   const [clockLabel, setClockLabel] = useState("--:--:--");
   const [cancha, setCancha] = useState("");
-  const [fecha, setFecha] = useState("");
+  const [fecha, setFecha] = useState(() => buildLastSevenDaysOptions()[0]?.value ?? "");
   const [hora, setHora] = useState("");
   const [openMenu, setOpenMenu] = useState<"cancha" | "fecha" | "hora" | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
 
   const close = useCallback(() => setOpen(false), []);
+
+  useEffect(() => {
+    let cancelled = false;
+    void loadReplayShiftConfig(apiBase).then((c) => {
+      if (!cancelled) setShiftConfig(c);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [apiBase]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void loadReplayCourts(apiBase).then((p) => {
+      if (cancelled) return;
+      setCourtOptions(p.courts.map((c) => ({ value: c.slug, label: c.label })));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [apiBase]);
+
+  useEffect(() => {
+    if (cancha && courtOptions.length > 0 && !courtOptions.some((o) => o.value === cancha)) {
+      setCancha("");
+    }
+  }, [courtOptions, cancha]);
+
+  useEffect(() => {
+    if (!hora) return;
+    if (!turnos.some((t) => t.value === hora)) {
+      setHora("")
+    }
+  }, [turnos, hora]);
 
   useEffect(() => {
     const onPointerDown = (e: PointerEvent) => {
@@ -163,7 +176,10 @@ export default function ReplaysVerPartido() {
       window.alert("Completá cancha, fecha y turno para continuar.");
       return;
     }
-    const label = /^\d{2}:\d{2}$/.test(hora) ? `${hora}:00` : hora || "--:--:--";
+    const turnoOpt = turnos.find((t) => t.value === hora);
+    const label =
+      turnoOpt?.label ??
+      (/^\d{2}:\d{2}$/.test(hora) ? `${hora}:00` : hora || "--:--:--");
     setClockLabel(label);
     document.dispatchEvent(new CustomEvent("mobile-nav:close"));
     setOpen(true);
@@ -187,7 +203,7 @@ export default function ReplaysVerPartido() {
             id="replays-cancha"
             label="Cancha"
             placeholder="Selecciona cancha"
-            options={CANCHAS}
+            options={courtOptions}
             value={cancha}
             open={openMenu === "cancha"}
             onToggle={() => setOpenMenu((v) => (v === "cancha" ? null : "cancha"))}
@@ -200,10 +216,13 @@ export default function ReplaysVerPartido() {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:col-span-1">
           <div className="block">
+            <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Día automático: hoy y los últimos 6 días
+            </p>
             <DropdownField
               id="replays-fecha"
-              label="Fecha"
-              placeholder="Selecciona fecha"
+              label="Día"
+              placeholder="Selecciona día"
               options={fechas}
               value={fecha}
               open={openMenu === "fecha"}
@@ -219,7 +238,7 @@ export default function ReplaysVerPartido() {
           <div className="block">
             <DropdownField
               id="replays-hora"
-              label="Turno"
+              label="Turno (inicio · fin grabación)"
               placeholder="Selecciona turno"
               options={turnos}
               value={hora}
