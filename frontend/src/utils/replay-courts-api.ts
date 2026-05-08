@@ -11,6 +11,11 @@ export type ReplayCourtsApiPayload = {
   source: "database" | "env";
 };
 
+const COURTS_CACHE_TTL_MS = 5 * 60 * 1000;
+const LOCAL_STORAGE_KEY_PREFIX = "vj_replay_courts_cache:";
+const memoryCache = new Map<string, { payload: ReplayCourtsApiPayload; expiresAt: number }>();
+const inFlightRequests = new Map<string, Promise<ReplayCourtsApiPayload>>();
+
 function normalizeCourtsPayload(json: unknown): ReplayCourtsApiPayload {
   if (!json || typeof json !== "object") {
     return { courts: FALLBACK_REPLAY_COURTS, source: "env" };
@@ -38,21 +43,103 @@ function normalizeCourtsPayload(json: unknown): ReplayCourtsApiPayload {
   return { courts, source: src };
 }
 
-export async function loadReplayCourts(apiBase: string): Promise<ReplayCourtsApiPayload> {
-  const base = apiBase.trim().replace(/\/$/, "");
-  if (!base) {
-    return { courts: FALLBACK_REPLAY_COURTS, source: "env" };
+function normalizeBase(apiBase: string): string {
+  return apiBase.trim().replace(/\/$/, "");
+}
+
+function getCacheKey(base: string): string {
+  return base || "__fallback__";
+}
+
+function getLocalStorageKey(cacheKey: string): string {
+  return `${LOCAL_STORAGE_KEY_PREFIX}${cacheKey}`;
+}
+
+function readCachedPayload(cacheKey: string): ReplayCourtsApiPayload | null {
+  const now = Date.now();
+  const inMemory = memoryCache.get(cacheKey);
+  if (inMemory && inMemory.expiresAt > now) {
+    return inMemory.payload;
+  }
+  if (typeof window === "undefined") {
+    return null;
   }
   try {
+    const raw = window.localStorage.getItem(getLocalStorageKey(cacheKey));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { payload?: unknown; expiresAt?: unknown };
+    if (typeof parsed.expiresAt !== "number" || parsed.expiresAt <= now) {
+      window.localStorage.removeItem(getLocalStorageKey(cacheKey));
+      return null;
+    }
+    const payload = normalizeCourtsPayload(parsed.payload);
+    memoryCache.set(cacheKey, { payload, expiresAt: parsed.expiresAt });
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedPayload(cacheKey: string, payload: ReplayCourtsApiPayload): void {
+  const expiresAt = Date.now() + COURTS_CACHE_TTL_MS;
+  memoryCache.set(cacheKey, { payload, expiresAt });
+  if (typeof window === "undefined") {
+    return;
+  }
+  try {
+    window.localStorage.setItem(
+      getLocalStorageKey(cacheKey),
+      JSON.stringify({ payload, expiresAt }),
+    );
+  } catch {
+    /* ignore storage quota/private mode errors */
+  }
+}
+
+export function getReplayCourtsSnapshot(apiBase: string): ReplayCourtsApiPayload {
+  const base = normalizeBase(apiBase);
+  const cacheKey = getCacheKey(base);
+  return readCachedPayload(cacheKey) ?? { courts: FALLBACK_REPLAY_COURTS, source: "env" };
+}
+
+export async function loadReplayCourts(apiBase: string): Promise<ReplayCourtsApiPayload> {
+  const base = normalizeBase(apiBase);
+  const cacheKey = getCacheKey(base);
+  const cached = readCachedPayload(cacheKey);
+  if (cached) {
+    return cached;
+  }
+  if (!base) {
+    const fallback = { courts: FALLBACK_REPLAY_COURTS, source: "env" } as const;
+    writeCachedPayload(cacheKey, fallback);
+    return fallback;
+  }
+  const inFlight = inFlightRequests.get(cacheKey);
+  if (inFlight) {
+    return inFlight;
+  }
+  const request = (async () => {
     const res = await fetch(`${base}/api/replays/courts`);
     if (!res.ok) {
-      return { courts: FALLBACK_REPLAY_COURTS, source: "env" };
+      const fallback = { courts: FALLBACK_REPLAY_COURTS, source: "env" } as const;
+      writeCachedPayload(cacheKey, fallback);
+      return fallback;
     }
     const json: unknown = await res.json();
-    return normalizeCourtsPayload(json);
-  } catch {
-    return { courts: FALLBACK_REPLAY_COURTS, source: "env" };
-  }
+    const payload = normalizeCourtsPayload(json);
+    writeCachedPayload(cacheKey, payload);
+    return payload;
+  })()
+    .catch(() => {
+      const fallback = { courts: FALLBACK_REPLAY_COURTS, source: "env" } as const;
+      writeCachedPayload(cacheKey, fallback);
+      return fallback;
+    })
+    .finally(() => {
+      inFlightRequests.delete(cacheKey);
+    });
+  inFlightRequests.set(cacheKey, request);
+  return request;
 }
 
 export async function saveReplayCourts(

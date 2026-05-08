@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, ChevronDown, X } from "lucide-react";
 import MatchReplayGate from "@/components/replays/MatchReplayGate";
-import { loadReplayCourts } from "@/utils/replay-courts-api";
+import { getReplayCourtsSnapshot, loadReplayCourts } from "@/utils/replay-courts-api";
 import { buildLastSevenDaysOptions } from "@/utils/replay-date-options";
 import { loadReplayShiftConfig } from "@/utils/replay-shift-config-api";
 import { buildReplayMatchKey } from "@/utils/replay-match-key";
@@ -69,7 +69,9 @@ export default function ReplaysVerPartido() {
   );
   const turnos = useMemo(() => buildReplayShiftTurnosFromConfig(shiftConfig), [shiftConfig]);
   const fechas = useMemo(buildLastSevenDaysOptions, []);
-  const [courtOptions, setCourtOptions] = useState<Option[]>([]);
+  const [courtOptions, setCourtOptions] = useState<Option[]>(() =>
+    getReplayCourtsSnapshot(apiBase).courts.map((c) => ({ value: c.slug, label: c.label })),
+  );
   const [cancha, setCancha] = useState("");
   const [fecha, setFecha] = useState(() => buildLastSevenDaysOptions()[0]?.value ?? "");
   const [hora, setHora] = useState("");
