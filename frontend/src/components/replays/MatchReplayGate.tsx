@@ -275,6 +275,9 @@ export default function MatchReplayGate({
           videoSrc={videoUrl}
           poster={resolvedPoster}
           clockLabel={clockLabel}
+          apiBase={base}
+          matchKey={matchKey}
+          sessionToken={sessionToken}
           chromeVariant="ghost"
           layout="fill"
         />
@@ -285,7 +288,7 @@ export default function MatchReplayGate({
         );
       }
       return (
-        <main className="fixed inset-0 z-50 m-0 min-h-dvh w-full overflow-y-auto overflow-x-hidden bg-black p-0">
+        <main className="fixed inset-0 z-50 m-0 min-h-dvh w-full overflow-hidden bg-black p-0">
           {player}
         </main>
       );
@@ -302,7 +305,14 @@ export default function MatchReplayGate({
             Salir / otro código
           </button>
         </div>
-        <ReplayMatchBlock videoSrc={videoUrl} poster={resolvedPoster} clockLabel={clockLabel} />
+        <ReplayMatchBlock
+          apiBase={base}
+          matchKey={matchKey}
+          sessionToken={sessionToken}
+          videoSrc={videoUrl}
+          poster={resolvedPoster}
+          clockLabel={clockLabel}
+        />
       </div>
     );
   }

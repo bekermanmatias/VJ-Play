@@ -9,6 +9,21 @@ export default defineConfig({
   output: "server",
   integrations: [react()],
   vite: {
-    plugins: [tailwindcss()],
+    plugins: [
+      tailwindcss(),
+      {
+        name: "vj-ignore-broken-sourcemap-sources",
+        configureServer(server) {
+          server.middlewares.use((req, res, next) => {
+            if (req.url?.startsWith("/node_modules/src/")) {
+              res.statusCode = 204;
+              res.end();
+              return;
+            }
+            next();
+          });
+        },
+      },
+    ],
   },
 });

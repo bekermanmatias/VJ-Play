@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   getReplayAdminMatches,
+  getReplayAccessClips,
   getReplayAccessExists,
   getReplayAccessMatchById,
   getReplayAccessStream,
@@ -29,5 +30,6 @@ replaysRouter.post('/access/verify', postReplayAccessVerify);
 replaysRouter.get('/access/exists', getReplayAccessExists);
 replaysRouter.get('/access/match-by-id', getReplayAccessMatchById);
 replaysRouter.get('/access/stream', getReplayAccessStream);
+replaysRouter.get('/access/clips', getReplayAccessClips);
 replaysRouter.post('/access/codes', requireAdminSecret, postReplayAccessCodes);
 replaysRouter.get('/admin/matches', requireAdminSecret, getReplayAdminMatches);

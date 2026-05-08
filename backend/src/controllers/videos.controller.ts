@@ -10,9 +10,11 @@ interface ClipBody {
   sourceUrl?: unknown;
   startSeconds?: unknown;
   endSeconds?: unknown;
+  clipLabel?: unknown;
   tenantId?: unknown;
   courtId?: unknown;
   matchId?: unknown;
+  matchKey?: unknown;
 }
 
 function parseFiniteNumber(value: unknown, label: string): number {
@@ -60,6 +62,10 @@ export const postVideoClip = asyncHandler(async (req: Request, res: Response) =>
   }
 
   const durationSeconds = endSeconds - startSeconds;
+  const clipLabel =
+    typeof body.clipLabel === 'string' && body.clipLabel.trim() !== ''
+      ? body.clipLabel.trim().slice(0, 120)
+      : undefined;
   const tenantId = resolveTenantId(req, body);
   const courtId =
     typeof body.courtId === 'string' && body.courtId.trim() !== ''
@@ -69,6 +75,10 @@ export const postVideoClip = asyncHandler(async (req: Request, res: Response) =>
     typeof body.matchId === 'string' && body.matchId.trim() !== ''
       ? body.matchId.trim()
       : undefined;
+  const matchKey =
+    typeof body.matchKey === 'string' && body.matchKey.trim() !== ''
+      ? body.matchKey.trim()
+      : undefined;
 
   const jobId = uuidv4();
   createClipJob(jobId);
@@ -77,9 +87,11 @@ export const postVideoClip = asyncHandler(async (req: Request, res: Response) =>
     sourceUrl,
     startSeconds,
     durationSeconds,
+    clipLabel,
     tenantId,
     courtId,
     matchId,
+    matchKey,
   });
 
   res.status(202).json({

@@ -10,6 +10,7 @@ import {
   signReplaySessionToken,
   verifyReplaySessionToken,
 } from './replay-session-token.js';
+import { listReplayClipsByMatchKey } from './replay-clips.service.js';
 
 type DevEntry = { matchKey: string; code: string };
 type AdminMatchRow = {
@@ -352,6 +353,35 @@ export async function getReplayStreamPayload(params: {
   }
 
   return fetchReplayAssets(claims.mk);
+}
+
+export async function listReplayClipsForSession(params: {
+  authorizationHeader: string | undefined;
+}): Promise<{
+  clips: {
+    id: string;
+    matchKey: string;
+    clipLabel: string | null;
+    sourceUrl: string;
+    clipUrl: string;
+    startSeconds: number;
+    durationSeconds: number;
+    createdAt: string;
+  }[];
+}> {
+  const raw = params.authorizationHeader;
+  const token =
+    raw?.startsWith('Bearer ') === true ? raw.slice('Bearer '.length).trim() : '';
+
+  if (!token) {
+    throw new HttpError(401, 'Sesión requerida');
+  }
+  const claims = verifyReplaySessionToken(token, env.jwtSessionSecret);
+  if (!claims) {
+    throw new HttpError(401, 'Sesión inválida o expirada');
+  }
+  const clips = await listReplayClipsByMatchKey(claims.mk);
+  return { clips };
 }
 
 export async function replayMatchExists(params: {

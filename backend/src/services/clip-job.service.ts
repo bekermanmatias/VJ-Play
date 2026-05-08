@@ -1,9 +1,10 @@
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { v4 as uuidv4 } from 'uuid';
 import { env } from '../config/env.js';
-import { extractHevcMp4Clip } from './ffmpeg.service.js';
+import { captureFrameAtTime, extractHevcMp4Clip } from './ffmpeg.service.js';
+import { insertReplayClipRecord } from './replay-clips.service.js';
 import { uploadFileToR2 } from './storage.service.js';
 import {
   failClipJob,
@@ -15,9 +16,11 @@ export interface ClipJobPayload {
   sourceUrl: string;
   startSeconds: number;
   durationSeconds: number;
+  clipLabel?: string;
   tenantId: string;
   courtId?: string;
   matchId?: string;
+  matchKey?: string;
 }
 
 /**
@@ -31,6 +34,7 @@ export async function runClipJob(
   startClipJob(jobId);
   const workDir = await mkdtemp(join(tmpdir(), 'vj-clip-'));
   const outFile = join(workDir, `clip-${uuidv4()}.mp4`);
+  const thumbFile = join(workDir, `thumb-${uuidv4()}.jpg`);
 
   try {
     await extractHevcMp4Clip(
@@ -54,11 +58,40 @@ export async function runClipJob(
       contentType: 'video/mp4',
       cacheControl: 'public, max-age=31536000, immutable',
     });
+    const clipStat = await stat(outFile);
+    let uploadedThumb: { key: string; publicUrl?: string } | null = null;
+    try {
+      await captureFrameAtTime(outFile, thumbFile, 0.1);
+      const thumbKey = `${prefix}/${Date.now()}-${uuidv4()}.jpg`;
+      uploadedThumb = await uploadFileToR2({
+        key: thumbKey,
+        filePath: thumbFile,
+        contentType: 'image/jpeg',
+        cacheControl: 'public, max-age=31536000, immutable',
+      });
+    } catch (thumbErr) {
+      if (env.nodeEnv !== 'test') {
+        console.warn('[clip-job-thumb]', jobId, thumbErr);
+      }
+    }
 
     succeedClipJob(jobId, {
       resultKey: uploaded.key,
       publicUrl: uploaded.publicUrl,
     });
+    if (payload.matchKey && uploaded.publicUrl) {
+      await insertReplayClipRecord({
+        matchKey: payload.matchKey,
+        clipLabel: payload.clipLabel?.trim() || null,
+        sourceUrl: payload.sourceUrl,
+        clipUrl: uploaded.publicUrl,
+        clipKey: uploaded.key,
+        thumbUrl: uploadedThumb?.publicUrl ?? null,
+        startSeconds: payload.startSeconds,
+        durationSeconds: payload.durationSeconds,
+        clipSizeBytes: clipStat.size,
+      });
+    }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     failClipJob(jobId, message);

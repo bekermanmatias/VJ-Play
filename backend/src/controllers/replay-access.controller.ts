@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/async-handler.js';
 import {
   getReplayMatchByNumericId,
+  listReplayClipsForSession,
   getReplayStreamPayload,
   insertReplayAccessCode,
   listReplayMatchesForAdmin,
@@ -19,6 +20,14 @@ export const postReplayAccessVerify = asyncHandler(async (req: Request, res: Res
 
 export const getReplayAccessStream = asyncHandler(async (req: Request, res: Response) => {
   const payload = await getReplayStreamPayload({
+    authorizationHeader: req.header('authorization'),
+  });
+  res.setHeader('Cache-Control', 'no-store');
+  res.json(payload);
+});
+
+export const getReplayAccessClips = asyncHandler(async (req: Request, res: Response) => {
+  const payload = await listReplayClipsForSession({
     authorizationHeader: req.header('authorization'),
   });
   res.setHeader('Cache-Control', 'no-store');

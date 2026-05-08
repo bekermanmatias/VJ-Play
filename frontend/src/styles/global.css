@@ -47,3 +47,34 @@ body {
   min-width: max-content;
   animation: vj-marquee 30s linear infinite;
 }
+
+/* Scrollbar personalizada para paneles internos */
+.vj-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(1 170 85 / 0.9) rgb(255 255 255 / 0.08);
+}
+
+.vj-scrollbar::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.vj-scrollbar::-webkit-scrollbar-track {
+  background: rgb(255 255 255 / 0.08);
+  border-radius: 9999px;
+}
+
+.vj-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgb(1 170 85 / 0.95), rgb(1 130 65 / 0.95));
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.vj-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgb(1 190 95), rgb(1 150 75));
+}
+
+.vj-scrollbar-dark::-webkit-scrollbar-track {
+  background: rgb(255 255 255 / 0.12);
+}

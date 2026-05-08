@@ -1,5 +1,21 @@
-import { Download } from "lucide-react";
-import type { DemoClip } from "@/components/replays/demo-clips";
+import { Download, EllipsisVertical, Pencil, Trash2 } from "lucide-react";
+import { useState } from "react";
+import type { ReplayClipItem } from "@/components/replays/clip-types";
+
+const CLIP_THUMB_FALLBACK =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 180'>
+      <defs>
+        <linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
+          <stop offset='0%' stop-color='#0f172a'/>
+          <stop offset='100%' stop-color='#111827'/>
+        </linearGradient>
+      </defs>
+      <rect width='320' height='180' fill='url(#g)'/>
+      <text x='160' y='95' text-anchor='middle' fill='#93a3b8' font-family='Inter, Arial' font-size='14'>Sin frame disponible</text>
+    </svg>`,
+  );
 
 function formatTime(seconds: number) {
   if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
@@ -9,7 +25,18 @@ function formatTime(seconds: number) {
   return `${m}:${r.toString().padStart(2, "0")}`;
 }
 
-function clipDownloadFilename(clip: DemoClip): string {
+function formatBytes(bytes: number | null | undefined): string {
+  if (!bytes || bytes <= 0) return "-";
+  if (bytes < 1024) return `${bytes} B`;
+  const kb = bytes / 1024;
+  if (kb < 1024) return `${kb.toFixed(1)} KB`;
+  const mb = kb / 1024;
+  if (mb < 1024) return `${mb.toFixed(1)} MB`;
+  const gb = mb / 1024;
+  return `${gb.toFixed(2)} GB`;
+}
+
+function clipDownloadFilename(clip: ReplayClipItem): string {
   const base =
     clip.label
       .normalize("NFD")
@@ -21,7 +48,7 @@ function clipDownloadFilename(clip: DemoClip): string {
 }
 
 export type ClipsPanelProps = {
-  clips: DemoClip[];
+  clips: ReplayClipItem[];
   videoSrc: string;
   /** Nombre sugerido del archivo del partido completo */
   fullMatchDownloadName?: string;
@@ -29,6 +56,9 @@ export type ClipsPanelProps = {
   /** Página clara (replay normal) vs fondo oscuro (modo cine) */
   surface?: "page" | "dark";
   sectionClassName?: string;
+  layout?: "default" | "side";
+  onRenameClip?: (clipId: string, nextLabel: string) => void;
+  onDeleteClip?: (clipId: string) => void;
 };
 
 export default function ClipsPanel({
@@ -38,12 +68,21 @@ export default function ClipsPanel({
   onSelectClip,
   surface = "page",
   sectionClassName,
+  layout = "default",
+  onRenameClip,
+  onDeleteClip,
 }: ClipsPanelProps) {
+  const [menuOpenFor, setMenuOpenFor] = useState<string | null>(null);
   const isDark = surface === "dark";
+  const isSide = layout === "side";
   const sectionClass = [
     "w-full bg-transparent",
-    isDark ? "border-t border-white/10" : "border-t border-slate-200/80",
-    "pt-6 sm:pt-8",
+    isSide
+      ? ""
+      : isDark
+        ? "border-t border-white/10 pt-6 sm:pt-8"
+        : "border-t border-slate-200/80 pt-6 sm:pt-8",
+    isSide ? "flex h-full min-h-0 flex-col overflow-hidden" : "",
     sectionClassName ?? "",
   ]
     .filter(Boolean)
@@ -64,16 +103,25 @@ export default function ClipsPanel({
       : "w-full px-2 py-2 text-left text-xs font-semibold text-slate-800 transition hover:bg-slate-50";
 
   const footnoteClass = isDark ? "mt-3 text-[10px] text-white/50" : "mt-3 text-[10px] text-slate-500";
+  const listClass = isSide
+    ? "vj-scrollbar vj-scrollbar-dark mt-4 grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto pr-1"
+    : "mt-4 flex gap-3 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch] sm:grid sm:grid-cols-3 sm:overflow-visible";
 
   return (
     <section className={sectionClass} aria-label="Clips del partido">
       <h3 className={titleClass}>Clips</h3>
-      <ul className="mt-4 flex gap-3 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch] sm:grid sm:grid-cols-3 sm:overflow-visible">
+      <ul className={listClass}>
         {clips.map((clip) => {
-          const href = clip.downloadHref ?? videoSrc;
+          const href =
+            clip.status && clip.status !== "ready"
+              ? "#"
+              : clip.downloadHref ?? videoSrc;
           const filename = clipDownloadFilename(clip);
           return (
-            <li key={clip.id} className="min-w-[min(72vw,11.5rem)] shrink-0 sm:min-w-0">
+            <li
+              key={clip.id}
+              className={isSide ? "min-w-0" : "min-w-[min(72vw,11.5rem)] shrink-0 sm:min-w-0"}
+            >
               <div className={cardShell}>
                 <div
                   className={`relative aspect-video w-full overflow-hidden ${isDark ? "bg-white/10" : "bg-slate-100"}`}
@@ -85,37 +133,138 @@ export default function ClipsPanel({
                     aria-label={`Ir a ${clip.label}`}
                   >
                     <img
-                      src={clip.thumb}
+                      src={clip.thumb || CLIP_THUMB_FALLBACK}
                       alt=""
                       className="h-full w-full object-cover transition group-hover/card:opacity-95"
                       loading="lazy"
                       decoding="async"
+                      onError={(e) => {
+                        const img = e.currentTarget;
+                        if (img.src !== CLIP_THUMB_FALLBACK) {
+                          img.src = CLIP_THUMB_FALLBACK;
+                        }
+                      }}
                     />
                   </button>
                   <a
                     href={href}
                     download={filename}
-                    onClick={(e) => e.stopPropagation()}
-                    className="pointer-events-auto absolute right-1 top-1 z-10 grid size-8 place-items-center rounded-full bg-black/70 text-white shadow-md ring-1 ring-white/25 transition hover:bg-black/85"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (clip.status && clip.status !== "ready") {
+                        e.preventDefault();
+                      }
+                    }}
+                    className={`pointer-events-auto absolute right-1 top-1 z-10 grid size-8 place-items-center rounded-full shadow-md ring-1 ring-white/25 transition ${
+                      clip.status === "processing"
+                        ? "cursor-wait bg-black/45 text-white/60"
+                        : clip.status === "failed"
+                          ? "cursor-not-allowed bg-rose-900/60 text-rose-100"
+                          : "bg-black/70 text-white hover:bg-black/85"
+                    }`}
                     aria-label={`Descargar clip: ${clip.label}`}
+                    aria-disabled={clip.status !== undefined && clip.status !== "ready"}
+                    style={{ display: "none" }}
                   >
                     <Download size={15} strokeWidth={2.6} />
                   </a>
-                  <span className="pointer-events-none absolute bottom-1 right-1 z-[5] rounded bg-black/75 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-white">
-                    {formatTime(clip.at)}
-                  </span>
+                  <div className="absolute right-1 top-1 z-20">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMenuOpenFor((prev) => (prev === clip.id ? null : clip.id));
+                      }}
+                      className="grid size-8 place-items-center rounded-full bg-black/70 text-white shadow-md ring-1 ring-white/25 transition hover:bg-black/85"
+                      aria-label={`Opciones del clip ${clip.label}`}
+                    >
+                      <EllipsisVertical size={15} strokeWidth={2.6} />
+                    </button>
+                    {menuOpenFor === clip.id && (
+                      <div
+                        className="absolute right-0 mt-1 w-40 overflow-hidden rounded-md border border-white/15 bg-black/90 shadow-xl ring-1 ring-black/40"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          type="button"
+                          disabled={clip.status !== "ready"}
+                          onClick={() => {
+                            if (clip.status !== "ready") return;
+                            const link = document.createElement("a");
+                            link.href = href;
+                            link.download = filename;
+                            document.body.appendChild(link);
+                            link.click();
+                            link.remove();
+                            setMenuOpenFor(null);
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-white hover:bg-white/10 disabled:cursor-not-allowed disabled:text-white/45"
+                        >
+                          <Download size={14} />
+                          Descargar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const current = clip.label.trim();
+                            const next = window.prompt("Nuevo nombre del clip", current);
+                            if (!next) return;
+                            const cleaned = next.trim();
+                            if (!cleaned) return;
+                            onRenameClip?.(clip.id, cleaned);
+                            setMenuOpenFor(null);
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-white hover:bg-white/10"
+                        >
+                          <Pencil size={14} />
+                          Renombrar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const ok = window.confirm("¿Querés borrar este clip?");
+                            if (!ok) return;
+                            onDeleteClip?.(clip.id);
+                            setMenuOpenFor(null);
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-rose-300 hover:bg-rose-500/20"
+                        >
+                          <Trash2 size={14} />
+                          Borrar
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <button type="button" className={labelBtn} onClick={() => onSelectClip(clip.at)}>
                   {clip.label}
+                  {clip.status === "processing" && " · Procesando..."}
+                  {clip.status === "failed" && " · Error al generar"}
                 </button>
+                <div className={isDark ? "flex items-center justify-between px-2 pb-2 text-[11px] text-white/70" : "flex items-center justify-between px-2 pb-2 text-[11px] text-slate-600"}>
+                  <span>
+                    {formatTime(clip.at)} - {formatTime(clip.endAt ?? clip.at + (clip.durationSeconds ?? 0))}
+                  </span>
+                  <span>
+                    {formatTime(clip.durationSeconds ?? Math.max(0, (clip.endAt ?? clip.at) - clip.at))} · {formatBytes(clip.clipSizeBytes)}
+                  </span>
+                </div>
+                {clip.status === "failed" && clip.error && (
+                  <p className={isDark ? "px-2 pb-2 text-[11px] text-rose-300" : "px-2 pb-2 text-[11px] text-rose-700"}>
+                    {clip.error}
+                  </p>
+                )}
               </div>
             </li>
           );
         })}
       </ul>
-      <p className={footnoteClass}>
-        Datos de ejemplo. Luego se cargan desde tu backend.
-      </p>
+      {clips.length === 0 && (
+        <p className={isDark ? "mt-3 text-xs text-white/65" : "mt-3 text-xs text-slate-600"}>
+          Todavia no hay clips. Usa el boton rojo para grabar uno desde el video.
+        </p>
+      )}
+      <p className={footnoteClass}>Los clips se generan sobre este partido.</p>
       <a
         href={videoSrc}
         download={fullMatchDownloadName}

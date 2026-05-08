@@ -8,7 +8,6 @@ import {
 } from "react";
 import {
   Clapperboard,
-  Download,
   FastForward,
   Maximize2,
   Minimize2,
@@ -24,7 +23,7 @@ import {
 } from "lucide-react";
 import { createPortal } from "react-dom";
 import ClipsPanel from "@/components/replays/ClipsPanel";
-import { DEMO_CLIPS } from "@/components/replays/demo-clips";
+import type { ReplayClipItem } from "@/components/replays/clip-types";
 
 export type MatchPlayerHandle = {
   seekTo: (seconds: number) => void;
@@ -49,6 +48,14 @@ type Props = {
   chromeVariant?: "default" | "ghost";
   /** Si se provee, el HUD se monta en este elemento via portal (queda fuera del zoom). */
   hudPortalTarget?: HTMLElement | null;
+  /** Base del API backend para generar recortes reales. */
+  clipApiBase?: string;
+  /** Match actual para vincular clips persistentes. */
+  matchKey?: string;
+  /** Sesión de replay para listar clips ya existentes del partido. */
+  sessionToken?: string | null;
+  /** Propaga la lista de clips para paneles externos al player. */
+  onClipsUpdate?: (clips: ReplayClipItem[]) => void;
 };
 
 type PendingClip = {
@@ -61,6 +68,12 @@ type SavedClipNotice = {
   name: string;
   start: number;
   end: number;
+};
+
+type ClipJobNotice = {
+  name: string;
+  status: "processing" | "failed";
+  error?: string;
 };
 
 function formatTime(seconds: number) {
@@ -90,6 +103,10 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
     onClipsOpenChange,
     chromeVariant = "default",
     hudPortalTarget,
+    clipApiBase = "",
+    matchKey = "",
+    sessionToken = null,
+    onClipsUpdate,
   },
   ref,
 ) {
@@ -127,11 +144,13 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
   const [pendingClip, setPendingClip] = useState<PendingClip | null>(null);
   const [clipDraftName, setClipDraftName] = useState("");
   const [savedClipNotice, setSavedClipNotice] = useState<SavedClipNotice | null>(null);
+  const [clipJobNotice, setClipJobNotice] = useState<ClipJobNotice | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [uncontrolledClipsOpen, setUncontrolledClipsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [brightnessPct, setBrightnessPct] = useState(100);
   const [contrastPct, setContrastPct] = useState(100);
+  const [clips, setClips] = useState<ReplayClipItem[]>([]);
 
   const isClipsControlled =
     clipsOpenProp !== undefined && onClipsOpenChange !== undefined;
@@ -167,16 +186,27 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
   }, [syncTime]);
 
   useEffect(() => {
+    const getFullscreenHost = () => {
+      if (hudPortalTarget?.parentElement) {
+        return hudPortalTarget.parentElement;
+      }
+      return shellRef.current;
+    };
+
     const syncFs = () => {
-      const shell = shellRef.current;
-      if (!shell) return;
-      setIsFullscreen(document.fullscreenElement === shell);
+      const host = getFullscreenHost();
+      const fsEl = document.fullscreenElement;
+      if (!host || !fsEl) {
+        setIsFullscreen(false);
+        return;
+      }
+      setIsFullscreen(fsEl === host);
     };
 
     syncFs();
     document.addEventListener("fullscreenchange", syncFs);
     return () => document.removeEventListener("fullscreenchange", syncFs);
-  }, []);
+  }, [hudPortalTarget]);
 
   useEffect(() => {
     if (!settingsOpen) return;
@@ -198,6 +228,86 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
       document.removeEventListener("keydown", onKey);
     };
   }, [settingsOpen]);
+
+  useEffect(() => {
+    onClipsUpdate?.(clips);
+  }, [clips, onClipsUpdate]);
+
+  useEffect(() => {
+    const apiBase = clipApiBase.trim().replace(/\/$/, "");
+    const mk = matchKey.trim();
+    const token = typeof sessionToken === "string" ? sessionToken.trim() : "";
+    if (!apiBase || !mk || !token) {
+      return;
+    }
+    let cancelled = false;
+    void fetch(`${apiBase}/api/replays/access/clips`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(async (res) => {
+        const body = (await res.json().catch(() => null)) as
+          | {
+              clips?: Array<{
+                id?: string;
+                clipUrl?: string;
+                thumbUrl?: string | null;
+                clipLabel?: string | null;
+                startSeconds?: number;
+                durationSeconds?: number;
+                clipSizeBytes?: number | null;
+              }>;
+              error?: string;
+            }
+          | null;
+        if (cancelled) return;
+        if (!res.ok) {
+          throw new Error(body?.error ?? "No se pudieron cargar clips.");
+        }
+        const remote = (body?.clips ?? [])
+          .map((row): ReplayClipItem | null => {
+            const id = typeof row.id === "string" ? row.id : "";
+            const clipUrl = typeof row.clipUrl === "string" ? row.clipUrl : "";
+            const thumbUrl =
+              typeof row.thumbUrl === "string" && row.thumbUrl.trim() !== ""
+                ? row.thumbUrl
+                : null;
+            const clipLabel =
+              typeof row.clipLabel === "string" && row.clipLabel.trim() !== ""
+                ? row.clipLabel
+                : null;
+            const at = typeof row.startSeconds === "number" ? row.startSeconds : 0;
+            const durationSeconds =
+              typeof row.durationSeconds === "number" ? row.durationSeconds : 0;
+            const clipSizeBytes =
+              typeof row.clipSizeBytes === "number" ? row.clipSizeBytes : null;
+            if (!id || !clipUrl) return null;
+            return {
+              id,
+              label: clipLabel ?? `Clip ${formatTime(at)}`,
+              at,
+              endAt: at + Math.max(0, durationSeconds),
+              thumb: thumbUrl ?? poster ?? "",
+              downloadHref: clipUrl,
+              durationSeconds,
+              clipSizeBytes,
+              status: "ready",
+              error: null,
+            };
+          })
+          .filter((v): v is ReplayClipItem => v !== null);
+        setClips((prev) => {
+          const processing = prev.filter((c) => c.status === "processing");
+          const failed = prev.filter((c) => c.status === "failed");
+          return [...processing, ...failed, ...remote];
+        });
+      })
+      .catch(() => {
+        // Silencioso: el usuario aún puede crear clips nuevos.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [clipApiBase, matchKey, poster, sessionToken]);
 
   const seekTo = useCallback((seconds: number) => {
     const v = videoRef.current;
@@ -288,14 +398,14 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
   };
 
   const toggleFullscreen = async () => {
-    const shell = shellRef.current;
-    if (!shell) return;
+    const host = hudPortalTarget?.parentElement ?? shellRef.current;
+    if (!host) return;
     try {
       if (document.fullscreenElement) {
         await document.exitFullscreen();
         return;
       }
-      await shell.requestFullscreen();
+      await host.requestFullscreen();
     } catch {
       // noop
     }
@@ -362,11 +472,101 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
       minute: "2-digit",
     })}`;
     const clipName = clipDraftName.trim() || fallback;
-    setSavedClipNotice({
-      name: clipName,
-      start: pendingClip.start,
-      end: pendingClip.end,
-    });
+    setClipJobNotice({ name: clipName, status: "processing" });
+    const createdAt = Date.now();
+    const localId = `clip-${createdAt}-${Math.random().toString(36).slice(2, 8)}`;
+    const nextClip: ReplayClipItem = {
+      id: localId,
+      label: clipName,
+      at: pendingClip.start,
+      endAt: pendingClip.end,
+      thumb: poster || "",
+      durationSeconds: pendingClip.duration,
+      status: "processing",
+    };
+    setClips((prev) => [nextClip, ...prev]);
+    const apiBase = clipApiBase.trim().replace(/\/$/, "");
+    if (!apiBase) {
+      setClips((prev) =>
+        prev.map((clip) =>
+          clip.id === localId
+            ? {
+                ...clip,
+                status: "failed",
+                error: "Falta configurar PUBLIC_REPLAY_API_BASE.",
+              }
+            : clip,
+        ),
+      );
+      closeClipModal();
+      return;
+    }
+    void (async () => {
+      try {
+        const createRes = await fetch(`${apiBase}/api/videos/clip`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sourceUrl: videoSrc,
+            startSeconds: pendingClip.start,
+            endSeconds: pendingClip.end,
+            clipLabel: clipName,
+            matchKey: matchKey.trim() || undefined,
+          }),
+        });
+        const createBody = (await createRes.json().catch(() => null)) as
+          | { jobId?: string; error?: string }
+          | null;
+        if (!createRes.ok || !createBody?.jobId) {
+          throw new Error(createBody?.error ?? "No se pudo encolar el clip.");
+        }
+        const jobId = createBody.jobId;
+        let completedUrl = "";
+        for (let i = 0; i < 600; i += 1) {
+          await new Promise<void>((resolve) => {
+            window.setTimeout(() => resolve(), 1000);
+          });
+          const jobRes = await fetch(`${apiBase}/api/videos/clip/${encodeURIComponent(jobId)}`);
+          const jobBody = (await jobRes.json().catch(() => null)) as
+            | { status?: string; publicUrl?: string; error?: string }
+            | null;
+          if (!jobRes.ok) {
+            throw new Error(jobBody?.error ?? "No se pudo consultar el clip.");
+          }
+          if (jobBody?.status === "completed" && typeof jobBody.publicUrl === "string") {
+            completedUrl = jobBody.publicUrl;
+            break;
+          }
+          if (jobBody?.status === "failed") {
+            throw new Error(jobBody?.error ?? "Falló la generación del clip.");
+          }
+        }
+        if (!completedUrl) {
+          throw new Error("El clip tardó demasiado en procesarse.");
+        }
+        setClips((prev) =>
+          prev.map((clip) =>
+            clip.id === localId
+              ? { ...clip, status: "ready", downloadHref: completedUrl, error: null }
+              : clip,
+          ),
+        );
+        setClipJobNotice(null);
+        setSavedClipNotice({
+          name: clipName,
+          start: pendingClip.start,
+          end: pendingClip.end,
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "No se pudo generar el clip.";
+        setClips((prev) =>
+          prev.map((clip) =>
+            clip.id === localId ? { ...clip, status: "failed", error: message } : clip,
+          ),
+        );
+        setClipJobNotice({ name: clipName, status: "failed", error: message });
+      }
+    })();
     closeClipModal();
   };
 
@@ -547,24 +747,14 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
             )}
           </div>
           {ghost && (
-            <>
-              <a
-                href={videoSrc}
-                download="partido-completo.mp4"
-                className={`${sideIconBtn} no-underline`}
-                aria-label="Descargar partido"
-              >
-                <Download size={20} strokeWidth={2.8} />
-              </a>
-              <button
-                type="button"
-                onClick={() => seek(-5)}
-                className={sideIconBtn}
-                aria-label="Retroceder 5 segundos"
-              >
-                <Rewind size={20} strokeWidth={2.8} />
-              </button>
-            </>
+            <button
+              type="button"
+              onClick={() => seek(-5)}
+              className={sideIconBtn}
+              aria-label="Retroceder 5 segundos"
+            >
+              <Rewind size={20} strokeWidth={2.8} />
+            </button>
           )}
         </div>
 
@@ -806,6 +996,44 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
             </div>
           </div>
         )}
+        {clipJobNotice && (
+          <div className="pointer-events-auto absolute inset-0 z-50 grid place-items-center bg-black/60 p-3">
+            <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-4 shadow-2xl">
+              <h4 className="text-sm font-black uppercase tracking-wide text-slate-800">
+                {clipJobNotice.status === "processing" ? "Generando clip" : "Error al generar clip"}
+              </h4>
+              {clipJobNotice.status === "processing" ? (
+                <>
+                  <p className="mt-2 text-sm text-slate-700">
+                    <span className="font-black text-slate-900">{clipJobNotice.name}</span> se está procesando.
+                  </p>
+                  <p className="mt-1 text-xs text-slate-600">
+                    Esperá unos instantes. El clip aparecerá listo para descargar automáticamente.
+                  </p>
+                  <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+                    <div className="h-full w-1/3 animate-pulse rounded-full bg-vj-green" />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="mt-2 text-sm text-slate-700">
+                    No se pudo generar <span className="font-black text-slate-900">{clipJobNotice.name}</span>.
+                  </p>
+                  <p className="mt-1 text-xs text-slate-600">{clipJobNotice.error ?? "Intentá nuevamente."}</p>
+                </>
+              )}
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setClipJobNotice(null)}
+                  className="rounded-md bg-vj-green px-3 py-2 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-vj-green-600"
+                >
+                  {clipJobNotice.status === "processing" ? "Entendido" : "Cerrar"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
     </>
   );
 
@@ -842,7 +1070,20 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
       {hudPortalTarget && createPortal(hud, hudPortalTarget)}
 
       {showClipsPanel && clipsOpen && (
-        <ClipsPanel clips={DEMO_CLIPS} videoSrc={videoSrc} onSelectClip={seekTo} surface="page" />
+        <ClipsPanel
+          clips={clips}
+          videoSrc={videoSrc}
+          onSelectClip={seekTo}
+          onRenameClip={(clipId, nextLabel) => {
+            setClips((prev) =>
+              prev.map((clip) => (clip.id === clipId ? { ...clip, label: nextLabel } : clip)),
+            );
+          }}
+          onDeleteClip={(clipId) => {
+            setClips((prev) => prev.filter((clip) => clip.id !== clipId));
+          }}
+          surface="page"
+        />
       )}
     </>
   );

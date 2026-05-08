@@ -48,6 +48,36 @@ export function captureFrameFromVideoSource(
 }
 
 /**
+ * Captura un frame de una fuente de video en un tiempo específico.
+ */
+export function captureFrameAtTime(
+  inputUrl: string,
+  outputFilePath: string,
+  atSeconds: number,
+): Promise<void> {
+  const safeTime = Number.isFinite(atSeconds) && atSeconds > 0 ? atSeconds : 0;
+  return new Promise((resolve, reject) => {
+    const command = ffmpeg(inputUrl);
+    if (isRtspUrl(inputUrl)) {
+      command.inputOptions(['-rtsp_transport', 'tcp']);
+    }
+    command
+      .setStartTime(safeTime)
+      .frames(1)
+      .outputOptions([
+        '-vf',
+        'scale=320:-2',
+        '-q:v',
+        '24',
+      ])
+      .output(outputFilePath)
+      .on('end', () => resolve())
+      .on('error', (err: Error) => reject(err))
+      .run();
+  });
+}
+
+/**
  * Extrae un clip en contenedor MP4 con video H.265 (HEVC) y audio AAC.
  * La decodificación/codificación ocurre en el proceso FFmpeg, no en el hilo principal.
  */
