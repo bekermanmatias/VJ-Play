@@ -307,6 +307,22 @@ export default function MatchReplayGate({
     );
   }
 
+  if (cinema && sessionToken && (verifyLoading || streamLoading)) {
+    const openingState = (
+      <div className="flex min-h-dvh w-full items-center justify-center bg-black text-sm font-semibold text-white">
+        Cargando video...
+      </div>
+    );
+    if (embedCinema) {
+      return (
+        <div className="flex h-full min-h-0 w-full flex-1 flex-col bg-black">
+          {openingState}
+        </div>
+      );
+    }
+    return openingState;
+  }
+
   const gateCard = (
     <div
       className="relative mx-auto w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
