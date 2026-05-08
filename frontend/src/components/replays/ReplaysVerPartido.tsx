@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, ChevronDown, X } from "lucide-react";
 import MatchReplayGate from "@/components/replays/MatchReplayGate";
 import { loadReplayCourts } from "@/utils/replay-courts-api";
@@ -10,11 +10,9 @@ import {
   getDefaultReplayShiftConfigFromEnv,
   type ReplayShiftConfig,
 } from "@/utils/replay-shift-turnos";
-
+const apiBase = import.meta.env.PUBLIC_REPLAY_API_BASE ?? "";
 const POSTER_FALLBACK =
   "https://images.unsplash.com/photo-1627615922102-6b7ef5f0ec55?auto=format&fit=crop&w=1400&q=70";
-
-const apiBase = import.meta.env.PUBLIC_REPLAY_API_BASE ?? "";
 
 type Option = { value: string; label: string };
 
@@ -24,9 +22,7 @@ type DropdownFieldProps = {
   placeholder: string;
   options: Option[];
   value: string;
-  open: boolean;
   showCalendarIcon?: boolean;
-  onToggle: () => void;
   onPick: (value: string) => void;
 };
 
@@ -36,61 +32,33 @@ function DropdownField({
   placeholder,
   options,
   value,
-  open,
   showCalendarIcon = false,
-  onToggle,
   onPick,
 }: DropdownFieldProps) {
-  const selected = options.find((o) => o.value === value);
-
   return (
     <div className="relative">
       <span className="mb-1.5 inline-block text-xs font-bold uppercase tracking-wider text-slate-600">
         {label}
       </span>
-      <button
-        id={id}
-        type="button"
-        onClick={onToggle}
-        className={`relative h-12 w-full rounded-md border border-slate-300 bg-white pl-3 text-left text-sm font-semibold text-slate-800 outline-none transition hover:border-slate-400 focus:border-vj-green ${showCalendarIcon ? "pr-14" : "pr-10"}`}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-      >
-        <span className={`block truncate ${selected ? "text-slate-800" : "text-slate-500"}`}>
-          {selected?.label ?? placeholder}
-        </span>
+      <div className="relative">
+        <select
+          id={id}
+          value={value}
+          onChange={(e) => onPick(e.target.value)}
+          className={`h-12 w-full appearance-none rounded-md border border-slate-300 bg-white pl-3 pr-10 text-sm font-semibold text-slate-800 outline-none transition hover:border-slate-400 focus:border-vj-green ${showCalendarIcon ? "pr-14" : "pr-10"}`}
+        >
+          <option value="">{placeholder}</option>
+          {options.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
         <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center gap-1.5">
           {showCalendarIcon && <CalendarDays className="h-4 w-4 text-slate-400" aria-hidden />}
-          <ChevronDown
-            className={`h-4 w-4 text-slate-500 transition ${open ? "rotate-180" : ""}`}
-            aria-hidden
-          />
+          <ChevronDown className="h-4 w-4 text-slate-500" aria-hidden />
         </span>
-      </button>
-
-      {open && (
-        <ul
-          role="listbox"
-          aria-labelledby={id}
-          className="absolute z-40 mt-2 max-h-64 w-full overflow-auto border border-slate-300 bg-white p-1 shadow-lg"
-        >
-          {options.map((opt) => (
-            <li key={opt.value}>
-              <button
-                type="button"
-                onClick={() => onPick(opt.value)}
-                className={`block w-full px-3 py-2 text-left text-sm font-semibold transition-colors ${
-                  value === opt.value
-                    ? "bg-vj-green text-white"
-                    : "text-slate-700 hover:bg-vj-green hover:text-white"
-                }`}
-              >
-                {opt.label}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      </div>
     </div>
   );
 }
@@ -102,15 +70,15 @@ export default function ReplaysVerPartido() {
   const turnos = useMemo(() => buildReplayShiftTurnosFromConfig(shiftConfig), [shiftConfig]);
   const fechas = useMemo(buildLastSevenDaysOptions, []);
   const [courtOptions, setCourtOptions] = useState<Option[]>([]);
-  const [open, setOpen] = useState(false);
-  const [clockLabel, setClockLabel] = useState("--:--:--");
   const [cancha, setCancha] = useState("");
   const [fecha, setFecha] = useState(() => buildLastSevenDaysOptions()[0]?.value ?? "");
   const [hora, setHora] = useState("");
-  const [openMenu, setOpenMenu] = useState<"cancha" | "fecha" | "hora" | null>(null);
-  const formRef = useRef<HTMLFormElement | null>(null);
-
-  const close = useCallback(() => setOpen(false), []);
+  const [checkingMatch, setCheckingMatch] = useState(false);
+  const [notFoundOpen, setNotFoundOpen] = useState(false);
+  const [notFoundMsg, setNotFoundMsg] = useState("El turno seleccionado no existe o ya no está disponible.");
+  const [accessOpen, setAccessOpen] = useState(false);
+  const [selectedNumericId, setSelectedNumericId] = useState<number | null>(null);
+  const [clockLabel, setClockLabel] = useState("--:--:--");
 
   useEffect(() => {
     let cancelled = false;
@@ -146,50 +114,93 @@ export default function ReplaysVerPartido() {
     }
   }, [turnos, hora]);
 
-  useEffect(() => {
-    const onPointerDown = (e: PointerEvent) => {
-      if (!(e.target instanceof Node)) return;
-      if (formRef.current?.contains(e.target)) return;
-      setOpenMenu(null);
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, []);
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!cancha || !fecha || !hora) {
+      return;
+    }
+    setCheckingMatch(true);
+    try {
+      if (!apiBase.trim()) {
+        throw new Error("El servicio de replays no está disponible en este momento.");
+      }
+      const matchKey = `${cancha}|${fecha}|${hora}`;
+      const existsUrl = new URL(`${apiBase.replace(/\/$/, "")}/api/replays/access/exists`);
+      existsUrl.searchParams.set("matchKey", matchKey);
+      const res = await fetch(existsUrl.toString());
+      const body = (await res.json().catch(() => null)) as
+        | { exists?: boolean; numericId?: number; error?: string }
+        | null;
+      if (!res.ok) {
+        throw new Error(body?.error ?? "No se pudo validar el turno.");
+      }
+      if (!body?.exists) {
+        setNotFoundMsg("El turno seleccionado no existe o ya no está disponible.");
+        setNotFoundOpen(true);
+        return;
+      }
+      const numericId = typeof body?.numericId === "number" ? body.numericId : null;
+      if (!numericId || numericId <= 0) {
+        throw new Error("No se pudo obtener el ID del partido.");
+      }
+      const turnoOpt = turnos.find((t) => t.value === hora);
+      const label =
+        turnoOpt?.label ??
+        (/^\d{2}:\d{2}$/.test(hora) ? `${hora}:00` : hora || "--:--:--");
+      setClockLabel(label);
+      setSelectedNumericId(numericId);
+      setAccessOpen(true);
+    } catch (err) {
+      setNotFoundMsg(err instanceof Error ? err.message : "No se pudo validar el turno.");
+      setNotFoundOpen(true);
+    } finally {
+      setCheckingMatch(false);
+    }
+  };
 
   useEffect(() => {
-    if (!open) return;
-    const prev = document.body.style.overflow;
+    if (!notFoundOpen && !accessOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    const prevPaddingRight = document.body.style.paddingRight;
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
     document.body.style.overflow = "hidden";
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
+      if (e.key !== "Escape") return;
+      if (accessOpen) setAccessOpen(false);
+      if (notFoundOpen) setNotFoundOpen(false);
     };
     document.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = prev;
+      document.body.style.overflow = prevOverflow;
+      document.body.style.paddingRight = prevPaddingRight;
       document.removeEventListener("keydown", onKey);
     };
-  }, [open, close]);
+  }, [notFoundOpen, accessOpen]);
 
-  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!cancha || !fecha || !hora) {
-      window.alert("Completá cancha, fecha y turno para continuar.");
-      return;
+  const selectedMatchKey = useMemo(() => {
+    if (!cancha || !fecha || !hora) return "";
+    return buildReplayMatchKey({ cancha, fecha, hora });
+  }, [cancha, fecha, hora]);
+
+  const onCodeAuthorized = ({ sessionToken }: { sessionToken: string }) => {
+    if (!selectedNumericId || !selectedMatchKey || !sessionToken) return;
+    try {
+      sessionStorage.setItem(
+        `vj_replay_sess:${selectedMatchKey}`,
+        JSON.stringify({ matchKey: selectedMatchKey, token: sessionToken }),
+      );
+    } catch {
+      /* ignore */
     }
-    const turnoOpt = turnos.find((t) => t.value === hora);
-    const label =
-      turnoOpt?.label ??
-      (/^\d{2}:\d{2}$/.test(hora) ? `${hora}:00` : hora || "--:--:--");
-    setClockLabel(label);
-    document.dispatchEvent(new CustomEvent("mobile-nav:close"));
-    setOpen(true);
-    setOpenMenu(null);
+    window.location.href = `/replays/${selectedNumericId}?cinema=1`;
   };
 
   return (
     <>
       <form
-        ref={formRef}
         id="replays-form"
         onSubmit={onSubmit}
         className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6"
@@ -205,11 +216,8 @@ export default function ReplaysVerPartido() {
             placeholder="Selecciona cancha"
             options={courtOptions}
             value={cancha}
-            open={openMenu === "cancha"}
-            onToggle={() => setOpenMenu((v) => (v === "cancha" ? null : "cancha"))}
             onPick={(v) => {
               setCancha(v);
-              setOpenMenu(null);
             }}
           />
         </div>
@@ -222,12 +230,9 @@ export default function ReplaysVerPartido() {
               placeholder="Selecciona día"
               options={fechas}
               value={fecha}
-              open={openMenu === "fecha"}
               showCalendarIcon
-              onToggle={() => setOpenMenu((v) => (v === "fecha" ? null : "fecha"))}
               onPick={(v) => {
                 setFecha(v);
-                setOpenMenu(null);
               }}
             />
           </div>
@@ -239,11 +244,8 @@ export default function ReplaysVerPartido() {
               placeholder="Selecciona turno"
               options={turnos}
               value={hora}
-              open={openMenu === "hora"}
-              onToggle={() => setOpenMenu((v) => (v === "hora" ? null : "hora"))}
               onPick={(v) => {
                 setHora(v);
-                setOpenMenu(null);
               }}
             />
           </div>
@@ -255,46 +257,78 @@ export default function ReplaysVerPartido() {
           </span>
           <button
             type="submit"
-            className="h-12 w-full rounded-md bg-vj-green px-4 text-sm font-bold uppercase tracking-wider text-white transition-colors hover:bg-vj-green-600"
+            disabled={checkingMatch || !cancha || !fecha || !hora}
+            className="h-12 w-full rounded-md bg-vj-green px-4 text-sm font-bold uppercase tracking-wider text-white transition-colors hover:bg-vj-green-600 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600"
           >
-            VER PARTIDO
+            {checkingMatch ? "Cargando..." : "VER PARTIDO"}
           </button>
         </div>
       </form>
 
-      {open && (
+      {notFoundOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
+          onClick={() => setNotFoundOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setNotFoundOpen(false)}
+              className="absolute right-3 top-3 rounded-md p-1 text-slate-500 transition hover:bg-slate-100"
+              aria-label="Cerrar"
+            >
+              <X size={18} />
+            </button>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-rose-700">Replay</p>
+                <h3 className="mt-1 text-xl font-black tracking-tight text-slate-900">Partido no encontrado</h3>
+              </div>
+            </div>
+            <p className="mt-2 text-sm text-slate-600">{notFoundMsg}</p>
+            <div className="mt-4 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setNotFoundOpen(false)}
+                className="inline-flex h-10 items-center rounded-md bg-vj-green px-4 text-sm font-bold uppercase tracking-wider text-white hover:bg-vj-green-600"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {accessOpen && selectedMatchKey && selectedNumericId !== null && (
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Acceso al replay"
-          className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-black"
-          style={{
-            paddingTop: "var(--mobile-nav-offset, 0px)",
-          }}
+          aria-label="Ingresar código del partido"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
+          onClick={() => setAccessOpen(false)}
         >
-          <div className="pointer-events-none absolute right-0 top-0 z-60 flex justify-end p-3 sm:p-4">
-            <button
-              type="button"
-              onClick={close}
-              className="pointer-events-auto grid size-11 place-items-center rounded-full text-white filter-[drop-shadow(0_2px_8px_rgba(0,0,0,0.85))] transition hover:bg-white/15"
-              aria-label="Cerrar"
-            >
-              <X size={26} strokeWidth={2.5} />
-            </button>
-          </div>
-          <div className="relative flex min-h-0 flex-1 flex-col">
+          <div
+            className="relative w-full max-w-md"
+            onClick={(e) => e.stopPropagation()}
+          >
             <MatchReplayGate
-              key={buildReplayMatchKey({ cancha, fecha, hora })}
-              matchKey={buildReplayMatchKey({ cancha, fecha, hora })}
+              key={selectedMatchKey}
+              matchKey={selectedMatchKey}
               apiBase={apiBase}
-              cinema
-              embedCinema
+              cinema={false}
+              authorizeOnly
+              onAuthorized={onCodeAuthorized}
+              onClose={() => setAccessOpen(false)}
               clockLabel={clockLabel}
               posterFallback={POSTER_FALLBACK}
             />
           </div>
         </div>
       )}
+
     </>
   );
 }

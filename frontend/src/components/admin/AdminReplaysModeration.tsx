@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, ChevronDown, Eye, EyeOff, Plus, Save, Star, Trash2 } from "lucide-react";
-import ReplayMatchBlock from "@/components/replays/ReplayMatchBlock";
+import { Plus, Save, Trash2 } from "lucide-react";
 import {
   loadReplayCourts,
   saveReplayCourts,
@@ -10,118 +9,36 @@ import {
   saveReplayShiftConfig,
 } from "@/utils/replay-shift-config-api";
 import { getReplayAdminSecret } from "@/utils/replay-admin-secret";
-import { buildLastSevenDaysOptions } from "@/utils/replay-date-options";
 import {
   buildReplayShiftTurnosFromConfig,
   getDefaultReplayShiftConfigFromEnv,
   type ReplayShiftConfig,
 } from "@/utils/replay-shift-turnos";
-
-type Option = { value: string; label: string };
-
-type MatchResult = {
-  court: string;
-  date: string;
-  time: string;
-  timeRangeLabel: string;
-};
-
-type DropdownFieldProps = {
-  id: string;
-  label: string;
-  placeholder: string;
-  options: Option[];
-  value: string;
-  open: boolean;
-  showCalendarIcon?: boolean;
-  onToggle: () => void;
-  onPick: (value: string) => void;
-};
-
-function DropdownField({
-  id,
-  label,
-  placeholder,
-  options,
-  value,
-  open,
-  showCalendarIcon = false,
-  onToggle,
-  onPick,
-}: DropdownFieldProps) {
-  const selected = options.find((o) => o.value === value);
-
-  return (
-    <div className="relative">
-      <span className="mb-1.5 inline-block text-xs font-bold uppercase tracking-wider text-slate-600">
-        {label}
-      </span>
-      <button
-        id={id}
-        type="button"
-        onClick={onToggle}
-        className={`relative h-12 w-full rounded-md border border-slate-300 bg-white pl-3 text-left text-sm font-semibold text-slate-800 outline-none transition hover:border-slate-400 focus:border-vj-green ${showCalendarIcon ? "pr-14" : "pr-10"}`}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-      >
-        <span className={`block truncate ${selected ? "text-slate-800" : "text-slate-500"}`}>
-          {selected?.label ?? placeholder}
-        </span>
-        <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center gap-1.5">
-          {showCalendarIcon && <CalendarDays className="h-4 w-4 text-slate-400" aria-hidden />}
-          <ChevronDown className={`h-4 w-4 text-slate-500 transition ${open ? "rotate-180" : ""}`} aria-hidden />
-        </span>
-      </button>
-
-      {open && (
-        <ul
-          role="listbox"
-          aria-labelledby={id}
-          className="absolute z-40 mt-2 max-h-64 w-full overflow-auto border border-slate-300 bg-white p-1 shadow-lg"
-        >
-          {options.map((opt) => (
-            <li key={opt.value}>
-              <button
-                type="button"
-                onClick={() => onPick(opt.value)}
-                className={`block w-full px-3 py-2 text-left text-sm font-semibold transition-colors ${
-                  value === opt.value
-                    ? "bg-vj-green text-white"
-                    : "text-slate-700 hover:bg-vj-green hover:text-white"
-                }`}
-              >
-                {opt.label}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-const videoSrc =
-  "https://archive.org/download/fourteenhours1951/Fourteen%20Hours%20(1951%2C%20USA)%20Featuring%20Richard%20Basehart%2C%20Paul%20Douglas%20-%20Film%20Noir%20Full%20Movie.mp4";
-const poster =
-  "https://images.unsplash.com/photo-1627615922102-6b7ef5f0ec55?auto=format&fit=crop&w=1400&q=70";
+import {
+  loadReplayAdminMatches,
+  type ReplayAdminMatchRow,
+} from "@/utils/replay-admin-matches-api";
+import { buildLastSevenDaysOptions } from "@/utils/replay-date-options";
 
 const apiBase = import.meta.env.PUBLIC_REPLAY_API_BASE ?? "";
 
-export default function AdminReplaysModeration() {
-  const dates = useMemo(buildLastSevenDaysOptions, []);
+type Props = {
+  showSettings?: boolean;
+  showMatches?: boolean;
+};
+
+export default function AdminReplaysModeration({
+  showSettings = true,
+  showMatches = true,
+}: Props) {
   const [courtRows, setCourtRows] = useState<{ slug: string; label: string }[]>([
     { slug: "cancha-padel", label: "Cancha Padel" },
     { slug: "cancha-f5", label: "Cancha F5" },
   ]);
-  const courtOptions = useMemo(
-    () => courtRows.map((r) => ({ value: r.slug, label: r.label })),
-    [courtRows],
-  );
 
   const [shiftConfig, setShiftConfig] = useState<ReplayShiftConfig>(() =>
     getDefaultReplayShiftConfigFromEnv(),
   );
-  const turnos = useMemo(() => buildReplayShiftTurnosFromConfig(shiftConfig), [shiftConfig]);
 
   const [formDurMin, setFormDurMin] = useState(() =>
     Math.round(getDefaultReplayShiftConfigFromEnv().shiftDurationSeconds / 60),
@@ -136,6 +53,7 @@ export default function AdminReplaysModeration() {
   const [courtsSaving, setCourtsSaving] = useState(false);
 
   useEffect(() => {
+    if (!showSettings && !showMatches) return;
     let cancelled = false;
     void loadReplayCourts(apiBase).then((p) => {
       if (cancelled) return;
@@ -144,9 +62,10 @@ export default function AdminReplaysModeration() {
     return () => {
       cancelled = true;
     };
-  }, [apiBase]);
+  }, [apiBase, showMatches, showSettings]);
 
   useEffect(() => {
+    if (!showSettings && !showMatches) return;
     let cancelled = false;
     void loadReplayShiftConfig(apiBase).then((c) => {
       if (cancelled) return;
@@ -158,51 +77,76 @@ export default function AdminReplaysModeration() {
     return () => {
       cancelled = true;
     };
-  }, [apiBase]);
+  }, [apiBase, showMatches, showSettings]);
 
-  const [court, setCourt] = useState("");
-  const [date, setDate] = useState(() => buildLastSevenDaysOptions()[0]?.value ?? "");
-  const [time, setTime] = useState("");
-  const [openMenu, setOpenMenu] = useState<"court" | "date" | "time" | null>(null);
+  const [search, setSearch] = useState("");
+  const [filterCourt, setFilterCourt] = useState("");
+  const [filterDate, setFilterDate] = useState("");
+  const [filterShift, setFilterShift] = useState("");
+  const [rows, setRows] = useState<ReplayAdminMatchRow[]>([]);
+  const [matchesLoading, setMatchesLoading] = useState(false);
+  const [matchesMsg, setMatchesMsg] = useState<string | null>(null);
+  const [copiedMatchKey, setCopiedMatchKey] = useState<string | null>(null);
 
-  const [result, setResult] = useState<MatchResult | null>(null);
-  const [isPublic, setIsPublic] = useState(true);
-  const [isDeleted, setIsDeleted] = useState(false);
-  const [isFeatured, setIsFeatured] = useState(false);
+  const secret = useMemo(() => getReplayAdminSecret(), []);
+  const shiftOptions = useMemo(() => buildReplayShiftTurnosFromConfig(shiftConfig), [shiftConfig]);
+  const dateOptions = useMemo(buildLastSevenDaysOptions, []);
 
-  useEffect(() => {
-    if (court && courtRows.length > 0 && !courtRows.some((r) => r.slug === court)) {
-      setCourt("");
-    }
-  }, [courtRows, court]);
-
-  useEffect(() => {
-    if (!time) return;
-    if (!turnos.some((t) => t.value === time)) {
-      setTime("");
-    }
-  }, [turnos, time]);
-
-  const onSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!court || !date || !time) {
-      window.alert("Selecciona cancha, fecha y horario para buscar el bloque.");
+  const loadMatches = async (query: string) => {
+    if (!apiBase.trim()) {
+      setMatchesMsg("Configurá PUBLIC_REPLAY_API_BASE.");
+      setRows([]);
       return;
     }
-    const courtLabel = courtRows.find((c) => c.slug === court)?.label ?? court;
-    const dateLabel = dates.find((d) => d.value === date)?.label ?? date;
-    const timeRangeLabel = turnos.find((t) => t.value === time)?.label ?? time;
+    if (!secret) {
+      setMatchesMsg("Definí PUBLIC_REPLAY_ADMIN_SECRET en frontend/.env.");
+      setRows([]);
+      return;
+    }
+    setMatchesLoading(true);
+    setMatchesMsg(null);
+    try {
+      const payload = await loadReplayAdminMatches({
+        apiBase,
+        adminSecret: secret,
+        query,
+      });
+      setRows(payload);
+      if (payload.length === 0) {
+        setMatchesMsg(null);
+      }
+    } catch (err) {
+      setMatchesMsg(err instanceof Error ? err.message : "No se pudo cargar partidos.");
+      setRows([]);
+    } finally {
+      setMatchesLoading(false);
+    }
+  };
 
-    setResult({
-      court: courtLabel,
-      date: dateLabel,
-      time,
-      timeRangeLabel,
-    });
-    setIsPublic(true);
-    setIsDeleted(false);
-    setIsFeatured(false);
-    setOpenMenu(null);
+  const onSearchMatches = (e: React.FormEvent) => {
+    e.preventDefault();
+    const hasFreeSearch = search.trim().length > 0;
+    if (!hasFreeSearch && !filterShift.trim()) {
+      setMatchesMsg("Seleccioná un turno para buscar.");
+      setRows([]);
+      return;
+    }
+    const query = [search, filterCourt, filterDate, filterShift]
+      .map((v) => v.trim())
+      .filter((v) => v.length > 0)
+      .join(" ");
+    void loadMatches(query);
+  };
+
+  const onCopyCode = async (row: ReplayAdminMatchRow) => {
+    if (!row.code) return;
+    try {
+      await navigator.clipboard.writeText(row.code);
+      setCopiedMatchKey(row.matchKey);
+      window.setTimeout(() => setCopiedMatchKey((prev) => (prev === row.matchKey ? null : prev)), 1200);
+    } catch {
+      setMatchesMsg("No se pudo copiar al portapapeles.");
+    }
   };
 
   const onSaveCourts = async (e: React.FormEvent) => {
@@ -293,10 +237,11 @@ export default function AdminReplaysModeration() {
       <section className="py-1">
         <h2 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Replays</h2>
         <p className="mt-2 max-w-3xl text-base text-slate-700">
-          Buscador igual a la vista publica con herramientas de moderacion para recepcion.
+          Gestión operativa: canchas, turnos y códigos de acceso por partido.
         </p>
       </section>
 
+      {showSettings && (
       <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <h3 className="text-sm font-black uppercase tracking-wider text-slate-700">Canchas</h3>
         <p className="mt-1 text-sm text-slate-600">
@@ -320,7 +265,7 @@ export default function AdminReplaysModeration() {
                   autoCapitalize="off"
                 />
               </label>
-              <label className="block min-w-[160px] flex-[2] text-xs font-bold uppercase tracking-wider text-slate-600">
+              <label className="block min-w-[160px] flex-2 text-xs font-bold uppercase tracking-wider text-slate-600">
                 Nombre visible
                 <input
                   type="text"
@@ -368,7 +313,9 @@ export default function AdminReplaysModeration() {
           <p className="mt-3 text-sm font-semibold text-slate-700">{courtsSaveMsg}</p>
         )}
       </section>
+      )}
 
+      {showSettings && (
       <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <h3 className="text-sm font-black uppercase tracking-wider text-slate-700">
           Turnos (base de datos)
@@ -430,142 +377,175 @@ export default function AdminReplaysModeration() {
           <p className="mt-3 text-sm font-semibold text-slate-700">{shiftSaveMsg}</p>
         )}
       </section>
+      )}
 
-      <section className="mt-6">
-        <form onSubmit={onSearch} className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <DropdownField
-            id="admin-court"
-            label="Cancha"
-            placeholder="Selecciona cancha"
-            options={courtOptions}
-            value={court}
-            open={openMenu === "court"}
-            onToggle={() => setOpenMenu((v) => (v === "court" ? null : "court"))}
-            onPick={(v) => {
-              setCourt(v);
-              setOpenMenu(null);
-            }}
-          />
-
-          <DropdownField
-            id="admin-date"
-            label="Día (últimos 7)"
-            placeholder="Selecciona día"
-            options={dates}
-            value={date}
-            open={openMenu === "date"}
-            showCalendarIcon
-            onToggle={() => setOpenMenu((v) => (v === "date" ? null : "date"))}
-            onPick={(v) => {
-              setDate(v);
-              setOpenMenu(null);
-            }}
-          />
-
-          <DropdownField
-            id="admin-time"
-            label="Turno (inicio · fin grabación)"
-            placeholder="Selecciona turno"
-            options={turnos}
-            value={time}
-            open={openMenu === "time"}
-            onToggle={() => setOpenMenu((v) => (v === "time" ? null : "time"))}
-            onPick={(v) => {
-              setTime(v);
-              setOpenMenu(null);
-            }}
-          />
-
-          <div className="lg:col-span-3">
-            <button
-              type="submit"
-              className="h-12 w-full rounded-md bg-vj-green px-4 text-sm font-bold uppercase tracking-wider text-white transition-colors hover:bg-vj-green-600"
-            >
-              Buscar bloque
-            </button>
-          </div>
-        </form>
-      </section>
-
-      {result && (
-        <section className="mt-7">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h3 className="text-lg font-black text-slate-900">
-                {result.court}
-              </h3>
-              <p className="mt-1 text-sm text-slate-600">
-                {result.date} | Grabación {result.timeRangeLabel}
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span
-                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${
-                  isDeleted
-                    ? "bg-rose-100 text-rose-700"
-                    : isPublic
-                      ? "bg-emerald-100 text-emerald-700"
-                      : "bg-amber-100 text-amber-700"
-                }`}
-              >
-                {isDeleted ? "Eliminado" : isPublic ? "Visible en publico" : "Oculto en publico"}
-              </span>
-              {isFeatured && (
-                <span className="inline-flex rounded-full bg-yellow-100 px-2.5 py-1 text-xs font-bold text-yellow-700">
-                  Destacado en Home
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setIsPublic((v) => !v)}
-              disabled={isDeleted}
-              className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-              title="Cambia is_public en la base"
-            >
-              {isPublic ? <EyeOff size={16} /> : <Eye size={16} />}
-              {isPublic ? "Ocultar de la vista publica" : "Mostrar en la vista publica"}
-            </button>
-
+      {showMatches && (
+      <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h3 className="text-sm font-black uppercase tracking-wider text-slate-700">
+            Partidos
+          </h3>
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => {
-                const ok = window.confirm("Esta accion elimina el archivo de forma permanente. Continuar?");
-                if (ok) setIsDeleted(true);
+                const query = [search, filterCourt, filterDate, filterShift]
+                  .map((v) => v.trim())
+                  .filter((v) => v.length > 0)
+                  .join(" ");
+                const hasFreeSearch = search.trim().length > 0;
+                if (!hasFreeSearch && !filterShift.trim()) {
+                  setMatchesMsg("Seleccioná un turno para buscar.");
+                  setRows([]);
+                  return;
+                }
+                void loadMatches(query);
               }}
-              disabled={isDeleted}
-              className="inline-flex items-center gap-2 rounded-md border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
-              title="Borrado forzado antes de 7 dias"
+              disabled={matchesLoading}
+              className="rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
             >
-              <Trash2 size={16} />
-              Eliminacion forzada
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setIsFeatured((v) => !v)}
-              disabled={isDeleted}
-              className="inline-flex items-center gap-2 rounded-md border border-yellow-300 bg-yellow-50 px-3 py-2 text-sm font-bold text-yellow-800 transition hover:bg-yellow-100 disabled:cursor-not-allowed disabled:opacity-50"
-              title="Fija este replay en el muro"
-            >
-              <Star size={16} />
-              {isFeatured ? "Quitar destacado" : "Destacar"}
+              {matchesLoading ? "Actualizando..." : "Actualizar"}
             </button>
           </div>
+        </div>
+        <p className="mt-1 text-sm text-slate-600">
+          Buscá tu partido por cancha, fecha y turno. También podés usar el ID del partido.
+        </p>
 
-          <div className="mt-5">
-            {isDeleted ? (
-              <div className="rounded-xl border border-rose-200 bg-rose-50 p-5 text-sm font-semibold text-rose-700">
-                Este replay fue marcado como eliminado permanentemente.
-              </div>
-            ) : (
-              <ReplayMatchBlock videoSrc={videoSrc} poster={poster} clockLabel={result.timeRangeLabel} />
-            )}
-          </div>
-        </section>
+        <form onSubmit={onSearchMatches} className="mt-4 flex flex-col gap-2 sm:flex-row">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Ej: 10452231, cancha-padel, 2026-05-08, 10:00"
+            className="h-11 w-full rounded-md border border-slate-300 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
+          />
+          <button
+            type="submit"
+            disabled={matchesLoading}
+            className="h-11 rounded-md bg-vj-green px-4 text-sm font-bold uppercase tracking-wider text-white hover:bg-vj-green-600 disabled:opacity-50"
+          >
+            Buscar
+          </button>
+        </form>
+
+        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
+            Cancha
+            <select
+              value={filterCourt}
+              onChange={(e) => setFilterCourt(e.target.value)}
+              className="mt-1.5 h-10 w-full rounded-md border border-slate-300 bg-white px-2 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
+            >
+              <option value="">Todas</option>
+              {courtRows.map((c) => (
+                <option key={c.slug} value={c.slug}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
+            Fecha
+            <select
+              value={filterDate}
+              onChange={(e) => setFilterDate(e.target.value)}
+              className="mt-1.5 h-10 w-full rounded-md border border-slate-300 bg-white px-2 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
+            >
+              <option value="">Todas</option>
+              {dateOptions.map((d) => (
+                <option key={d.value} value={d.value}>
+                  {d.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
+            Turno
+            <select
+              value={filterShift}
+              onChange={(e) => setFilterShift(e.target.value)}
+              className="mt-1.5 h-10 w-full rounded-md border border-slate-300 bg-white px-2 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
+            >
+              <option value="">Seleccionar turno</option>
+              {shiftOptions.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        {matchesMsg && matchesMsg !== "No hay partidos que coincidan con la búsqueda." && (
+          <p className="mt-3 text-sm font-semibold text-slate-700">{matchesMsg}</p>
+        )}
+
+        <div className="mt-4 overflow-x-auto">
+          <table className="min-w-full table-fixed border border-slate-200 text-sm">
+            <colgroup>
+              <col className="w-[110px]" />
+              <col className="w-[150px]" />
+              <col className="w-[130px]" />
+              <col className="w-[110px]" />
+              <col className="w-[120px]" />
+              <col className="w-[220px]" />
+            </colgroup>
+            <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-600">
+              <tr className="h-10">
+                <th className="border-b border-slate-200 px-3 py-2 text-left">ID</th>
+                <th className="border-b border-slate-200 px-3 py-2 text-left">Cancha</th>
+                <th className="border-b border-slate-200 px-3 py-2 text-left">Fecha</th>
+                <th className="border-b border-slate-200 px-3 py-2 text-left">Turno</th>
+                <th className="border-b border-slate-200 px-3 py-2 text-left">Código</th>
+                <th className="border-b border-slate-200 px-3 py-2 text-left">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.matchKey} className="h-12 odd:bg-white even:bg-slate-50/40">
+                  <td className="border-b border-slate-100 px-3 py-2 align-middle font-mono text-xs">{row.numericId}</td>
+                  <td className="border-b border-slate-100 px-3 py-2 align-middle whitespace-nowrap">{row.court || "-"}</td>
+                  <td className="border-b border-slate-100 px-3 py-2 align-middle whitespace-nowrap">{row.date || "-"}</td>
+                  <td className="border-b border-slate-100 px-3 py-2 align-middle whitespace-nowrap">{row.shift || "-"}</td>
+                  <td className="border-b border-slate-100 px-3 py-2 align-middle">
+                    <span className="font-mono text-xs font-bold text-slate-800">{row.code ?? "Generando..."}</span>
+                  </td>
+                  <td className="border-b border-slate-100 px-3 py-2 align-middle">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void onCopyCode(row)}
+                        disabled={!row.code}
+                        className="h-8 w-24 rounded-md border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 text-center text-xs font-bold leading-none text-emerald-800 hover:bg-emerald-100 disabled:opacity-40"
+                      >
+                        {copiedMatchKey === row.matchKey ? "Copiado" : "Copiar código"}
+                      </button>
+                      <a
+                        href={`/replays/${encodeURIComponent(String(row.numericId))}?cinema=1`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex h-8 w-24 items-center justify-center rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-center text-xs font-bold leading-none text-slate-700 hover:bg-slate-50"
+                      >
+                        Ver partido
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {rows.length === 0 && !matchesLoading && (
+                <tr>
+                  <td colSpan={6} className="px-3 py-4 text-center text-sm font-semibold text-slate-500">
+                    {filterShift.trim()
+                      ? "No hay partidos que coincidan con la búsqueda."
+                      : "Seleccioná filtros y buscá un turno para ver resultados."}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
       )}
     </div>
   );

@@ -1,8 +1,11 @@
 import type { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/async-handler.js';
 import {
+  getReplayMatchByNumericId,
   getReplayStreamPayload,
   insertReplayAccessCode,
+  listReplayMatchesForAdmin,
+  replayMatchExists,
   verifyReplayAccessCode,
 } from '../services/replay-access.service.js';
 
@@ -18,6 +21,21 @@ export const getReplayAccessStream = asyncHandler(async (req: Request, res: Resp
   const payload = await getReplayStreamPayload({
     authorizationHeader: req.header('authorization'),
   });
+  res.setHeader('Cache-Control', 'no-store');
+  res.json(payload);
+});
+
+export const getReplayAccessExists = asyncHandler(async (req: Request, res: Response) => {
+  const matchKey = typeof req.query.matchKey === 'string' ? req.query.matchKey : '';
+  const payload = await replayMatchExists({ matchKey });
+  res.setHeader('Cache-Control', 'no-store');
+  res.json(payload);
+});
+
+export const getReplayAccessMatchById = asyncHandler(async (req: Request, res: Response) => {
+  const raw = typeof req.query.id === 'string' ? req.query.id : '';
+  const id = Number.parseInt(raw, 10);
+  const payload = await getReplayMatchByNumericId({ numericId: id });
   res.setHeader('Cache-Control', 'no-store');
   res.json(payload);
 });
@@ -42,4 +60,10 @@ export const postReplayAccessCodes = asyncHandler(async (req: Request, res: Resp
   });
 
   res.status(201).json({ ok: true, tokenHash: row.tokenHash });
+});
+
+export const getReplayAdminMatches = asyncHandler(async (req: Request, res: Response) => {
+  const query = typeof req.query.q === 'string' ? req.query.q : '';
+  const payload = await listReplayMatchesForAdmin({ query });
+  res.json(payload);
 });
