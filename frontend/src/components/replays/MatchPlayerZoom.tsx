@@ -38,7 +38,9 @@ export default function MatchPlayerZoom({
           maxScale={5}
           centerOnInit
           wheel={{
-            step: 0.003,
+            // Zoom más suave con rueda: menor salto por tick + interpolación gradual.
+            step: 0.0007,
+            smoothStep: 0.0018,
             wheelDisabled: false,
             touchPadDisabled: false,
           }}

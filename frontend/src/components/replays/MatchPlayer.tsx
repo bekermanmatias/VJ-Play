@@ -105,6 +105,18 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
   const shellRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const settingsAnchorRef = useRef<HTMLDivElement | null>(null);
+  const pointerDragStateRef = useRef<{
+    pointerId: number | null;
+    startX: number;
+    startY: number;
+    moved: boolean;
+  }>({
+    pointerId: null,
+    startX: 0,
+    startY: 0,
+    moved: false,
+  });
+  const suppressNextClickRef = useRef(false);
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
   const [duration, setDuration] = useState(0);
@@ -208,6 +220,50 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
     if (!v) return;
     if (v.paused) await v.play();
     else v.pause();
+  };
+
+  const onVideoPointerDown = (e: React.PointerEvent<HTMLVideoElement>) => {
+    pointerDragStateRef.current = {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      moved: false,
+    };
+  };
+
+  const onVideoPointerMove = (e: React.PointerEvent<HTMLVideoElement>) => {
+    const st = pointerDragStateRef.current;
+    if (st.pointerId !== e.pointerId) return;
+    const dx = e.clientX - st.startX;
+    const dy = e.clientY - st.startY;
+    if (!st.moved && Math.hypot(dx, dy) > 6) {
+      st.moved = true;
+      suppressNextClickRef.current = true;
+    }
+  };
+
+  const onVideoPointerUp = (e: React.PointerEvent<HTMLVideoElement>) => {
+    const st = pointerDragStateRef.current;
+    if (st.pointerId !== e.pointerId) return;
+    if (st.moved) {
+      suppressNextClickRef.current = true;
+    }
+    pointerDragStateRef.current.pointerId = null;
+  };
+
+  const onVideoPointerCancel = () => {
+    pointerDragStateRef.current.pointerId = null;
+    pointerDragStateRef.current.moved = false;
+  };
+
+  const onVideoClick = (e: React.MouseEvent<HTMLVideoElement>) => {
+    if (suppressNextClickRef.current) {
+      suppressNextClickRef.current = false;
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    void togglePlay();
   };
 
   const seek = (delta: number) => {
@@ -775,7 +831,11 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
           playsInline
           preload="metadata"
           controls={false}
-          onClick={togglePlay}
+          onPointerDown={onVideoPointerDown}
+          onPointerMove={onVideoPointerMove}
+          onPointerUp={onVideoPointerUp}
+          onPointerCancel={onVideoPointerCancel}
+          onClick={onVideoClick}
         />
         {!hudPortalTarget && hud}
       </div>
