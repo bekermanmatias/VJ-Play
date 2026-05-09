@@ -8,6 +8,8 @@ export interface ClipJobRecord {
   error?: string;
   resultKey?: string;
   publicUrl?: string;
+  /** Fila en replay_clips cuando la inserción en Supabase tuvo éxito. */
+  replayClipId?: string;
 }
 
 const jobs = new Map<string, ClipJobRecord>();
@@ -37,7 +39,7 @@ export function startClipJob(jobId: string): void {
 
 export function succeedClipJob(
   jobId: string,
-  result: { resultKey: string; publicUrl?: string },
+  result: { resultKey: string; publicUrl?: string; replayClipId?: string },
 ): void {
   const row = jobs.get(jobId);
   if (!row) {
@@ -46,6 +48,9 @@ export function succeedClipJob(
   row.status = 'completed';
   row.resultKey = result.resultKey;
   row.publicUrl = result.publicUrl;
+  if (result.replayClipId) {
+    row.replayClipId = result.replayClipId;
+  }
   row.updatedAt = nowIso();
 }
 

@@ -78,10 +78,10 @@ export function captureFrameAtTime(
 }
 
 /**
- * Extrae un clip en contenedor MP4 con video H.265 (HEVC) y audio AAC.
+ * Extrae un clip en MP4 con H.264 + AAC (yuv420p): reproducible en la mayoría de navegadores, móviles y TVs.
  * La decodificación/codificación ocurre en el proceso FFmpeg, no en el hilo principal.
  */
-export function extractHevcMp4Clip(
+export function extractCompatibleMp4Clip(
   inputUrl: string,
   outputFilePath: string,
   startSeconds: number,
@@ -104,14 +104,22 @@ export function extractHevcMp4Clip(
       .setStartTime(startSeconds)
       .duration(durationSeconds)
       .outputOptions([
+        '-map',
+        '0:v:0',
+        '-map',
+        '0:a?',
         '-c:v',
-        'libx265',
+        'libx264',
         '-preset',
         'medium',
         '-crf',
-        '28',
-        '-tag:v',
-        'hvc1',
+        '23',
+        '-profile:v',
+        'high',
+        '-level',
+        '4.0',
+        '-pix_fmt',
+        'yuv420p',
         '-c:a',
         'aac',
         '-b:a',

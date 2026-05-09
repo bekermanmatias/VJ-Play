@@ -10,6 +10,7 @@ type VerifyResponse = {
 type StreamResponse = {
   videoUrl: string;
   posterUrl: string | null;
+  videoSizeBytes?: number | null;
 };
 
 const DEFAULT_CANCHA = "cancha-padel";
@@ -122,7 +123,13 @@ export default function DevReplayLab() {
       if (!res.ok) {
         throw new Error(body?.error ?? `Error ${res.status}`);
       }
-      setStreamResult(`OK. videoUrl: ${body.videoUrl ?? "-"}\nposterUrl: ${body.posterUrl ?? "-"}`);
+      const sz =
+        typeof body.videoSizeBytes === "number" && body.videoSizeBytes > 0
+          ? `${body.videoSizeBytes} bytes`
+          : "-";
+      setStreamResult(
+        `OK. videoUrl: ${body.videoUrl ?? "-"}\nposterUrl: ${body.posterUrl ?? "-"}\nvideoSizeBytes: ${sz}`,
+      );
     } catch (error) {
       setStreamResult(error instanceof Error ? error.message : "No se pudo cargar stream");
     } finally {

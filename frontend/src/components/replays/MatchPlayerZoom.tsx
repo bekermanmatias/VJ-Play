@@ -11,6 +11,7 @@ type Props = {
   apiBase?: string;
   matchKey?: string;
   sessionToken?: string | null;
+  fullMatchSizeBytes?: number | null;
   chromeVariant?: "default" | "ghost";
   /** fill: ocupa el 100% del padre (overlay). scroll: mínimo alto pantalla + scroll si hay clips (cine / partido). */
   layout?: "fill" | "scroll";
@@ -23,6 +24,7 @@ export default function MatchPlayerZoom({
   apiBase = "",
   matchKey = "",
   sessionToken = null,
+  fullMatchSizeBytes = null,
   chromeVariant = "default",
   layout = "scroll",
 }: Props) {
@@ -110,15 +112,25 @@ export default function MatchPlayerZoom({
             <ClipsPanel
               clips={clips}
               videoSrc={videoSrc}
+              matchKey={matchKey}
+              fullMatchSizeBytes={fullMatchSizeBytes}
               onSelectClip={(at) => playerRef.current?.seekTo(at)}
               onRenameClip={(clipId, nextLabel) => {
-                setClips((prev) =>
-                  prev.map((clip) => (clip.id === clipId ? { ...clip, label: nextLabel } : clip)),
-                );
+                void playerRef.current?.renameClip(clipId, nextLabel);
               }}
               onDeleteClip={(clipId) => {
-                setClips((prev) => prev.filter((clip) => clip.id !== clipId));
+                void playerRef.current?.deleteClip(clipId);
               }}
+              onAuthorizedDownload={
+                apiBase.trim() && typeof sessionToken === "string" && sessionToken.trim()
+                  ? (clip) => void playerRef.current?.downloadClip(clip)
+                  : undefined
+              }
+              onAuthorizedFullMatchDownload={
+                apiBase.trim() && typeof sessionToken === "string" && sessionToken.trim()
+                  ? (fileName) => void playerRef.current?.downloadFullMatch(fileName)
+                  : undefined
+              }
               surface="dark"
               layout="side"
               sectionClassName="h-full min-h-0"

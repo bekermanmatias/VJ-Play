@@ -77,6 +77,19 @@ function parseRecordingShiftsWindowStartHour(): number {
   return n;
 }
 
+/** TTL de URLs firmadas para descargar el partido completo desde R2 (60 s – 24 h). */
+function parseReplayFullVideoPresignExpiresSeconds(): number {
+  const raw = process.env.REPLAY_FULL_VIDEO_PRESIGN_EXPIRES_SECONDS;
+  if (!raw || raw.trim() === '') {
+    return 900;
+  }
+  const n = Number.parseInt(raw, 10);
+  if (!Number.isFinite(n)) {
+    return 900;
+  }
+  return Math.min(Math.max(n, 60), 86_400);
+}
+
 function parseRecordingShiftsWindowEndHour(): number {
   const raw = process.env.RECORDING_SHIFTS_WINDOW_END_HOUR;
   if (!raw || raw.trim() === '') {
@@ -117,10 +130,13 @@ export const env = {
     optionalEnv('R2_ENDPOINT') ??
     `https://${r2AccountId}.r2.cloudflarestorage.com`,
   r2PublicBaseUrl: optionalEnv('R2_PUBLIC_BASE_URL'),
+  replayFullVideoPresignExpiresSeconds: parseReplayFullVideoPresignExpiresSeconds(),
 
   ffmpegPath: optionalEnv('FFMPEG_PATH'),
   ffprobePath: optionalEnv('FFPROBE_PATH'),
   watermarkPngPath: optionalEnv('WATERMARK_PNG_PATH'),
+  /** Escudo PNG (ej. copia de `frontend/public/images/escudo-varela-junior.png`) para marca en videos descargados. Si falta, solo texto en la marca. */
+  replayDownloadEscudoPath: optionalEnv('REPLAY_DOWNLOAD_ESCUDO_PATH'),
   defaultRtspUrl: optionalEnv('DEFAULT_RTSP_URL'),
 
   replayFallbackVideoUrl:

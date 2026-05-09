@@ -23,10 +23,15 @@ import {
 } from "lucide-react";
 import { createPortal } from "react-dom";
 import ClipsPanel from "@/components/replays/ClipsPanel";
-import type { ReplayClipItem } from "@/components/replays/clip-types";
+import { replayClipDownloadFilename, type ReplayClipItem } from "@/components/replays/clip-types";
 
 export type MatchPlayerHandle = {
   seekTo: (seconds: number) => void;
+  renameClip: (clipId: string, nextLabel: string) => Promise<void>;
+  deleteClip: (clipId: string) => Promise<void>;
+  downloadClip: (clip: ReplayClipItem) => Promise<void>;
+  /** Descarga el partido completo vía API (sesión); `fileName` es el nombre sugerido del archivo. */
+  downloadFullMatch: (fileName?: string) => Promise<void>;
 };
 
 type Props = {
@@ -56,6 +61,8 @@ type Props = {
   sessionToken?: string | null;
   /** Propaga la lista de clips para paneles externos al player. */
   onClipsUpdate?: (clips: ReplayClipItem[]) => void;
+  /** Peso del partido completo en bytes (cuando el API lo informó). */
+  fullMatchSizeBytes?: number | null;
 };
 
 type PendingClip = {
@@ -107,6 +114,7 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
     matchKey = "",
     sessionToken = null,
     onClipsUpdate,
+    fullMatchSizeBytes = null,
   },
   ref,
 ) {
@@ -317,12 +325,158 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
     void v.play().catch(() => {});
   }, []);
 
+  const commitRenameClip = useCallback(
+    async (clipId: string, nextLabel: string) => {
+      const apiBase = clipApiBase.trim().replace(/\/$/, "");
+      const token = typeof sessionToken === "string" ? sessionToken.trim() : "";
+      if (!apiBase || !token) {
+        setClips((prev) =>
+          prev.map((c) => (c.id === clipId ? { ...c, label: nextLabel } : c)),
+        );
+        return;
+      }
+      const res = await fetch(`${apiBase}/api/replays/access/clips/${encodeURIComponent(clipId)}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ clipLabel: nextLabel }),
+      });
+      const body = (await res.json().catch(() => null)) as
+        | { clip?: { clipLabel?: string | null }; error?: string }
+        | null;
+      if (!res.ok) {
+        window.alert(body?.error ?? "No se pudo renombrar el clip.");
+        return;
+      }
+      const label =
+        typeof body?.clip?.clipLabel === "string" && body.clip.clipLabel.trim() !== ""
+          ? body.clip.clipLabel.trim()
+          : nextLabel;
+      setClips((prev) => prev.map((c) => (c.id === clipId ? { ...c, label } : c)));
+    },
+    [clipApiBase, sessionToken],
+  );
+
+  const commitDeleteClip = useCallback(
+    async (clipId: string) => {
+      const apiBase = clipApiBase.trim().replace(/\/$/, "");
+      const token = typeof sessionToken === "string" ? sessionToken.trim() : "";
+      if (!apiBase || !token) {
+        setClips((prev) => prev.filter((c) => c.id !== clipId));
+        return;
+      }
+      const res = await fetch(`${apiBase}/api/replays/access/clips/${encodeURIComponent(clipId)}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const errBody = (await res.json().catch(() => null)) as { error?: string } | null;
+        window.alert(errBody?.error ?? "No se pudo borrar el clip.");
+        return;
+      }
+      setClips((prev) => prev.filter((c) => c.id !== clipId));
+    },
+    [clipApiBase, sessionToken],
+  );
+
+  const downloadFullMatch = useCallback(
+    async (fileName?: string) => {
+      const apiBase = clipApiBase.trim().replace(/\/$/, "");
+      const token = typeof sessionToken === "string" ? sessionToken.trim() : "";
+      if (!apiBase || !token) {
+        return;
+      }
+      const safeName =
+        typeof fileName === "string" && fileName.trim() !== "" ? fileName.trim() : "partido-completo.mp4";
+      const qs = new URLSearchParams({ filename: safeName });
+      const res = await fetch(`${apiBase}/api/replays/access/full-video/download-prepare?${qs}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const body = (await res.json().catch(() => null)) as
+        | {
+            mode?: string;
+            streamPath?: string;
+            url?: string;
+            strategy?: string;
+            expiresInSeconds?: number | null;
+            error?: string;
+          }
+        | null;
+      if (!res.ok || !body) {
+        window.alert(body?.error ?? "No se pudo preparar la descarga del partido. Probá de nuevo.");
+        return;
+      }
+      const downloadSrc =
+        body.mode === "watermarked" && typeof body.streamPath === "string" && body.streamPath.trim() !== ""
+          ? `${apiBase}${body.streamPath}`
+          : typeof body.url === "string"
+            ? body.url
+            : "";
+      if (!downloadSrc) {
+        window.alert(body?.error ?? "No se pudo preparar la descarga del partido. Probá de nuevo.");
+        return;
+      }
+      const iframe = document.createElement("iframe");
+      iframe.setAttribute("aria-hidden", "true");
+      iframe.style.cssText = "position:fixed;width:0;height:0;border:0;visibility:hidden";
+      iframe.src = downloadSrc;
+      document.body.appendChild(iframe);
+      window.setTimeout(() => {
+        iframe.remove();
+      }, 180_000);
+
+      window.setTimeout(() => {
+        window.alert(
+          "La descarga del partido completo comenzó correctamente. Vas a ver el archivo en la carpeta de descargas del navegador.",
+        );
+      }, 400);
+    },
+    [clipApiBase, sessionToken],
+  );
+
+  const authorizedDownloadClip = useCallback(
+    async (clip: ReplayClipItem) => {
+      const apiBase = clipApiBase.trim().replace(/\/$/, "");
+      const token = typeof sessionToken === "string" ? sessionToken.trim() : "";
+      if (!apiBase || !token) {
+        return;
+      }
+      if (clip.status === "processing" || clip.status === "failed") {
+        return;
+      }
+      const res = await fetch(
+        `${apiBase}/api/replays/access/clips/${encodeURIComponent(clip.id)}/download`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (!res.ok) {
+        window.alert("No se pudo descargar el clip.");
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = replayClipDownloadFilename(clip, matchKey);
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    },
+    [clipApiBase, sessionToken, matchKey],
+  );
+
   useImperativeHandle(
     ref,
     () => ({
       seekTo,
+      renameClip: commitRenameClip,
+      deleteClip: commitDeleteClip,
+      downloadClip: authorizedDownloadClip,
+      downloadFullMatch,
     }),
-    [seekTo],
+    [seekTo, commitRenameClip, commitDeleteClip, authorizedDownloadClip, downloadFullMatch],
   );
 
   const togglePlay = async () => {
@@ -522,19 +676,28 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
         }
         const jobId = createBody.jobId;
         let completedUrl = "";
+        let serverClipId: string | undefined;
         for (let i = 0; i < 600; i += 1) {
           await new Promise<void>((resolve) => {
             window.setTimeout(() => resolve(), 1000);
           });
           const jobRes = await fetch(`${apiBase}/api/videos/clip/${encodeURIComponent(jobId)}`);
           const jobBody = (await jobRes.json().catch(() => null)) as
-            | { status?: string; publicUrl?: string; error?: string }
+            | {
+                status?: string;
+                publicUrl?: string;
+                replayClipId?: string;
+                error?: string;
+              }
             | null;
           if (!jobRes.ok) {
             throw new Error(jobBody?.error ?? "No se pudo consultar el clip.");
           }
           if (jobBody?.status === "completed" && typeof jobBody.publicUrl === "string") {
             completedUrl = jobBody.publicUrl;
+            if (typeof jobBody.replayClipId === "string" && jobBody.replayClipId.trim() !== "") {
+              serverClipId = jobBody.replayClipId.trim();
+            }
             break;
           }
           if (jobBody?.status === "failed") {
@@ -547,7 +710,13 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
         setClips((prev) =>
           prev.map((clip) =>
             clip.id === localId
-              ? { ...clip, status: "ready", downloadHref: completedUrl, error: null }
+              ? {
+                  ...clip,
+                  id: serverClipId ?? clip.id,
+                  status: "ready",
+                  downloadHref: completedUrl,
+                  error: null,
+                }
               : clip,
           ),
         );
@@ -1073,15 +1242,25 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
         <ClipsPanel
           clips={clips}
           videoSrc={videoSrc}
+          matchKey={matchKey}
+          fullMatchSizeBytes={fullMatchSizeBytes}
           onSelectClip={seekTo}
           onRenameClip={(clipId, nextLabel) => {
-            setClips((prev) =>
-              prev.map((clip) => (clip.id === clipId ? { ...clip, label: nextLabel } : clip)),
-            );
+            void commitRenameClip(clipId, nextLabel);
           }}
           onDeleteClip={(clipId) => {
-            setClips((prev) => prev.filter((clip) => clip.id !== clipId));
+            void commitDeleteClip(clipId);
           }}
+          onAuthorizedDownload={
+            clipApiBase.trim() && typeof sessionToken === "string" && sessionToken.trim()
+              ? authorizedDownloadClip
+              : undefined
+          }
+          onAuthorizedFullMatchDownload={
+            clipApiBase.trim() && typeof sessionToken === "string" && sessionToken.trim()
+              ? (name) => void downloadFullMatch(name)
+              : undefined
+          }
           surface="page"
         />
       )}

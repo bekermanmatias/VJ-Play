@@ -70,6 +70,7 @@ export default function MatchReplayGate({
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [posterUrl, setPosterUrl] = useState<string | null>(null);
+  const [fullMatchSizeBytes, setFullMatchSizeBytes] = useState<number | null>(null);
   const [streamLoading, setStreamLoading] = useState(false);
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [code, setCode] = useState("");
@@ -98,6 +99,7 @@ export default function MatchReplayGate({
     setSessionToken(null);
     setVideoUrl(null);
     setPosterUrl(null);
+    setFullMatchSizeBytes(null);
     setCode("");
     setError(null);
   }, [matchKey]);
@@ -110,7 +112,12 @@ export default function MatchReplayGate({
         const res = await fetch(`${base}/api/replays/access/stream`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const body = (await res.json().catch(() => null)) as { videoUrl?: string; posterUrl?: string | null; error?: string } | null;
+        const body = (await res.json().catch(() => null)) as {
+          videoUrl?: string;
+          posterUrl?: string | null;
+          videoSizeBytes?: number | null;
+          error?: string;
+        } | null;
         if (!res.ok) {
           if (res.status === 401) {
             clearSession();
@@ -122,6 +129,10 @@ export default function MatchReplayGate({
         }
         setVideoUrl(body.videoUrl);
         setPosterUrl(typeof body.posterUrl === "string" && body.posterUrl.trim() !== "" ? body.posterUrl : null);
+        const sz = body.videoSizeBytes;
+        setFullMatchSizeBytes(
+          typeof sz === "number" && Number.isFinite(sz) && sz > 0 ? sz : null,
+        );
       } catch (e) {
         setError(e instanceof Error ? e.message : "Error de red");
       } finally {
@@ -278,6 +289,7 @@ export default function MatchReplayGate({
           apiBase={base}
           matchKey={matchKey}
           sessionToken={sessionToken}
+          fullMatchSizeBytes={fullMatchSizeBytes}
           chromeVariant="ghost"
           layout="fill"
         />
@@ -312,6 +324,7 @@ export default function MatchReplayGate({
           videoSrc={videoUrl}
           poster={resolvedPoster}
           clockLabel={clockLabel}
+          fullMatchSizeBytes={fullMatchSizeBytes}
         />
       </div>
     );

@@ -43,7 +43,7 @@ function resolveTenantId(req: Request, body: ClipBody): string {
 
 /**
  * POST /api/videos/clip
- * Encola recorte HEVC + subida a R2; responde 202 de inmediato.
+ * Encola recorte MP4 (H.264 + AAC) + subida a R2; responde 202 de inmediato.
  */
 export const postVideoClip = asyncHandler(async (req: Request, res: Response) => {
   const body = req.body as ClipBody;

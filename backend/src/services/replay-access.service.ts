@@ -10,7 +10,23 @@ import {
   signReplaySessionToken,
   verifyReplaySessionToken,
 } from './replay-session-token.js';
-import { listReplayClipsByMatchKey } from './replay-clips.service.js';
+import {
+  deleteReplayClipForMatch,
+  getReplayClipStorageRowForMatch,
+  listReplayClipsByMatchKey,
+  updateReplayClipLabelForMatch,
+} from './replay-clips.service.js';
+import { spawnWatermarkedMp4FromHttpInput, probeFfmpegAvailable } from './ffmpeg-watermark-video.service.js';
+import {
+  signWatermarkedStreamToken,
+  verifyWatermarkedStreamToken,
+} from './replay-download-stream-token.js';
+import { ensureReplayVideoWatermarkPngPath } from './replay-watermark-image.service.js';
+import {
+  getObjectStreamFromR2,
+  getPresignedGetObjectDownloadUrl,
+  getPresignedGetObjectReadUrl,
+} from './storage.service.js';
 
 type DevEntry = { matchKey: string; code: string };
 type AdminMatchRow = {
@@ -72,6 +88,29 @@ function splitMatchKey(matchKey: string): { court: string; date: string; shift: 
     date: parts[1] ?? '',
     shift: parts[2] ?? '',
   };
+}
+
+function sanitizeReplayFilenameSegment(raw: string): string {
+  const s = raw.trim();
+  if (!s) {
+    return '';
+  }
+  const out = s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9_.-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 80);
+  return out;
+}
+
+/** Fragmento `cancha-fecha-hora` alineado al front (`match_key` normalizado). */
+function matchKeyToDownloadStem(mk: string): string {
+  const normalized = normalizeMatchKey(mk);
+  const { court, date, shift } = splitMatchKey(normalized);
+  const parts = [court, date, shift].map(sanitizeReplayFilenameSegment).filter((p) => p.length > 0);
+  return parts.length > 0 ? parts.join('-') : 'partido';
 }
 
 function buildRandomAccessCode(): string {
@@ -281,6 +320,76 @@ async function fetchReplayAssets(matchKey: string): Promise<{
   };
 }
 
+/**
+ * Obtiene el tamaño del archivo remoto (HEAD o petición Range mínima).
+ * Si el servidor no informa tamaño, devuelve null sin lanzar.
+ */
+async function probeRemoteVideoContentLength(url: string): Promise<number | null> {
+  const u = url.trim();
+  if (!u.startsWith('http://') && !u.startsWith('https://')) {
+    return null;
+  }
+  const timeoutMs = 8000;
+
+  async function tryHead(): Promise<number | null> {
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const headRes = await fetch(u, {
+        method: 'HEAD',
+        redirect: 'follow',
+        signal: controller.signal,
+      });
+      if (!headRes.ok) {
+        return null;
+      }
+      const cl = headRes.headers.get('content-length');
+      if (!cl) {
+        return null;
+      }
+      const n = Number.parseInt(cl, 10);
+      return Number.isFinite(n) && n > 0 ? n : null;
+    } catch {
+      return null;
+    } finally {
+      clearTimeout(tid);
+    }
+  }
+
+  async function tryRange(): Promise<number | null> {
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const rangeRes = await fetch(u, {
+        method: 'GET',
+        headers: { Range: 'bytes=0-0' },
+        redirect: 'follow',
+        signal: controller.signal,
+      });
+      const cr = rangeRes.headers.get('content-range');
+      if (cr) {
+        const m = /\/(\d+)\s*$/.exec(cr);
+        const cap = m?.[1];
+        if (cap) {
+          const n = Number.parseInt(cap, 10);
+          return Number.isFinite(n) && n > 0 ? n : null;
+        }
+      }
+      return null;
+    } catch {
+      return null;
+    } finally {
+      clearTimeout(tid);
+    }
+  }
+
+  const fromHead = await tryHead();
+  if (fromHead !== null) {
+    return fromHead;
+  }
+  return tryRange();
+}
+
 export async function verifyReplayAccessCode(params: {
   matchKey: string;
   code: string;
@@ -338,7 +447,7 @@ export async function verifyReplayAccessCode(params: {
 
 export async function getReplayStreamPayload(params: {
   authorizationHeader: string | undefined;
-}): Promise<{ videoUrl: string; posterUrl: string | null }> {
+}): Promise<{ videoUrl: string; posterUrl: string | null; videoSizeBytes: number | null }> {
   const raw = params.authorizationHeader;
   const token =
     raw?.startsWith('Bearer ') === true ? raw.slice('Bearer '.length).trim() : '';
@@ -352,36 +461,381 @@ export async function getReplayStreamPayload(params: {
     throw new HttpError(401, 'Sesión inválida o expirada');
   }
 
-  return fetchReplayAssets(claims.mk);
+  const assets = await fetchReplayAssets(claims.mk);
+  const videoSizeBytes = await probeRemoteVideoContentLength(assets.videoUrl);
+  return { ...assets, videoSizeBytes };
+}
+
+function sessionMatchKeyFromAuthorization(authorizationHeader: string | undefined): string {
+  const raw = authorizationHeader;
+  const token =
+    raw?.startsWith('Bearer ') === true ? raw.slice('Bearer '.length).trim() : '';
+
+  if (!token) {
+    throw new HttpError(401, 'Sesión requerida');
+  }
+  const claims = verifyReplaySessionToken(token, env.jwtSessionSecret);
+  if (!claims) {
+    throw new HttpError(401, 'Sesión inválida o expirada');
+  }
+  return claims.mk;
+}
+
+export type ReplayClipApiRow = {
+  id: string;
+  matchKey: string;
+  clipLabel: string | null;
+  sourceUrl: string;
+  clipUrl: string;
+  thumbUrl: string | null;
+  startSeconds: number;
+  durationSeconds: number;
+  clipSizeBytes: number | null;
+  createdAt: string;
+};
+
+function mapClipRowToApi(row: Awaited<ReturnType<typeof listReplayClipsByMatchKey>>[number]): ReplayClipApiRow {
+  return {
+    id: row.id,
+    matchKey: row.matchKey,
+    clipLabel: row.clipLabel,
+    sourceUrl: row.sourceUrl,
+    clipUrl: row.clipUrl,
+    thumbUrl: row.thumbUrl,
+    startSeconds: row.startSeconds,
+    durationSeconds: row.durationSeconds,
+    clipSizeBytes: row.clipSizeBytes,
+    createdAt: row.createdAt,
+  };
 }
 
 export async function listReplayClipsForSession(params: {
   authorizationHeader: string | undefined;
-}): Promise<{
-  clips: {
-    id: string;
-    matchKey: string;
-    clipLabel: string | null;
-    sourceUrl: string;
-    clipUrl: string;
-    startSeconds: number;
-    durationSeconds: number;
-    createdAt: string;
-  }[];
-}> {
-  const raw = params.authorizationHeader;
-  const token =
-    raw?.startsWith('Bearer ') === true ? raw.slice('Bearer '.length).trim() : '';
+}): Promise<{ clips: ReplayClipApiRow[] }> {
+  const mk = sessionMatchKeyFromAuthorization(params.authorizationHeader);
+  const rows = await listReplayClipsByMatchKey(mk);
+  return { clips: rows.map(mapClipRowToApi) };
+}
 
-  if (!token) {
-    throw new HttpError(401, 'Sesión requerida');
+export async function renameReplayClipForSession(params: {
+  authorizationHeader: string | undefined;
+  clipId: string;
+  clipLabel: string;
+}): Promise<{ clip: ReplayClipApiRow }> {
+  const mk = sessionMatchKeyFromAuthorization(params.authorizationHeader);
+  const label = params.clipLabel.trim().slice(0, 120);
+  if (!label) {
+    throw new HttpError(400, 'clipLabel es requerido');
   }
-  const claims = verifyReplaySessionToken(token, env.jwtSessionSecret);
+  const updated = await updateReplayClipLabelForMatch({
+    matchKey: mk,
+    clipId: params.clipId,
+    clipLabel: label,
+  });
+  if (!updated) {
+    throw new HttpError(404, 'Clip no encontrado');
+  }
+  return { clip: mapClipRowToApi(updated) };
+}
+
+export async function deleteReplayClipForSession(params: {
+  authorizationHeader: string | undefined;
+  clipId: string;
+}): Promise<void> {
+  const mk = sessionMatchKeyFromAuthorization(params.authorizationHeader);
+  await deleteReplayClipForMatch({ matchKey: mk, clipId: params.clipId });
+}
+
+function asciiDownloadFilename(base: string, clipId: string): string {
+  const raw = base.trim() || `clip-${clipId}`;
+  const ascii = raw
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\w\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .slice(0, 80);
+  return ascii || `clip-${clipId}`;
+}
+
+function contentDispositionAttachment(filename: string): string {
+  const ascii = filename.replace(/[^\x20-\x7E]/g, '_');
+  const encoded = encodeURIComponent(filename);
+  return `attachment; filename="${ascii}"; filename*=UTF-8''${encoded}`;
+}
+
+export async function openReplayClipDownloadForSession(params: {
+  authorizationHeader: string | undefined;
+  clipId: string;
+}): Promise<{
+  body: NodeJS.ReadableStream;
+  contentLength?: number;
+  contentType: string;
+  contentDisposition: string;
+}> {
+  const mk = sessionMatchKeyFromAuthorization(params.authorizationHeader);
+  const row = await getReplayClipStorageRowForMatch(mk, params.clipId);
+  if (!row) {
+    throw new HttpError(404, 'Clip no encontrado');
+  }
+  const labelPart = asciiDownloadFilename(row.clipLabel ?? '', row.id);
+  const stem = matchKeyToDownloadStem(mk);
+  const filename = `${labelPart}-${stem}.mp4`;
+
+  if (await canWatermarkReplayDownloads()) {
+    try {
+      const expiresInSeconds = Math.min(
+        3600,
+        Math.max(120, env.replayFullVideoPresignExpiresSeconds),
+      );
+      const presigned = await getPresignedGetObjectReadUrl({
+        key: row.clipKey,
+        expiresInSeconds,
+        responseContentType: 'video/mp4',
+      });
+      const wmPath = await ensureReplayVideoWatermarkPngPath();
+      const ff = spawnWatermarkedMp4FromHttpInput({
+        inputUrl: presigned,
+        watermarkPath: wmPath,
+      });
+      const ffOut = ff.stdout;
+      if (!ffOut) {
+        ff.kill('SIGKILL');
+        throw new Error('ffmpeg sin stdout');
+      }
+      ff.stderr?.on('data', () => {});
+      ff.on('error', (err) => {
+        ffOut.destroy(err as Error);
+      });
+      return {
+        body: ffOut as NodeJS.ReadableStream,
+        contentType: 'video/mp4',
+        contentDisposition: contentDispositionAttachment(filename),
+      };
+    } catch (err) {
+      if (env.nodeEnv !== 'test') {
+        console.warn('[replay-clip-watermark-fallback]', err);
+      }
+    }
+  }
+
+  const { body, contentLength, contentType } = await getObjectStreamFromR2({
+    key: row.clipKey,
+  });
+  return {
+    body,
+    contentLength,
+    contentType: contentType ?? 'video/mp4',
+    contentDisposition: contentDispositionAttachment(filename),
+  };
+}
+
+function r2ObjectKeyFromPublicVideoUrl(videoUrl: string): string | null {
+  const base = env.r2PublicBaseUrl?.replace(/\/$/, '');
+  if (!base) {
+    return null;
+  }
+  const u = videoUrl.trim();
+  if (!u.startsWith(base)) {
+    return null;
+  }
+  const key = u.slice(base.length).replace(/^\/+/, '');
+  if (!key) {
+    return null;
+  }
+  try {
+    return decodeURIComponent(key);
+  } catch {
+    return key;
+  }
+}
+
+let ffmpegWatermarkProbeCache: boolean | null = null;
+
+async function canWatermarkReplayDownloads(): Promise<boolean> {
+  try {
+    await ensureReplayVideoWatermarkPngPath();
+    if (ffmpegWatermarkProbeCache === null) {
+      ffmpegWatermarkProbeCache = await probeFfmpegAvailable();
+    }
+    return ffmpegWatermarkProbeCache;
+  } catch {
+    return false;
+  }
+}
+
+async function resolveReplaySourceUrlForFfmpeg(videoUrlRaw: string): Promise<string> {
+  const videoUrl = videoUrlRaw.trim();
+  if (!videoUrl.startsWith('http://') && !videoUrl.startsWith('https://')) {
+    throw new HttpError(502, 'URL de video inválida');
+  }
+  const key = r2ObjectKeyFromPublicVideoUrl(videoUrl);
+  const ttl = Math.min(3600, Math.max(120, env.replayFullVideoPresignExpiresSeconds));
+  if (key) {
+    try {
+      return await getPresignedGetObjectReadUrl({
+        key,
+        expiresInSeconds: ttl,
+        responseContentType: 'video/mp4',
+      });
+    } catch (err) {
+      if (env.nodeEnv !== 'test') {
+        console.warn('[replay-ffmpeg-presign]', err);
+      }
+    }
+  }
+  return videoUrl;
+}
+
+function sanitizeFullMatchDownloadFilename(raw: string): string {
+  const t = raw.trim().slice(0, 160);
+  if (!t) {
+    return 'partido-completo.mp4';
+  }
+  const noPath = t.replace(/[/\\]/g, '');
+  const safe = noPath.replace(/[^\w.\- \u00C0-\u024F]/g, '_').replace(/\s+/g, ' ').trim();
+  if (!safe) {
+    return 'partido-completo.mp4';
+  }
+  if (!safe.toLowerCase().endsWith('.mp4')) {
+    const dot = safe.lastIndexOf('.');
+    const baseOnly = dot === -1 ? safe : safe.slice(0, dot);
+    return `${baseOnly || 'partido-completo'}.mp4`;
+  }
+  return safe;
+}
+
+/**
+ * Enlace para descargar el partido completo sin pasar el archivo por el API ni por blob en el cliente:
+ * URL firmada (GET) contra R2 cuando video_url coincide con R2_PUBLIC_BASE_URL; si no, URL pública directa.
+ */
+export async function getReplayFullVideoDownloadLinkForSession(params: {
+  authorizationHeader: string | undefined;
+  downloadFilename?: string;
+}): Promise<{
+  url: string;
+  strategy: 'presigned_r2' | 'direct_url';
+  expiresInSeconds: number | null;
+}> {
+  const mk = sessionMatchKeyFromAuthorization(params.authorizationHeader);
+  const assets = await fetchReplayAssets(mk);
+  const videoUrl = assets.videoUrl.trim();
+  if (!videoUrl.startsWith('http://') && !videoUrl.startsWith('https://')) {
+    throw new HttpError(502, 'URL de video inválida');
+  }
+
+  const filename = sanitizeFullMatchDownloadFilename(params.downloadFilename ?? 'partido-completo.mp4');
+  const disposition = contentDispositionAttachment(filename);
+
+  const key = r2ObjectKeyFromPublicVideoUrl(videoUrl);
+  const expiresIn = env.replayFullVideoPresignExpiresSeconds;
+
+  if (key) {
+    try {
+      const signed = await getPresignedGetObjectDownloadUrl({
+        key,
+        expiresInSeconds: expiresIn,
+        responseContentDisposition: disposition,
+        responseContentType: 'video/mp4',
+      });
+      return {
+        url: signed,
+        strategy: 'presigned_r2',
+        expiresInSeconds: expiresIn,
+      };
+    } catch (err) {
+      if (env.nodeEnv !== 'test') {
+        console.warn('[replay-full-video-presign]', err);
+      }
+    }
+  }
+
+  return {
+    url: videoUrl,
+    strategy: 'direct_url',
+    expiresInSeconds: null,
+  };
+}
+
+export type ReplayFullVideoDownloadPrepare =
+  | {
+      mode: 'watermarked';
+      streamPath: string;
+    }
+  | {
+      mode: 'direct';
+      url: string;
+      strategy: 'presigned_r2' | 'direct_url';
+      expiresInSeconds: number | null;
+    };
+
+/** Decide entre descarga por API con marca vía FFmpeg o enlace directo/presignado (sin transcodificar). */
+export async function prepareReplayFullVideoDownloadForSession(params: {
+  authorizationHeader: string | undefined;
+  downloadFilename?: string;
+}): Promise<ReplayFullVideoDownloadPrepare> {
+  const mk = sessionMatchKeyFromAuthorization(params.authorizationHeader);
+  await fetchReplayAssets(mk);
+  const filename = sanitizeFullMatchDownloadFilename(
+    params.downloadFilename ?? 'partido-completo.mp4',
+  );
+
+  if (await canWatermarkReplayDownloads()) {
+    const exp = Math.floor(Date.now() / 1000) + 15 * 60;
+    const tok = signWatermarkedStreamToken({ mk, fn: filename, exp }, env.jwtSessionSecret);
+    return {
+      mode: 'watermarked',
+      streamPath: `/api/replays/access/full-video/watermarked-stream?token=${encodeURIComponent(tok)}`,
+    };
+  }
+
+  const direct = await getReplayFullVideoDownloadLinkForSession(params);
+  return {
+    mode: 'direct',
+    url: direct.url,
+    strategy: direct.strategy,
+    expiresInSeconds: direct.expiresInSeconds,
+  };
+}
+
+export async function openReplayFullVideoWatermarkedDownloadForSession(params: {
+  token: string | undefined;
+}): Promise<{
+  body: NodeJS.ReadableStream;
+  contentType: string;
+  contentDisposition: string;
+}> {
+  const rawTok = params.token?.trim();
+  if (!rawTok) {
+    throw new HttpError(400, 'token requerido');
+  }
+  const claims = verifyWatermarkedStreamToken(rawTok, env.jwtSessionSecret);
   if (!claims) {
-    throw new HttpError(401, 'Sesión inválida o expirada');
+    throw new HttpError(401, 'Enlace inválido o vencido');
   }
-  const clips = await listReplayClipsByMatchKey(claims.mk);
-  return { clips };
+
+  const assets = await fetchReplayAssets(claims.mk);
+  const inputUrl = await resolveReplaySourceUrlForFfmpeg(assets.videoUrl);
+  const wmPath = await ensureReplayVideoWatermarkPngPath();
+  const ff = spawnWatermarkedMp4FromHttpInput({
+    inputUrl,
+    watermarkPath: wmPath,
+  });
+  const ffOut = ff.stdout;
+  if (!ffOut) {
+    ff.kill('SIGKILL');
+    throw new HttpError(502, 'FFmpeg no inició correctamente');
+  }
+  ff.stderr?.on('data', () => {});
+  ff.on('error', (err) => {
+    ffOut.destroy(err as Error);
+  });
+
+  return {
+    body: ffOut as NodeJS.ReadableStream,
+    contentType: 'video/mp4',
+    contentDisposition: contentDispositionAttachment(claims.fn),
+  };
 }
 
 export async function replayMatchExists(params: {

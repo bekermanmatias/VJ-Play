@@ -1,10 +1,16 @@
 import { Router } from 'express';
 import {
+  deleteReplayAccessClip,
+  getReplayAccessClipDownload,
+  getReplayAccessFullVideoDownloadPrepare,
+  getReplayAccessFullVideoDownloadUrl,
+  getReplayAccessFullVideoWatermarkedStream,
   getReplayAdminMatches,
   getReplayAccessClips,
   getReplayAccessExists,
   getReplayAccessMatchById,
   getReplayAccessStream,
+  patchReplayAccessClip,
   postReplayAccessCodes,
   postReplayAccessVerify,
 } from '../controllers/replay-access.controller.js';
@@ -30,6 +36,12 @@ replaysRouter.post('/access/verify', postReplayAccessVerify);
 replaysRouter.get('/access/exists', getReplayAccessExists);
 replaysRouter.get('/access/match-by-id', getReplayAccessMatchById);
 replaysRouter.get('/access/stream', getReplayAccessStream);
+replaysRouter.get('/access/full-video/download-url', getReplayAccessFullVideoDownloadUrl);
+replaysRouter.get('/access/full-video/download-prepare', getReplayAccessFullVideoDownloadPrepare);
+replaysRouter.get('/access/full-video/watermarked-stream', getReplayAccessFullVideoWatermarkedStream);
 replaysRouter.get('/access/clips', getReplayAccessClips);
+replaysRouter.get('/access/clips/:clipId/download', getReplayAccessClipDownload);
+replaysRouter.patch('/access/clips/:clipId', patchReplayAccessClip);
+replaysRouter.delete('/access/clips/:clipId', deleteReplayAccessClip);
 replaysRouter.post('/access/codes', requireAdminSecret, postReplayAccessCodes);
 replaysRouter.get('/admin/matches', requireAdminSecret, getReplayAdminMatches);

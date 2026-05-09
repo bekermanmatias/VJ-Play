@@ -1,6 +1,7 @@
-import { Download, EllipsisVertical, Pencil, Trash2 } from "lucide-react";
-import { useState } from "react";
-import type { ReplayClipItem } from "@/components/replays/clip-types";
+import { Download, EllipsisVertical, Loader2, Pencil, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { replayClipDownloadFilename, type ReplayClipItem } from "@/components/replays/clip-types";
+import { matchKeyToDownloadFileStem } from "@/utils/replay-download-filename";
 
 const CLIP_THUMB_FALLBACK =
   "data:image/svg+xml;utf8," +
@@ -13,7 +14,7 @@ const CLIP_THUMB_FALLBACK =
         </linearGradient>
       </defs>
       <rect width='320' height='180' fill='url(#g)'/>
-      <text x='160' y='95' text-anchor='middle' fill='#93a3b8' font-family='Inter, Arial' font-size='14'>Sin frame disponible</text>
+      <text x='160' y='95' text-anchor='middle' fill='#93a3b8' font-family='Inter, Arial' font-size='13'>Cargando miniatura…</text>
     </svg>`,
   );
 
@@ -36,22 +37,15 @@ function formatBytes(bytes: number | null | undefined): string {
   return `${gb.toFixed(2)} GB`;
 }
 
-function clipDownloadFilename(clip: ReplayClipItem): string {
-  const base =
-    clip.label
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^\w\s-]/g, "")
-      .trim()
-      .replace(/\s+/g, "-") || "clip";
-  return `clip-${clip.id}-${base}.mp4`;
-}
-
 export type ClipsPanelProps = {
   clips: ReplayClipItem[];
   videoSrc: string;
-  /** Nombre sugerido del archivo del partido completo */
+  /** Nombre sugerido del archivo del partido completo (opcional; si hay matchKey se ignora salvo que no haya matchKey). */
   fullMatchDownloadName?: string;
+  /** match_key `cancha|fecha|hora` para armar nombres `cancha-fecha-hora` y clips `nombre-cancha-fecha-hora`. */
+  matchKey?: string;
+  /** Peso del archivo del partido completo (bytes). */
+  fullMatchSizeBytes?: number | null;
   onSelectClip: (atSeconds: number) => void;
   /** Página clara (replay normal) vs fondo oscuro (modo cine) */
   surface?: "page" | "dark";
@@ -59,20 +53,38 @@ export type ClipsPanelProps = {
   layout?: "default" | "side";
   onRenameClip?: (clipId: string, nextLabel: string) => void;
   onDeleteClip?: (clipId: string) => void;
+  /** Descarga con sesión (p. ej. proxy del API); si no hay, se usa la URL pública del clip. */
+  onAuthorizedDownload?: (clip: ReplayClipItem) => void | Promise<void>;
+  /** Partido completo vía API con sesión; muestra espera mientras se prepara el archivo. */
+  onAuthorizedFullMatchDownload?: (fileName: string) => void | Promise<void>;
 };
 
 export default function ClipsPanel({
   clips,
   videoSrc,
-  fullMatchDownloadName = "partido-completo.mp4",
+  fullMatchDownloadName,
+  matchKey = "",
+  fullMatchSizeBytes = null,
   onSelectClip,
   surface = "page",
   sectionClassName,
   layout = "default",
   onRenameClip,
   onDeleteClip,
+  onAuthorizedDownload,
+  onAuthorizedFullMatchDownload,
 }: ClipsPanelProps) {
   const [menuOpenFor, setMenuOpenFor] = useState<string | null>(null);
+  const [downloadPendingFor, setDownloadPendingFor] = useState<string | null>(null);
+  const [fullMatchDownloadPending, setFullMatchDownloadPending] = useState(false);
+
+  const resolvedFullMatchDownloadName = useMemo(() => {
+    if (matchKey.trim()) {
+      return `${matchKeyToDownloadFileStem(matchKey)}.mp4`;
+    }
+    const custom = typeof fullMatchDownloadName === "string" ? fullMatchDownloadName.trim() : "";
+    return custom || "partido-completo.mp4";
+  }, [matchKey, fullMatchDownloadName]);
   const isDark = surface === "dark";
   const isSide = layout === "side";
   const sectionClass = [
@@ -116,7 +128,10 @@ export default function ClipsPanel({
             clip.status && clip.status !== "ready"
               ? "#"
               : clip.downloadHref ?? videoSrc;
-          const filename = clipDownloadFilename(clip);
+          const filename = replayClipDownloadFilename(clip, matchKey);
+          const isGenerating = clip.status === "processing";
+          const isDownloadLoading = downloadPendingFor === clip.id;
+          const showClipBusyOverlay = isGenerating || isDownloadLoading;
           return (
             <li
               key={clip.id}
@@ -131,6 +146,7 @@ export default function ClipsPanel({
                     className="absolute inset-0 z-0 block"
                     onClick={() => onSelectClip(clip.at)}
                     aria-label={`Ir a ${clip.label}`}
+                    disabled={isDownloadLoading}
                   >
                     <img
                       src={clip.thumb || CLIP_THUMB_FALLBACK}
@@ -146,6 +162,28 @@ export default function ClipsPanel({
                       }}
                     />
                   </button>
+                  {showClipBusyOverlay && (
+                    <div
+                      className="pointer-events-none absolute inset-0 z-[15] flex flex-col items-center justify-center gap-2 bg-black/60 px-3 text-center backdrop-blur-[2px]"
+                      role="status"
+                      aria-live="polite"
+                      aria-busy="true"
+                    >
+                      <Loader2
+                        className="size-9 shrink-0 animate-spin text-white"
+                        strokeWidth={2.4}
+                        aria-hidden
+                      />
+                      <span className="text-[11px] font-semibold leading-tight text-white">
+                        {isGenerating ? "Generando clip…" : "Preparando descarga…"}
+                      </span>
+                      <span className="text-[10px] font-medium leading-tight text-white/80">
+                        {isGenerating
+                          ? "Puede tardar un momento."
+                          : "Esperá mientras armamos el archivo."}
+                      </span>
+                    </div>
+                  )}
                   <a
                     href={href}
                     download={filename}
@@ -187,9 +225,17 @@ export default function ClipsPanel({
                       >
                         <button
                           type="button"
-                          disabled={clip.status !== "ready"}
+                          disabled={clip.status !== "ready" || isDownloadLoading}
                           onClick={() => {
-                            if (clip.status !== "ready") return;
+                            if (clip.status !== "ready" || isDownloadLoading) return;
+                            if (onAuthorizedDownload) {
+                              setMenuOpenFor(null);
+                              setDownloadPendingFor(clip.id);
+                              void Promise.resolve(onAuthorizedDownload(clip)).finally(() => {
+                                setDownloadPendingFor(null);
+                              });
+                              return;
+                            }
                             const link = document.createElement("a");
                             link.href = href;
                             link.download = filename;
@@ -200,8 +246,12 @@ export default function ClipsPanel({
                           }}
                           className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-white hover:bg-white/10 disabled:cursor-not-allowed disabled:text-white/45"
                         >
-                          <Download size={14} />
-                          Descargar
+                          {isDownloadLoading ? (
+                            <Loader2 size={14} className="animate-spin shrink-0" aria-hidden />
+                          ) : (
+                            <Download size={14} />
+                          )}
+                          {isDownloadLoading ? "Descargando…" : "Descargar"}
                         </button>
                         <button
                           type="button"
@@ -265,14 +315,65 @@ export default function ClipsPanel({
         </p>
       )}
       <p className={footnoteClass}>Los clips se generan sobre este partido.</p>
-      <a
-        href={videoSrc}
-        download={fullMatchDownloadName}
-        className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-vj-green px-4 py-3 text-sm font-bold uppercase tracking-wide text-white shadow-sm ring-1 ring-black/10 transition hover:brightness-110"
-      >
-        <Download size={18} strokeWidth={2.5} className="shrink-0" aria-hidden />
-        Descargar partido completo
-      </a>
+      {onAuthorizedFullMatchDownload ? (
+        <button
+          type="button"
+          disabled={fullMatchDownloadPending}
+          aria-busy={fullMatchDownloadPending}
+          onClick={() => {
+            setFullMatchDownloadPending(true);
+            void Promise.resolve(onAuthorizedFullMatchDownload(resolvedFullMatchDownloadName)).finally(() => {
+              setFullMatchDownloadPending(false);
+            });
+          }}
+          className={`mt-4 flex w-full flex-col items-center justify-center gap-1 rounded-lg px-4 py-3 text-sm font-bold uppercase tracking-wide text-white shadow-sm ring-1 ring-black/10 transition ${
+            fullMatchDownloadPending
+              ? "cursor-wait bg-vj-green/85 ring-black/10"
+              : "cursor-pointer bg-vj-green hover:brightness-110"
+          } disabled:opacity-95`}
+        >
+          <span className="flex items-center justify-center gap-2">
+            {fullMatchDownloadPending ? (
+              <Loader2 size={18} strokeWidth={2.5} className="shrink-0 animate-spin" aria-hidden />
+            ) : (
+              <Download size={18} strokeWidth={2.5} className="shrink-0" aria-hidden />
+            )}
+            {fullMatchDownloadPending ? "Preparando tu archivo…" : "Descargar partido completo"}
+          </span>
+          {fullMatchDownloadPending ? (
+            <>
+              <span className="text-[11px] font-semibold normal-case tracking-normal leading-snug text-white/95">
+                Estamos generando el archivo para descargar. Aguardá un momento…
+              </span>
+              {typeof fullMatchSizeBytes === "number" && fullMatchSizeBytes > 0 ? (
+                <span className="text-[10px] font-medium normal-case tracking-normal text-white/85">
+                  Peso aproximado: {formatBytes(fullMatchSizeBytes)}
+                </span>
+              ) : null}
+            </>
+          ) : typeof fullMatchSizeBytes === "number" && fullMatchSizeBytes > 0 ? (
+            <span className="text-[11px] font-semibold normal-case tracking-normal text-white/90">
+              Peso aproximado: {formatBytes(fullMatchSizeBytes)}
+            </span>
+          ) : null}
+        </button>
+      ) : (
+        <a
+          href={videoSrc}
+          download={resolvedFullMatchDownloadName}
+          className="mt-4 flex w-full flex-col items-center justify-center gap-1 rounded-lg bg-vj-green px-4 py-3 text-sm font-bold uppercase tracking-wide text-white shadow-sm ring-1 ring-black/10 transition hover:brightness-110"
+        >
+          <span className="flex items-center justify-center gap-2">
+            <Download size={18} strokeWidth={2.5} className="shrink-0" aria-hidden />
+            Descargar partido completo
+          </span>
+          {typeof fullMatchSizeBytes === "number" && fullMatchSizeBytes > 0 ? (
+            <span className="text-[11px] font-semibold normal-case tracking-normal text-white/90">
+              Peso aproximado: {formatBytes(fullMatchSizeBytes)}
+            </span>
+          ) : null}
+        </a>
+      )}
     </section>
   );
 }
