@@ -2,6 +2,7 @@ import {
   type ReplayShiftConfig,
   getDefaultReplayShiftConfigFromEnv,
 } from "@/utils/replay-shift-turnos";
+import { normalizeReplayApiBase } from "@/utils/replay-api-base";
 
 function normalizeApiResponse(json: unknown): ReplayShiftConfig {
   if (!json || typeof json !== "object") {
@@ -44,7 +45,7 @@ function normalizeApiResponse(json: unknown): ReplayShiftConfig {
 
 /** Lee turnos desde el API (Supabase + fallback servidor); si no hay `apiBase`, usa solo env público. */
 export async function loadReplayShiftConfig(apiBase: string): Promise<ReplayShiftConfig> {
-  const base = apiBase.trim().replace(/\/$/, "");
+  const base = normalizeReplayApiBase(apiBase);
   if (!base) {
     return getDefaultReplayShiftConfigFromEnv();
   }
@@ -65,7 +66,7 @@ export async function saveReplayShiftConfig(
   adminSecret: string,
   body: Pick<ReplayShiftConfig, "shiftDurationSeconds" | "windowStartHour" | "windowEndHour">,
 ): Promise<ReplayShiftConfig> {
-  const base = apiBase.trim().replace(/\/$/, "");
+  const base = normalizeReplayApiBase(apiBase);
   if (!base) {
     throw new Error("Falta PUBLIC_REPLAY_API_BASE");
   }

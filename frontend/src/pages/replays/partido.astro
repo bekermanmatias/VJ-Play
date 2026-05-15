@@ -3,7 +3,8 @@ import Layout from "@/layouts/Layout.astro";
 import TopBar from "@/components/TopBar.astro";
 import Navbar from "@/components/Navbar.astro";
 import ReplayPartidoById from "@/components/replays/ReplayPartidoById";
-const apiBase = import.meta.env.PUBLIC_REPLAY_API_BASE ?? "";
+import { getReplayApiBaseFromEnv } from "@/utils/replay-api-base";
+const apiBase = getReplayApiBaseFromEnv();
 const cinema = Astro.url.searchParams.get("cinema") === "1";
 ---
 

@@ -3,12 +3,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { v4 as uuidv4 } from 'uuid';
 import { env } from '../config/env.js';
+import { captureFrameAtTime, extractCompatibleMp4Clip } from './ffmpeg.service.js';
 import {
   encodeMp4ClipWithWatermarkFromUrl,
   probeFfmpegAvailable,
+  watermarkPngExists,
 } from './ffmpeg-watermark-video.service.js';
-import { captureFrameAtTime, extractCompatibleMp4Clip } from './ffmpeg.service.js';
-import { ensureReplayVideoWatermarkPngPath } from './replay-watermark-image.service.js';
 import { insertReplayClipRecord } from './replay-clips.service.js';
 import { uploadFileToR2 } from './storage.service.js';
 import {
@@ -43,9 +43,9 @@ export async function runClipJob(
 
   try {
     let encodedWithWatermark = false;
-    if (await probeFfmpegAvailable()) {
+    const wmPath = env.watermarkPngPath?.trim() ?? '';
+    if (wmPath && (await watermarkPngExists(wmPath)) && (await probeFfmpegAvailable())) {
       try {
-        const wmPath = await ensureReplayVideoWatermarkPngPath();
         await encodeMp4ClipWithWatermarkFromUrl({
           inputUrl: payload.sourceUrl,
           outputPath: outFile,

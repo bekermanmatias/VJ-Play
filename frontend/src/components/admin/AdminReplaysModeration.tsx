@@ -20,7 +20,9 @@ import {
 } from "@/utils/replay-admin-matches-api";
 import { buildLastSevenDaysOptions } from "@/utils/replay-date-options";
 
-const apiBase = import.meta.env.PUBLIC_REPLAY_API_BASE ?? "";
+import { getReplayApiBaseFromEnv } from "@/utils/replay-api-base";
+
+const apiBase = getReplayApiBaseFromEnv();
 
 type Props = {
   showSettings?: boolean;

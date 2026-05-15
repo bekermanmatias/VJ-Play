@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { buildReplayMatchKey } from "@/utils/replay-match-key";
+import { getReplayApiBaseFromEnv } from "@/utils/replay-api-base";
 
 type VerifyResponse = {
   sessionToken: string;
@@ -19,7 +20,7 @@ const DEFAULT_HORA = "13:00";
 const DEFAULT_CODE = "CLUB1234";
 
 export default function DevReplayLab() {
-  const apiBase = (import.meta.env.PUBLIC_REPLAY_API_BASE ?? "").trim().replace(/\/$/, "");
+  const apiBase = getReplayApiBaseFromEnv();
   const [cancha, setCancha] = useState(DEFAULT_CANCHA);
   const [fecha, setFecha] = useState(DEFAULT_FECHA);
   const [hora, setHora] = useState(DEFAULT_HORA);

@@ -1,3 +1,5 @@
+import { normalizeReplayApiBase } from "@/utils/replay-api-base";
+
 export type ReplayAdminMatchRow = {
   matchKey: string;
   numericId: number;
@@ -24,7 +26,7 @@ export async function loadReplayAdminMatches(params: {
   adminSecret: string;
   query: string;
 }): Promise<ReplayAdminMatchRow[]> {
-  const base = params.apiBase.trim().replace(/\/$/, "");
+  const base = normalizeReplayApiBase(params.apiBase);
   if (!base) {
     throw new Error("Falta PUBLIC_REPLAY_API_BASE");
   }

@@ -10,7 +10,9 @@ import {
   getDefaultReplayShiftConfigFromEnv,
   type ReplayShiftConfig,
 } from "@/utils/replay-shift-turnos";
-const apiBase = import.meta.env.PUBLIC_REPLAY_API_BASE ?? "";
+import { getReplayApiBaseFromEnv } from "@/utils/replay-api-base";
+
+const apiBase = getReplayApiBaseFromEnv();
 const POSTER_FALLBACK =
   "https://images.unsplash.com/photo-1627615922102-6b7ef5f0ec55?auto=format&fit=crop&w=1400&q=70";
 

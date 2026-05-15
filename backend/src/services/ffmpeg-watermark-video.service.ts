@@ -1,46 +1,62 @@
-import { execFile, spawn } from 'node:child_process';
-import type { ChildProcess } from 'node:child_process';
-import { promisify } from 'node:util';
+import { spawn, type ChildProcessByStdio } from 'node:child_process';
+import { access } from 'node:fs/promises';
+import type { Readable } from 'node:stream';
 import { env } from '../config/env.js';
 
-const execFileAsync = promisify(execFile);
+const FFMPEG_BIN = env.ffmpegPath ?? 'ffmpeg';
 
-function ffmpegExecutable(): string {
-  return env.ffmpegPath?.trim() || 'ffmpeg';
+/**
+ * Marca anclada por el borde inferior (el texto queda más abajo en el cuadro).
+ * PNG 2000×1500 → se escala manteniendo 4:3 dentro de la caja máx. ancho × alto.
+ */
+function overlayFilter(): string {
+  const xPct = env.watermarkXPercent;
+  const bottomPct = env.watermarkBottomPercent;
+  const wPct = env.watermarkWidthPercent;
+  const hPct = env.watermarkMaxHeightPercent;
+  const xExpr = `(W*${xPct}-w*50)/100`;
+  const yExpr = `(H*${bottomPct}/100-h)`;
+
+  if (wPct > 0 && hPct > 0) {
+    return `[1:v][0:v]scale2ref=w=ref_w*${wPct}/100:h=ref_h*${hPct}/100:force_original_aspect_ratio=decrease[wm][base];[base][wm]overlay=x=${xExpr}:y=${yExpr}:format=auto[outv]`;
+  }
+  if (wPct > 0) {
+    return `[1:v][0:v]scale2ref=w=ref_w*${wPct}/100:h=-1[wm][base];[base][wm]overlay=x=${xExpr}:y=${yExpr}:format=auto[outv]`;
+  }
+  return `[0:v][1:v]overlay=x=${xExpr}:y=${yExpr}:format=auto[outv]`;
 }
 
+let ffmpegProbeCache: boolean | null = null;
+
+/** Verifica que el binario FFmpeg sea ejecutable (cacheado). */
 export async function probeFfmpegAvailable(): Promise<boolean> {
+  if (ffmpegProbeCache !== null) {
+    return ffmpegProbeCache;
+  }
+  ffmpegProbeCache = await new Promise<boolean>((resolve) => {
+    const proc = spawn(FFMPEG_BIN, ['-version'], { stdio: 'ignore' });
+    proc.once('error', () => resolve(false));
+    proc.once('exit', (code) => resolve(code === 0));
+  });
+  return ffmpegProbeCache;
+}
+
+/** Verifica que el PNG de marca exista y sea legible. */
+export async function watermarkPngExists(path: string | undefined): Promise<boolean> {
+  if (!path || path.trim() === '') {
+    return false;
+  }
   try {
-    await execFileAsync(ffmpegExecutable(), ['-hide_banner', '-version'], {
-      timeout: 8000,
-      maxBuffer: 512_000,
-    });
+    await access(path.trim());
     return true;
   } catch {
     return false;
   }
 }
 
-function runFfmpeg(args: string[], label: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const ff = spawn(ffmpegExecutable(), args, { stdio: ['ignore', 'pipe', 'pipe'] });
-    let err = '';
-    ff.stderr?.on('data', (c: Buffer) => {
-      err += c.toString();
-    });
-    ff.on('error', reject);
-    ff.on('close', (code) => {
-      if (code === 0) {
-        resolve();
-      } else {
-        reject(new Error(`ffmpeg ${label} exit ${code}: ${err.slice(-1200)}`));
-      }
-    });
-  });
-}
-
 /**
- * Recorte MP4 compatible + marca arriba-derecha (misma convención que descarga stream).
+ * Codifica un clip H.264/AAC con marca de agua superpuesta.
+ * Output a archivo (faststart para reproducción inmediata).
  */
 export async function encodeMp4ClipWithWatermarkFromUrl(params: {
   inputUrl: string;
@@ -49,91 +65,68 @@ export async function encodeMp4ClipWithWatermarkFromUrl(params: {
   startSeconds: number;
   durationSeconds: number;
 }): Promise<void> {
-  await runFfmpeg(
-    [
-      '-hide_banner',
-      '-loglevel',
-      'error',
-      '-ss',
-      String(params.startSeconds),
-      '-i',
-      params.inputUrl,
-      '-i',
-      params.watermarkPath,
-      '-filter_complex',
-      '[1:v]scale=280:-1[wm];[0:v][wm]overlay=x=W-w-24:y=24:format=auto[outv]',
-      '-map',
-      '[outv]',
-      '-map',
-      '0:a?',
-      '-t',
-      String(params.durationSeconds),
-      '-c:v',
-      'libx264',
-      '-preset',
-      'medium',
-      '-crf',
-      '23',
-      '-profile:v',
-      'high',
-      '-level',
-      '4.0',
-      '-pix_fmt',
-      'yuv420p',
-      '-c:a',
-      'aac',
-      '-b:a',
-      '128k',
-      '-movflags',
-      '+faststart',
-      '-y',
-      params.outputPath,
-    ],
-    'clip+watermark',
-  );
+  const args = [
+    '-y',
+    '-ss', String(Math.max(0, params.startSeconds)),
+    '-i', params.inputUrl,
+    '-i', params.watermarkPath,
+    '-t', String(Math.max(0.01, params.durationSeconds)),
+    '-filter_complex', overlayFilter(),
+    '-map', '[outv]',
+    '-map', '0:a?',
+    '-c:v', 'libx264',
+    '-preset', 'medium',
+    '-crf', '23',
+    '-profile:v', 'high',
+    '-level', '4.0',
+    '-pix_fmt', 'yuv420p',
+    '-c:a', 'aac',
+    '-b:a', '128k',
+    '-movflags', '+faststart',
+    params.outputPath,
+  ];
+
+  await new Promise<void>((resolve, reject) => {
+    const proc = spawn(FFMPEG_BIN, args, { stdio: ['ignore', 'ignore', 'pipe'] });
+    let stderr = '';
+    proc.stderr?.on('data', (chunk: Buffer) => {
+      stderr += chunk.toString('utf8');
+      if (stderr.length > 4096) stderr = stderr.slice(-4096);
+    });
+    proc.on('error', reject);
+    proc.on('exit', (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(`ffmpeg exit ${code}: ${stderr.trim().slice(-512)}`));
+    });
+  });
 }
 
-/** FFmpeg que escribe MP4 fragmentado por stdout (entrada HTTP/S). */
+/**
+ * Inicia FFmpeg que toma input HTTP, aplica marca y emite MP4 fragmentado por stdout.
+ */
 export function spawnWatermarkedMp4FromHttpInput(params: {
   inputUrl: string;
   watermarkPath: string;
-}): ChildProcess {
-  return spawn(
-    ffmpegExecutable(),
-    [
-      '-hide_banner',
-      '-loglevel',
-      'error',
-      '-rw_timeout',
-      '15000000',
-      '-i',
-      params.inputUrl,
-      '-i',
-      params.watermarkPath,
-      '-filter_complex',
-      '[1:v]scale=280:-1[wm];[0:v][wm]overlay=x=W-w-24:y=24:format=auto[outv]',
-      '-map',
-      '[outv]',
-      '-map',
-      '0:a?',
-      '-c:v',
-      'libx264',
-      '-preset',
-      'veryfast',
-      '-crf',
-      '23',
-      '-pix_fmt',
-      'yuv420p',
-      '-c:a',
-      'aac',
-      '-b:a',
-      '128k',
-      '-movflags',
-      'frag_keyframe+empty_moov+faststart',
-      '-f',
-      'mp4',
-      'pipe:1',
-    ],
-    { stdio: ['ignore', 'pipe', 'pipe'] },
-  );
+}): ChildProcessByStdio<null, Readable, Readable> {
+  const args = [
+    '-loglevel', 'error',
+    '-i', params.inputUrl,
+    '-i', params.watermarkPath,
+    '-filter_complex', overlayFilter(),
+    '-map', '[outv]',
+    '-map', '0:a?',
+    '-c:v', 'libx264',
+    '-preset', 'veryfast',
+    '-crf', '23',
+    '-profile:v', 'high',
+    '-level', '4.0',
+    '-pix_fmt', 'yuv420p',
+    '-c:a', 'aac',
+    '-b:a', '128k',
+    '-movflags', 'frag_keyframe+empty_moov+default_base_moof',
+    '-f', 'mp4',
+    'pipe:1',
+  ];
+
+  return spawn(FFMPEG_BIN, args, { stdio: ['ignore', 'pipe', 'pipe'] });
 }

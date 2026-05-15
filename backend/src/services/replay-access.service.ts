@@ -16,17 +16,20 @@ import {
   listReplayClipsByMatchKey,
   updateReplayClipLabelForMatch,
 } from './replay-clips.service.js';
-import { spawnWatermarkedMp4FromHttpInput, probeFfmpegAvailable } from './ffmpeg-watermark-video.service.js';
-import {
-  signWatermarkedStreamToken,
-  verifyWatermarkedStreamToken,
-} from './replay-download-stream-token.js';
-import { ensureReplayVideoWatermarkPngPath } from './replay-watermark-image.service.js';
 import {
   getObjectStreamFromR2,
   getPresignedGetObjectDownloadUrl,
   getPresignedGetObjectReadUrl,
 } from './storage.service.js';
+import {
+  probeFfmpegAvailable,
+  spawnWatermarkedMp4FromHttpInput,
+  watermarkPngExists,
+} from './ffmpeg-watermark-video.service.js';
+import {
+  signWatermarkedStreamToken,
+  verifyWatermarkedStreamToken,
+} from './replay-download-stream-token.js';
 
 type DevEntry = { matchKey: string; code: string };
 type AdminMatchRow = {
@@ -582,43 +585,6 @@ export async function openReplayClipDownloadForSession(params: {
   const stem = matchKeyToDownloadStem(mk);
   const filename = `${labelPart}-${stem}.mp4`;
 
-  if (await canWatermarkReplayDownloads()) {
-    try {
-      const expiresInSeconds = Math.min(
-        3600,
-        Math.max(120, env.replayFullVideoPresignExpiresSeconds),
-      );
-      const presigned = await getPresignedGetObjectReadUrl({
-        key: row.clipKey,
-        expiresInSeconds,
-        responseContentType: 'video/mp4',
-      });
-      const wmPath = await ensureReplayVideoWatermarkPngPath();
-      const ff = spawnWatermarkedMp4FromHttpInput({
-        inputUrl: presigned,
-        watermarkPath: wmPath,
-      });
-      const ffOut = ff.stdout;
-      if (!ffOut) {
-        ff.kill('SIGKILL');
-        throw new Error('ffmpeg sin stdout');
-      }
-      ff.stderr?.on('data', () => {});
-      ff.on('error', (err) => {
-        ffOut.destroy(err as Error);
-      });
-      return {
-        body: ffOut as NodeJS.ReadableStream,
-        contentType: 'video/mp4',
-        contentDisposition: contentDispositionAttachment(filename),
-      };
-    } catch (err) {
-      if (env.nodeEnv !== 'test') {
-        console.warn('[replay-clip-watermark-fallback]', err);
-      }
-    }
-  }
-
   const { body, contentLength, contentType } = await getObjectStreamFromR2({
     key: row.clipKey,
   });
@@ -648,43 +614,6 @@ function r2ObjectKeyFromPublicVideoUrl(videoUrl: string): string | null {
   } catch {
     return key;
   }
-}
-
-let ffmpegWatermarkProbeCache: boolean | null = null;
-
-async function canWatermarkReplayDownloads(): Promise<boolean> {
-  try {
-    await ensureReplayVideoWatermarkPngPath();
-    if (ffmpegWatermarkProbeCache === null) {
-      ffmpegWatermarkProbeCache = await probeFfmpegAvailable();
-    }
-    return ffmpegWatermarkProbeCache;
-  } catch {
-    return false;
-  }
-}
-
-async function resolveReplaySourceUrlForFfmpeg(videoUrlRaw: string): Promise<string> {
-  const videoUrl = videoUrlRaw.trim();
-  if (!videoUrl.startsWith('http://') && !videoUrl.startsWith('https://')) {
-    throw new HttpError(502, 'URL de video inválida');
-  }
-  const key = r2ObjectKeyFromPublicVideoUrl(videoUrl);
-  const ttl = Math.min(3600, Math.max(120, env.replayFullVideoPresignExpiresSeconds));
-  if (key) {
-    try {
-      return await getPresignedGetObjectReadUrl({
-        key,
-        expiresInSeconds: ttl,
-        responseContentType: 'video/mp4',
-      });
-    } catch (err) {
-      if (env.nodeEnv !== 'test') {
-        console.warn('[replay-ffmpeg-presign]', err);
-      }
-    }
-  }
-  return videoUrl;
 }
 
 function sanitizeFullMatchDownloadFilename(raw: string): string {
@@ -769,7 +698,44 @@ export type ReplayFullVideoDownloadPrepare =
       expiresInSeconds: number | null;
     };
 
-/** Decide entre descarga por API con marca vía FFmpeg o enlace directo/presignado (sin transcodificar). */
+let ffmpegReadyCache: boolean | null = null;
+
+/** True si hay PNG configurado, accesible y FFmpeg ejecutable. */
+async function canWatermarkDownloads(): Promise<boolean> {
+  const wm = env.watermarkPngPath?.trim() ?? '';
+  if (!wm) return false;
+  if (!(await watermarkPngExists(wm))) return false;
+  if (ffmpegReadyCache === null) {
+    ffmpegReadyCache = await probeFfmpegAvailable();
+  }
+  return ffmpegReadyCache;
+}
+
+/** Devuelve URL de origen consumible por FFmpeg (presignada cuando aplica). */
+async function resolveSourceUrlForFfmpeg(videoUrlRaw: string): Promise<string> {
+  const videoUrl = videoUrlRaw.trim();
+  if (!videoUrl.startsWith('http://') && !videoUrl.startsWith('https://')) {
+    throw new HttpError(502, 'URL de video inválida');
+  }
+  const key = r2ObjectKeyFromPublicVideoUrl(videoUrl);
+  const ttl = Math.min(3600, Math.max(120, env.replayFullVideoPresignExpiresSeconds));
+  if (key) {
+    try {
+      return await getPresignedGetObjectReadUrl({
+        key,
+        expiresInSeconds: ttl,
+        responseContentType: 'video/mp4',
+      });
+    } catch (err) {
+      if (env.nodeEnv !== 'test') {
+        console.warn('[replay-ffmpeg-presign]', err);
+      }
+    }
+  }
+  return videoUrl;
+}
+
+/** Streaming con marca de agua o enlace directo según haya o no PNG configurado. */
 export async function prepareReplayFullVideoDownloadForSession(params: {
   authorizationHeader: string | undefined;
   downloadFilename?: string;
@@ -780,7 +746,7 @@ export async function prepareReplayFullVideoDownloadForSession(params: {
     params.downloadFilename ?? 'partido-completo.mp4',
   );
 
-  if (await canWatermarkReplayDownloads()) {
+  if (await canWatermarkDownloads()) {
     const exp = Math.floor(Date.now() / 1000) + 15 * 60;
     const tok = signWatermarkedStreamToken({ mk, fn: filename, exp }, env.jwtSessionSecret);
     return {
@@ -798,6 +764,7 @@ export async function prepareReplayFullVideoDownloadForSession(params: {
   };
 }
 
+/** Stream con marca aplicada on-the-fly para el partido completo (autorizado por token corto). */
 export async function openReplayFullVideoWatermarkedDownloadForSession(params: {
   token: string | undefined;
 }): Promise<{
@@ -813,14 +780,14 @@ export async function openReplayFullVideoWatermarkedDownloadForSession(params: {
   if (!claims) {
     throw new HttpError(401, 'Enlace inválido o vencido');
   }
+  const wmPath = env.watermarkPngPath?.trim() ?? '';
+  if (!wmPath || !(await watermarkPngExists(wmPath))) {
+    throw new HttpError(503, 'Marca de agua no configurada');
+  }
 
   const assets = await fetchReplayAssets(claims.mk);
-  const inputUrl = await resolveReplaySourceUrlForFfmpeg(assets.videoUrl);
-  const wmPath = await ensureReplayVideoWatermarkPngPath();
-  const ff = spawnWatermarkedMp4FromHttpInput({
-    inputUrl,
-    watermarkPath: wmPath,
-  });
+  const inputUrl = await resolveSourceUrlForFfmpeg(assets.videoUrl);
+  const ff = spawnWatermarkedMp4FromHttpInput({ inputUrl, watermarkPath: wmPath });
   const ffOut = ff.stdout;
   if (!ffOut) {
     ff.kill('SIGKILL');
@@ -832,7 +799,7 @@ export async function openReplayFullVideoWatermarkedDownloadForSession(params: {
   });
 
   return {
-    body: ffOut as NodeJS.ReadableStream,
+    body: ffOut,
     contentType: 'video/mp4',
     contentDisposition: contentDispositionAttachment(claims.fn),
   };

@@ -7,7 +7,7 @@ import { env } from '../config/env.js';
 import { HttpError } from '../errors/http-error.js';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { captureFrameFromVideoSource } from '../services/ffmpeg.service.js';
-import { applyWatermarkAndExportJpeg } from '../services/image.service.js';
+import { exportFrameAsJpeg } from '../services/image.service.js';
 import { uploadFileToR2 } from '../services/storage.service.js';
 import { delay } from '../utils/delay.js';
 import { firstRouteParam } from '../utils/route-params.js';
@@ -36,7 +36,7 @@ function resolveSourceUrl(req: Request): string | undefined {
 
 /**
  * POST /api/courts/:court_id/snap
- * Simula flujo QR: espera 3s, captura frame, marca de agua, sube a R2.
+ * Simula flujo QR: espera 3s, captura frame, sube a R2.
  */
 export const postCourtSnap = asyncHandler(async (req: Request, res: Response) => {
   const courtId = firstRouteParam(req.params.court_id);
@@ -61,7 +61,7 @@ export const postCourtSnap = asyncHandler(async (req: Request, res: Response) =>
 
   try {
     await captureFrameFromVideoSource(sourceUrl, rawFrame);
-    await applyWatermarkAndExportJpeg(rawFrame, finalJpeg);
+    await exportFrameAsJpeg(rawFrame, finalJpeg);
 
     const key = `${tenantId}/courts/${courtId}/snaps/${Date.now()}-${uuidv4()}.jpg`;
     const uploaded = await uploadFileToR2({

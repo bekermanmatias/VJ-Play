@@ -1,4 +1,5 @@
 import type { ReplayCourtRow } from "@/utils/replay-courts-types";
+import { normalizeReplayApiBase } from "@/utils/replay-api-base";
 
 /** Si el API no responde (misma semántica que el fallback del backend). */
 export const FALLBACK_REPLAY_COURTS: ReplayCourtRow[] = [
@@ -44,7 +45,7 @@ function normalizeCourtsPayload(json: unknown): ReplayCourtsApiPayload {
 }
 
 function normalizeBase(apiBase: string): string {
-  return apiBase.trim().replace(/\/$/, "");
+  return normalizeReplayApiBase(apiBase);
 }
 
 function getCacheKey(base: string): string {
@@ -147,7 +148,7 @@ export async function saveReplayCourts(
   adminSecret: string,
   courts: { slug: string; label: string; sortOrder: number }[],
 ): Promise<ReplayCourtsApiPayload> {
-  const base = apiBase.trim().replace(/\/$/, "");
+  const base = normalizeReplayApiBase(apiBase);
   if (!base) {
     throw new Error("Falta PUBLIC_REPLAY_API_BASE");
   }

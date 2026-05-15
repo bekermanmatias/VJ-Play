@@ -34,6 +34,17 @@ function parseCorsOrigins(raw: string | undefined): string[] {
     .filter((s) => s.length > 0);
 }
 
+function parseWatermarkPercent(raw: string | undefined, fallback: number): number {
+  if (!raw || raw.trim() === '') {
+    return fallback;
+  }
+  const n = Number.parseFloat(raw);
+  if (!Number.isFinite(n) || n < 0 || n > 100) {
+    return fallback;
+  }
+  return n;
+}
+
 function parseReplaySessionTtlSeconds(): number {
   const raw = process.env.REPLAY_SESSION_TTL_SECONDS;
   if (!raw || raw.trim() === '') {
@@ -134,9 +145,16 @@ export const env = {
 
   ffmpegPath: optionalEnv('FFMPEG_PATH'),
   ffprobePath: optionalEnv('FFPROBE_PATH'),
+  /** PNG a aplicar como marca en clips y descargas. Vacío = sin marca. */
   watermarkPngPath: optionalEnv('WATERMARK_PNG_PATH'),
-  /** Escudo PNG (ej. copia de `frontend/public/images/escudo-varela-junior.png`) para marca en videos descargados. Si falta, solo texto en la marca. */
-  replayDownloadEscudoPath: optionalEnv('REPLAY_DOWNLOAD_ESCUDO_PATH'),
+  /** Centro horizontal de la marca (% del ancho del video, 0–100). Default 50. */
+  watermarkXPercent: parseWatermarkPercent(process.env.WATERMARK_X_PERCENT, 50),
+  /** Borde inferior de la marca (% desde arriba del video). Default 93. */
+  watermarkBottomPercent: parseWatermarkPercent(process.env.WATERMARK_BOTTOM_PERCENT, 93),
+  /** Ancho máximo de la marca (% del ancho del video). 0 = tamaño nativo del PNG. Default 44. */
+  watermarkWidthPercent: parseWatermarkPercent(process.env.WATERMARK_WIDTH_PERCENT, 44),
+  /** Alto máximo de la marca (% del alto del video). Default 42. */
+  watermarkMaxHeightPercent: parseWatermarkPercent(process.env.WATERMARK_MAX_HEIGHT_PERCENT, 42),
   defaultRtspUrl: optionalEnv('DEFAULT_RTSP_URL'),
 
   replayFallbackVideoUrl:
