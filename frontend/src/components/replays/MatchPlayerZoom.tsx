@@ -43,27 +43,28 @@ export default function MatchPlayerZoom({
     <div className={rootClass}>
       <div className={shellClass}>
         <div className="relative min-h-0 flex-1 basis-0">
+        <div
+          className={fill ? "!flex !h-full !min-h-0 !flex-1 !basis-0" : "!flex-1 !min-h-0"}
+          style={
+            fill
+              ? { width: "100%", height: "100%", minHeight: 0, flex: "1 1 0%", display: "flex", flexDirection: "column" }
+              : undefined
+          }
+        >
           <TransformWrapper
             initialScale={1}
             minScale={0.5}
             maxScale={5}
             centerOnInit
             wheel={{
-              // Zoom más suave con rueda: menor salto por tick + interpolación gradual.
+              // Zoom con rueda: paso por tick (la librería no expone smoothStep en los tipos actuales).
               step: 0.0007,
-              smoothStep: 0.0018,
               wheelDisabled: false,
               touchPadDisabled: false,
             }}
             pinch={{ step: 0.25, disabled: false, allowPanning: true }}
             panning={{ velocityDisabled: false, allowLeftClickPan: true }}
             doubleClick={{ mode: "reset", disabled: false }}
-            className={fill ? "!flex !h-full !min-h-0 !flex-1 !basis-0" : "!flex-1 !min-h-0"}
-            style={
-              fill
-                ? { width: "100%", height: "100%", minHeight: 0, flex: "1 1 0%", display: "flex", flexDirection: "column" }
-                : undefined
-            }
           >
             <TransformComponent
               wrapperClass="!h-full !min-h-0 !w-full touch-none"
@@ -88,6 +89,7 @@ export default function MatchPlayerZoom({
               />
             </TransformComponent>
           </TransformWrapper>
+        </div>
           {/* Capa del HUD: fija a los bordes del area visible, fuera del zoom/pan. */}
           <div
             ref={setHudHost}

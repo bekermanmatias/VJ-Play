@@ -1,0 +1,28 @@
+{
+  "name": "vj-play-recorder",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Servicio 24/7 que graba el DVR Dahua, segmenta por turno y sube a R2 + Supabase",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "probe": "tsx src/cli/probe-rtsp.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.758.0",
+    "@aws-sdk/lib-storage": "^3.1045.0",
+    "@supabase/supabase-js": "^2.49.1",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}

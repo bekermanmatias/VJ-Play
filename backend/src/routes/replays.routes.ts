@@ -19,6 +19,11 @@ import {
   putCourts,
 } from '../controllers/replay-courts.controller.js';
 import {
+  getCourtsDvr,
+  getRecorderStatus,
+  patchCourtDvr,
+} from '../controllers/recorder-admin.controller.js';
+import {
   getShiftConfig,
   putShiftConfig,
 } from '../controllers/replay-shift-settings.controller.js';
@@ -45,3 +50,7 @@ replaysRouter.patch('/access/clips/:clipId', patchReplayAccessClip);
 replaysRouter.delete('/access/clips/:clipId', deleteReplayAccessClip);
 replaysRouter.post('/access/codes', requireAdminSecret, postReplayAccessCodes);
 replaysRouter.get('/admin/matches', requireAdminSecret, getReplayAdminMatches);
+
+replaysRouter.get('/admin/courts-dvr', requireAdminSecret, getCourtsDvr);
+replaysRouter.patch('/admin/courts-dvr/:slug', requireAdminSecret, patchCourtDvr);
+replaysRouter.get('/admin/recorder-status', requireAdminSecret, getRecorderStatus);
