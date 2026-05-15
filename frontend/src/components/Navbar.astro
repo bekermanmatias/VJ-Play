@@ -1,4 +1,6 @@
 ---
+import { deportesNav } from "@/data/deportes";
+
 interface NavLink {
   label: string;
   href: string;
@@ -11,15 +13,7 @@ const links: NavLink[] = [
   { label: "Contacto", href: "/contacto" },
 ];
 
-const deportes = [
-  { label: "Pádel", href: "/deportes/padel" },
-  { label: "Básquet", href: "/deportes/basquet" },
-  { label: "Vóley", href: "/deportes/voley" },
-  { label: "Fútbol", href: "/deportes/futbol" },
-  { label: "Hockey", href: "/deportes/hockey" },
-  { label: "Natación", href: "/deportes/natacion" },
-  { label: "Tenis", href: "/deportes/tenis" },
-];
+const deportes = deportesNav;
 
 const currentPath = Astro.url.pathname;
 const isActive = (href: string) =>
@@ -28,7 +22,7 @@ const isActive = (href: string) =>
 
 <header class="sticky top-0 z-40 bg-white shadow-sm" data-mobile-nav>
   <nav
-    class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-20 flex items-center gap-4"
+    class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-24 flex items-center gap-5"
     aria-label="Navegación principal"
   >
     <!-- Marca: escudo + nombre -->
@@ -40,16 +34,16 @@ const isActive = (href: string) =>
       <img
         src="/images/escudo-varela-junior.png"
         alt="Escudo Club Social Varela Junior"
-        class="h-12 w-auto shrink-0 object-contain"
+        class="h-14 w-auto shrink-0 object-contain"
         loading="eager"
         decoding="async"
       />
 
       <span class="hidden sm:flex flex-col leading-none antialiased">
-        <span class="text-[0.95rem] font-extrabold uppercase tracking-[0.03em] text-slate-900"
+        <span class="text-base font-extrabold uppercase tracking-[0.04em] text-slate-900"
           >Club Social</span
         >
-        <span class="mt-1 text-[1.6rem] font-black uppercase tracking-tight text-vj-green"
+        <span class="mt-1 text-[1.85rem] font-black uppercase tracking-tight text-vj-green"
           >Varela Junior</span
         >
       </span>
@@ -61,7 +55,7 @@ const isActive = (href: string) =>
         <button
           type="button"
           class:list={[
-            "px-3 py-2 rounded-md text-sm font-bold uppercase tracking-wide transition-colors inline-flex items-center gap-1",
+            "px-3.5 py-2.5 rounded-md text-[0.95rem] font-bold uppercase tracking-wide transition-colors inline-flex items-center gap-1",
             currentPath.startsWith("/deportes")
               ? "bg-slate-100 text-slate-900"
               : "text-slate-700 hover:text-vj-green hover:bg-slate-50",
@@ -86,22 +80,33 @@ const isActive = (href: string) =>
         </button>
 
         <div
-          class="invisible opacity-0 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 transition-all duration-150 absolute left-0 top-full pt-2 z-50"
+          class="invisible opacity-0 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 transition-all duration-150 absolute left-1/2 top-full z-50 -translate-x-1/2 pt-3"
         >
-          <ul class="min-w-48 border border-slate-300 bg-white shadow-lg p-1">
-            {
-              deportes.map((deporte) => (
-                <li>
-                  <a
-                    href={deporte.href}
-                    class="block px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-vj-green hover:text-white"
-                  >
-                    {deporte.label}
-                  </a>
-                </li>
-              ))
-            }
-          </ul>
+          <div class="overflow-hidden bg-slate-900 shadow-2xl ring-1 ring-slate-700">
+            <ul class="grid w-[44rem] grid-cols-3">
+              {
+                deportes.map((deporte) => {
+                  const active = currentPath === deporte.href;
+                  return (
+                    <li class="-mr-px -mb-px border-b border-r border-slate-700/70">
+                      <a
+                        href={deporte.href}
+                        aria-current={active ? "page" : undefined}
+                        class:list={[
+                          "block px-6 py-4 text-sm font-bold uppercase tracking-wide transition-colors",
+                          active
+                            ? "bg-slate-800/60 text-slate-400"
+                            : "text-slate-200 hover:bg-slate-800 hover:text-vj-green",
+                        ]}
+                      >
+                        {deporte.label}
+                      </a>
+                    </li>
+                  );
+                })
+              }
+            </ul>
+          </div>
         </div>
       </li>
 
@@ -114,7 +119,7 @@ const isActive = (href: string) =>
               <a
                 href={link.href}
                 class:list={[
-                  "px-3 py-2 rounded-md text-sm font-bold uppercase tracking-wide transition-colors inline-flex items-center gap-1.5",
+                  "px-3.5 py-2.5 rounded-md text-[0.95rem] font-bold uppercase tracking-wide transition-colors inline-flex items-center gap-1.5",
                   active
                     ? "bg-slate-100 text-slate-900"
                     : "text-slate-700 hover:text-vj-green hover:bg-slate-50",

@@ -1,0 +1,122 @@
+---
+const sede = {
+  name: "Club Social Varela Junior",
+  image: "/images/ubicacion.png",
+  imageAlt: "Sede del Club Social Varela Junior",
+  address:
+    "Av. Gral. José de San Martín 3275, B1889 Florencio Varela, Provincia de Buenos Aires",
+  phone: "011 5364-0616",
+  phoneHref: "tel:+5491153640616",
+};
+
+const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(sede.address)}`;
+---
+
+<section class="bg-white py-16 sm:py-20" aria-labelledby="home-contacto-title">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <header class="text-center">
+      <p class="text-xs font-bold uppercase tracking-[0.22em] text-vj-green">Encontranos</p>
+      <h2
+        id="home-contacto-title"
+        class="mt-2 font-display text-4xl font-extrabold uppercase tracking-wide text-slate-900 sm:text-5xl"
+      >
+        Contacto
+      </h2>
+    </header>
+
+    <article
+      class="mt-12 grid w-full grid-cols-1 overflow-hidden bg-slate-900 text-slate-200 shadow-xl ring-1 ring-slate-800 lg:grid-cols-2"
+    >
+      <a
+        href={mapsHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="block bg-slate-800 transition hover:opacity-95"
+        aria-label={`Abrir ${sede.name} en Google Maps`}
+      >
+        <img
+          src={sede.image}
+          alt={sede.imageAlt}
+          class="block aspect-[16/10] w-full object-cover lg:aspect-auto lg:h-full"
+          loading="lazy"
+          decoding="async"
+        />
+      </a>
+
+      <div class="flex flex-col justify-center gap-6 px-6 py-10 sm:px-10 lg:px-14 lg:py-12">
+        <h3 class="font-display text-2xl font-extrabold uppercase tracking-wide text-white sm:text-3xl">
+          {sede.name}
+        </h3>
+
+        <ul class="space-y-4 text-sm text-slate-300 sm:text-base">
+          <li>
+            <a
+              href={mapsHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="flex items-start gap-3 transition hover:text-white"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                class="mt-0.5 h-5 w-5 shrink-0 text-vj-green"
+                aria-hidden="true"
+              >
+                <path d="M12 22s-7-7-7-12a7 7 0 1 1 14 0c0 5-7 12-7 12Z"></path>
+                <circle cx="12" cy="10" r="2.5"></circle>
+              </svg>
+              <span>{sede.address}</span>
+            </a>
+          </li>
+
+          <li>
+            <a
+              href={sede.phoneHref}
+              class="flex items-center gap-3 transition hover:text-white"
+              aria-label={`Llamar al ${sede.phone}`}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                class="h-5 w-5 shrink-0 text-vj-green"
+                aria-hidden="true"
+              >
+                <path
+                  d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.05-.24c1.16.39 2.42.6 3.71.6a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A18 18 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.29.21 2.55.6 3.71a1 1 0 0 1-.24 1.05l-2.24 2.03Z"
+                ></path>
+              </svg>
+              <span class="font-semibold">{sede.phone}</span>
+            </a>
+          </li>
+        </ul>
+
+        <a
+          href={mapsHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex w-fit items-center gap-2 rounded-sm border border-slate-600 bg-slate-800/60 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition hover:border-vj-green hover:bg-vj-green/10"
+        >
+          Cómo llegar
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="h-4 w-4 text-vj-green"
+            aria-hidden="true"
+          >
+            <path d="M5 12h14"></path>
+            <path d="m13 5 7 7-7 7"></path>
+          </svg>
+        </a>
+      </div>
+    </article>
+  </div>
+</section>

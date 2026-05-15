@@ -244,7 +244,7 @@ export default function ReplaysVerPartido() {
           <div className="block">
             <DropdownField
               id="replays-hora"
-              label="Turno (inicio · fin grabación)"
+              label="Turno"
               placeholder="Selecciona turno"
               options={turnos}
               value={hora}
