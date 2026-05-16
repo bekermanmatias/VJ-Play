@@ -28,7 +28,7 @@ export function captureFrameFromVideoSource(
       command.inputOptions([
         '-rtsp_transport',
         'tcp',
-        '-stimeout',
+        '-timeout',
         '5000000',
       ]);
     }

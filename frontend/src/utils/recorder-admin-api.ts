@@ -96,6 +96,34 @@ export async function patchCourtDvr(
   return json.court;
 }
 
+export interface CourtRtspProbeResult {
+  ok: boolean;
+  courtSlug: string;
+  courtLabel?: string;
+  rtspUrlMasked: string;
+  probedAt: string;
+  video?: { codec: string; width: number; height: number };
+  error?: string;
+}
+
+export async function probeCourtDvr(
+  adminSecret: string,
+  slug: string,
+): Promise<CourtRtspProbeResult> {
+  const base = getBase();
+  const res = await fetch(
+    `${base}/api/replays/admin/courts-dvr/${encodeURIComponent(slug)}/probe`,
+    {
+      method: "POST",
+      headers: { "x-admin-secret": adminSecret },
+    },
+  );
+  if (!res.ok) {
+    throw new Error(await readError(res));
+  }
+  return (await res.json()) as CourtRtspProbeResult;
+}
+
 export async function fetchRecorderStatus(
   adminSecret: string,
 ): Promise<RecorderHeartbeatRow[]> {

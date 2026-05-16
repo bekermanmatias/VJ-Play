@@ -22,6 +22,7 @@ import {
   getCourtsDvr,
   getRecorderStatus,
   patchCourtDvr,
+  postCourtDvrProbe,
 } from '../controllers/recorder-admin.controller.js';
 import {
   getShiftConfig,
@@ -53,4 +54,5 @@ replaysRouter.get('/admin/matches', requireAdminSecret, getReplayAdminMatches);
 
 replaysRouter.get('/admin/courts-dvr', requireAdminSecret, getCourtsDvr);
 replaysRouter.patch('/admin/courts-dvr/:slug', requireAdminSecret, patchCourtDvr);
+replaysRouter.post('/admin/courts-dvr/:slug/probe', requireAdminSecret, postCourtDvrProbe);
 replaysRouter.get('/admin/recorder-status', requireAdminSecret, getRecorderStatus);

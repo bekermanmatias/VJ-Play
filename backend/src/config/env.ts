@@ -175,6 +175,22 @@ export const env = {
   watermarkMaxHeightPercent: parseWatermarkPercent(process.env.WATERMARK_MAX_HEIGHT_PERCENT, 42),
   defaultRtspUrl: optionalEnv('DEFAULT_RTSP_URL'),
 
+  /** DVR Dahua (mismas variables que recorder/.env) — probe RTSP desde admin. */
+  dvr: {
+    user: optionalEnv('DVR_RTSP_USER'),
+    password: optionalEnv('DVR_RTSP_PASSWORD'),
+    host: optionalEnv('DVR_HOST'),
+    port: (() => {
+      const raw = optionalEnv('DVR_RTSP_PORT');
+      if (!raw) return 554;
+      const n = Number.parseInt(raw, 10);
+      return Number.isFinite(n) && n > 0 ? n : 554;
+    })(),
+    urlTemplate:
+      optionalEnv('DVR_RTSP_URL_TEMPLATE') ??
+      'rtsp://{user}:{password}@{host}:{port}/cam/realmonitor?channel={channel}&subtype={subtype}',
+  },
+
   replayFallbackVideoUrl:
     optionalEnv('REPLAY_FALLBACK_VIDEO_URL') ??
     'https://archive.org/download/fourteenhours1951/Fourteen%20Hours%20(1951%2C%20USA)%20Featuring%20Richard%20Basehart%2C%20Paul%20Douglas%20-%20Film%20Noir%20Full%20Movie.mp4',

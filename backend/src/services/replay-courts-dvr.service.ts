@@ -50,6 +50,31 @@ function ensureSupabase(): void {
   }
 }
 
+export async function getCourtDvrBySlug(slug: string): Promise<CourtDvrRow | null> {
+  ensureSupabase();
+  const cleanSlug = slug.trim().toLowerCase();
+  if (!cleanSlug) {
+    return null;
+  }
+  const sb = getSupabase();
+  const { data, error } = await sb
+    .from('replay_courts')
+    .select(
+      'slug, label, sort_order, active, dvr_channel, dvr_subtype, rtsp_url_override, recording_enabled',
+    )
+    .eq('slug', cleanSlug)
+    .maybeSingle();
+
+  if (error) {
+    console.error('[replay-courts-dvr]', error.message);
+    throw new HttpError(503, 'No se pudo leer la cancha');
+  }
+  if (!data) {
+    return null;
+  }
+  return toCourtDvrRow(data as RawRow);
+}
+
 export async function listCourtsWithDvr(): Promise<CourtDvrRow[]> {
   ensureSupabase();
   const sb = getSupabase();

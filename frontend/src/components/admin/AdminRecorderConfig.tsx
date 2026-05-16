@@ -1,10 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2, CircleDot, Loader2, RefreshCw, Save, ServerCog, TriangleAlert } from "lucide-react";
+import {
+  CheckCircle2,
+  CircleDot,
+  Loader2,
+  RefreshCw,
+  Save,
+  ServerCog,
+  TriangleAlert,
+  Video,
+} from "lucide-react";
 import {
   fetchCourtsDvr,
   fetchRecorderStatus,
   patchCourtDvr,
+  probeCourtDvr,
   type CourtDvrRow,
+  type CourtRtspProbeResult,
   type RecorderHeartbeatRow,
 } from "@/utils/recorder-admin-api";
 
@@ -22,6 +33,12 @@ interface RowDraft {
 }
 
 const STATUS_REFRESH_MS = 15_000;
+
+type CameraProbeUi =
+  | { state: "idle" }
+  | { state: "loading" }
+  | { state: "ok"; result: CourtRtspProbeResult }
+  | { state: "error"; message: string };
 
 function rowFromServer(c: CourtDvrRow): RowDraft {
   return {
@@ -51,6 +68,9 @@ export default function AdminRecorderConfig() {
   const [statuses, setStatuses] = useState<RecorderHeartbeatRow[]>([]);
   const [statusError, setStatusError] = useState<string | null>(null);
   const [statusLoadingFirst, setStatusLoadingFirst] = useState(true);
+  const [cameraProbeBySlug, setCameraProbeBySlug] = useState<Record<string, CameraProbeUi>>(
+    {},
+  );
 
   const statusBySlug = useMemo(() => {
     const m = new Map<string, RecorderHeartbeatRow>();
@@ -187,6 +207,29 @@ export default function AdminRecorderConfig() {
     }
   }
 
+  async function probeCamera(slug: string): Promise<void> {
+    setCameraProbeBySlug((prev) => ({ ...prev, [slug]: { state: "loading" } }));
+    try {
+      const result = await probeCourtDvr(adminSecret, slug);
+      if (result.ok) {
+        setCameraProbeBySlug((prev) => ({ ...prev, [slug]: { state: "ok", result } }));
+      } else {
+        setCameraProbeBySlug((prev) => ({
+          ...prev,
+          [slug]: { state: "error", message: result.error ?? "Sin video" },
+        }));
+      }
+    } catch (err) {
+      setCameraProbeBySlug((prev) => ({
+        ...prev,
+        [slug]: {
+          state: "error",
+          message: err instanceof Error ? err.message : String(err),
+        },
+      }));
+    }
+  }
+
   function persistAdminSecret(v: string): void {
     setAdminSecret(v);
     if (typeof window !== "undefined") {
@@ -223,8 +266,9 @@ export default function AdminRecorderConfig() {
             Grabación de canchas
           </h2>
           <p className="mt-1 max-w-3xl text-sm text-slate-700">
-            Configurá el canal del DVR Dahua de cada cancha y activá/desactivá la grabación
-            continua. El recorder en el VPS lee esta configuración cada minuto.
+            Configurá el canal del DVR Dahua de cada cancha. Usá{" "}
+            <strong>Probar cámara</strong> para verificar RTSP en vivo; la columna{" "}
+            <strong>Recorder</strong> muestra si el proceso de grabación está corriendo.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -251,7 +295,8 @@ export default function AdminRecorderConfig() {
           <thead className="bg-slate-50 text-left">
             <tr>
               <th className="px-4 py-3 font-bold uppercase tracking-wider text-slate-500">Cancha</th>
-              <th className="px-4 py-3 font-bold uppercase tracking-wider text-slate-500">Estado</th>
+              <th className="px-4 py-3 font-bold uppercase tracking-wider text-slate-500">Cámara RTSP</th>
+              <th className="px-4 py-3 font-bold uppercase tracking-wider text-slate-500">Recorder</th>
               <th className="px-4 py-3 font-bold uppercase tracking-wider text-slate-500">Canal DVR</th>
               <th className="px-4 py-3 font-bold uppercase tracking-wider text-slate-500">Subtype</th>
               <th className="px-4 py-3 font-bold uppercase tracking-wider text-slate-500">RTSP override</th>
@@ -262,18 +307,25 @@ export default function AdminRecorderConfig() {
           <tbody>
             {rows.length === 0 && !loading && (
               <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-sm text-slate-500">
+                <td colSpan={8} className="px-4 py-6 text-center text-sm text-slate-500">
                   No hay canchas cargadas. Creálas en "Configuración" primero.
                 </td>
               </tr>
             )}
             {rows.map((row) => {
               const status = statusBySlug.get(row.slug);
+              const cameraProbe = cameraProbeBySlug[row.slug] ?? { state: "idle" };
               return (
                 <tr key={row.slug} className="border-t border-slate-200 align-top">
                   <td className="px-4 py-3">
                     <p className="font-bold text-slate-900">{row.label}</p>
                     <p className="text-xs text-slate-500">{row.slug}</p>
+                  </td>
+                  <td className="px-4 py-3">
+                    <CameraProbeCell
+                      probe={cameraProbe}
+                      onProbe={() => void probeCamera(row.slug)}
+                    />
                   </td>
                   <td className="px-4 py-3">
                     <StatusBadge row={status} loading={statusLoadingFirst} />
@@ -417,6 +469,46 @@ export default function AdminRecorderConfig() {
           ))}
         </div>
       </section>
+    </div>
+  );
+}
+
+function CameraProbeCell({
+  probe,
+  onProbe,
+}: {
+  probe: CameraProbeUi;
+  onProbe: () => void;
+}) {
+  return (
+    <div className="flex flex-col items-start gap-2">
+      <button
+        type="button"
+        onClick={onProbe}
+        disabled={probe.state === "loading"}
+        className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {probe.state === "loading" ? (
+          <Loader2 size={12} className="animate-spin" />
+        ) : (
+          <Video size={12} />
+        )}
+        Probar cámara
+      </button>
+      {probe.state === "idle" && (
+        <span className="text-[11px] text-slate-500">Sin probar aún</span>
+      )}
+      {probe.state === "ok" && probe.result.video && (
+        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-800 ring-1 ring-emerald-200">
+          <CheckCircle2 size={11} />
+          Conectada · {probe.result.video.width}×{probe.result.video.height}
+        </span>
+      )}
+      {probe.state === "error" && (
+        <span className="max-w-[200px] text-[11px] font-semibold text-rose-700">
+          {probe.message}
+        </span>
+      )}
     </div>
   );
 }

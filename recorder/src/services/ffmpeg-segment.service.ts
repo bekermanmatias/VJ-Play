@@ -58,7 +58,8 @@ export async function startFfmpegSegment(
     "warning",
     "-rtsp_transport",
     "tcp",
-    "-stimeout",
+    // FFmpeg 8.x (Windows): -stimeout no existe; -timeout en microsegundos
+    "-timeout",
     "5000000",
     "-i",
     params.rtspUrl,
