@@ -4,5 +4,7 @@ import { createApp } from './app.js';
 const app = createApp();
 
 app.listen(env.port, () => {
-  console.log(`varela-junior-api escuchando en http://localhost:${env.port}`);
+  console.log(
+    `varela-junior-api escuchando en http://localhost:${env.port} (VJ_RUNTIME=${env.vjRuntime})`,
+  );
 });

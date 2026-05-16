@@ -1,7 +1,18 @@
 import { runRecorder } from "./services/recorder.service.js";
 import { createLogger } from "./util/log.js";
+import { env } from "./config/env.js";
 
 const log = createLogger("main");
+
+log.info("iniciando recorder", {
+  VJ_RUNTIME: env.runtime.mode,
+  heartbeats: env.runtime.shouldSendHeartbeat ? "on" : "off (local sin RECORDER_ALLOW_HEARTBEAT_IN_LOCAL)",
+});
+if (env.runtime.isLocal) {
+  log.warn(
+    "VJ_RUNTIME=local — ideal para probar sin Mikrotik/VPS; en producción usá VJ_RUNTIME=vps",
+  );
+}
 
 const controller = new AbortController();
 

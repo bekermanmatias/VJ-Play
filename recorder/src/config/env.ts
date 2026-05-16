@@ -23,7 +23,44 @@ function num(name: string, def: number): number {
   return n;
 }
 
+function bool(name: string, def: boolean): boolean {
+  const v = process.env[name];
+  if (!v || v.trim() === "") return def;
+  const t = v.trim().toLowerCase();
+  if (["1", "true", "yes", "on"].includes(t)) return true;
+  if (["0", "false", "no", "off"].includes(t)) return false;
+  throw new Error(`[env] ${name} debe ser booleano (true/false / 1/0), recibí: "${v}"`);
+}
+
+/**
+ * Dónde corre el proceso: desarrollo en tu PC vs VPS con túnel al Mikrotik.
+ * - local (default): no envía heartbeats a Supabase salvo RECORDER_ALLOW_HEARTBEAT_IN_LOCAL=true
+ * - vps: producción; heartbeats y operación normal
+ */
+function parseVjRuntime(raw: string | undefined): "local" | "vps" {
+  const t = (raw ?? "local").trim().toLowerCase();
+  if (t === "vps" || t === "production" || t === "prod") return "vps";
+  if (t === "local" || t === "development" || t === "dev") return "local";
+  throw new Error(
+    `[env] VJ_RUNTIME debe ser local|vps (o dev|prod). Recibí: "${raw ?? ""}"`,
+  );
+}
+
 export const env = {
+  /** Modo de despliegue: no confundir ensayo en PC con el recorder del VPS. */
+  runtime: (() => {
+    const mode = parseVjRuntime(process.env.VJ_RUNTIME);
+    const allowHeartbeatInLocal = bool("RECORDER_ALLOW_HEARTBEAT_IN_LOCAL", false);
+    return {
+      mode,
+      isLocal: mode === "local",
+      isVps: mode === "vps",
+      /** En local, ¿mandar heartbeats igual? (default false) */
+      allowHeartbeatInLocal,
+      /** Heartbeat habilitado si vps, o local con flag explícito */
+      shouldSendHeartbeat: mode === "vps" || allowHeartbeatInLocal,
+    };
+  })(),
   supabase: {
     url: req("SUPABASE_URL"),
     key: req("SUPABASE_KEY"),

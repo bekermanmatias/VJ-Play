@@ -18,6 +18,9 @@ export interface HeartbeatPayload {
 }
 
 export async function sendHeartbeat(p: HeartbeatPayload): Promise<void> {
+  if (!env.runtime.shouldSendHeartbeat) {
+    return;
+  }
   const supa = getSupabase();
   const { error } = await supa.from("recorder_heartbeat").upsert(
     {
@@ -30,7 +33,10 @@ export async function sendHeartbeat(p: HeartbeatPayload): Promise<void> {
       bytes_written_last_segment: p.bytesWrittenLastSegment ?? null,
       error_message: p.errorMessage ?? null,
       recorder_version: "0.1.0",
-      recorder_host: env.heartbeat.hostLabel || null,
+      recorder_host:
+        env.heartbeat.hostLabel.trim() !== ""
+          ? `${env.runtime.mode}:${env.heartbeat.hostLabel}`
+          : `${env.runtime.mode}`,
       last_seen_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     },

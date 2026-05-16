@@ -115,9 +115,27 @@ function parseRecordingShiftsWindowEndHour(): number {
   return n;
 }
 
+function parseOptionalVjRuntime(raw: string | undefined): 'local' | 'vps' | undefined {
+  if (!raw || raw.trim() === '') {
+    return undefined;
+  }
+  const t = raw.trim().toLowerCase();
+  if (t === 'vps' || t === 'production' || t === 'prod') return 'vps';
+  if (t === 'local' || t === 'development' || t === 'dev') return 'local';
+  console.warn(
+    `[env] VJ_RUNTIME inválido (${JSON.stringify(raw)}); use local o vps. Ignorado.`,
+  );
+  return undefined;
+}
+
 export const env = {
   port: Number.parseInt(process.env.PORT ?? '4000', 10),
   nodeEnv: process.env.NODE_ENV ?? 'development',
+  /**
+   * Dónde corre el API: PC local vs VPS (producción con túnel/Mikrotik).
+   * Default `local` si no está definida (alinear con recorder).
+   */
+  vjRuntime: parseOptionalVjRuntime(optionalEnv('VJ_RUNTIME')) ?? 'local',
 
   jwtSessionSecret: requireEnv('JWT_SESSION_SECRET'),
   adminSecret: optionalEnv('ADMIN_SECRET'),
