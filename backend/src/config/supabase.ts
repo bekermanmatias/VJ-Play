@@ -17,8 +17,8 @@ export function getSupabase(): SupabaseClient {
   if (!client) {
     client = createClient(env.supabaseUrl, env.supabaseKey, {
       auth: { persistSession: false, autoRefreshToken: false },
-      // Node.js 20 doesn't expose a native WebSocket globally; provide ws explicitly for Supabase Realtime initialization.
-      realtime: { transport: ws },
+      // Node no expone WebSocket global; `ws` satisface Realtime en runtime.
+      realtime: { transport: ws as never },
     });
   }
   return client;

@@ -1,7 +1,49 @@
-# VJ Play — Deploy del recorder en VPS (Google Cloud Free Tier)
+# VJ Play — Deploy en VPS (Google Cloud)
 
-Guía para levantar el servicio `recorder/` en una VM Ubuntu 24.04 LTS de
-Google Cloud Compute Engine, conectada por WireGuard al Mikrotik del club.
+Guía para una VM Ubuntu 24.04 en **Google Cloud** (créditos $300 o free tier).
+
+| Objetivo | Camino recomendado |
+|----------|-------------------|
+| Probar **back + front** en la nube | **Docker** → `deploy/README.md` |
+| Recorder 24/7 + WireGuard al club | Docker `--profile recorder` o bare metal (§4) |
+
+---
+
+## 0. Deploy con Docker (back + front + Caddy)
+
+Recomendado para la primera subida a GCP.
+
+1. VM **e2-small** (2 GB) o **e2-micro** (solo back+front, sin recorder).
+2. Firewall GCP: **TCP 22** (SSH) y **TCP 80** (sitio + API vía Caddy).
+3. En la VM:
+
+```bash
+git clone <repo> /opt/vjplay/source
+cd /opt/vjplay/source
+sudo bash infra/vps-setup-docker.sh
+# Re-login SSH si hace falta (grupo docker)
+
+cd deploy
+cp .env.example .env
+# SITE_HOST y PUBLIC_REPLAY_API_BASE = http://<IP_PUBLICA>
+# CORS_ORIGINS = mismo valor
+# VJ_RUNTIME=vps + secretos Supabase/R2/JWT
+nano .env
+
+docker compose up -d --build
+docker compose ps
+curl -s http://127.0.0.1/health
+```
+
+Abrir en el navegador: `http://<IP_PUBLICA>`.
+
+**Recorder** (cuando Mikrotik esté listo): WireGuard en el host (§3) y luego:
+
+```bash
+docker compose --profile recorder up -d --build
+```
+
+Detalle completo: **`deploy/README.md`**.
 
 ---
 
@@ -14,7 +56,8 @@ Google Cloud Compute Engine, conectada por WireGuard al Mikrotik del club.
 - **Imagen:** **Ubuntu 24.04 LTS** (x86_64, "Minimal" está bien)
 - **Disco:** 30 GB SSD estándar (el máximo gratis)
 - **Networking:** dejar IP pública efímera (gratis) o reservar una estática (cuesta cuando la VM está apagada)
-- **Firewall:** marcar "Allow HTTPS / HTTP" no es necesario; el recorder no expone puertos. Sí necesitás dejar SSH (22).
+- **Firewall:** **SSH (22)**. Para Docker (§0): **HTTP (80)**. El recorder no necesita puertos públicos propios.
+- **Prueba con Docker:** preferí **e2-small** (2 GB RAM). Con **e2-micro** (1 GB) probá solo back+front.
 
 ### 1.2 Generar par de llaves SSH (Windows)
 
@@ -136,6 +179,7 @@ Datos a completar:
 - `DVR_HOST=192.168.88.10`, `DVR_RTSP_USER=recorder`, `DVR_RTSP_PASSWORD=<de Dahua>`.
 - `RECORDING_TIMEZONE=America/Argentina/Buenos_Aires`.
 - `RECORDER_HOST_LABEL=gcp-free-tier-1` (para diferenciar en heartbeat).
+- `VJ_RUNTIME=vps` (obligatorio en producción; en Docker va en `deploy/.env`).
 
 ### 4.3 Build
 
