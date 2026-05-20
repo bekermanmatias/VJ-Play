@@ -1,0 +1,183 @@
+---
+/**
+ * Sección de noticias del home (placeholder).
+ * En el futuro, este array debería poblarse desde Supabase / CMS.
+ * Mientras tanto se renderiza hardcodeado con datos de ejemplo.
+ */
+
+const PLACEHOLDER = "/images/deportes/placeholder.svg";
+
+type Noticia = {
+  id: string;
+  category: string;
+  title: string;
+  excerpt?: string;
+  date: string;
+  image: string;
+  href: string;
+};
+
+const noticias: Noticia[] = [
+  {
+    id: "n1",
+    category: "Institucional",
+    title: "Próximamente: novedades del Club Social Varela Junior",
+    excerpt:
+      "Acá vas a ver las noticias destacadas del club: eventos, torneos, logros deportivos y novedades para socios.",
+    date: "—/—/——",
+    image: PLACEHOLDER,
+    href: "#",
+  },
+  {
+    id: "n2",
+    category: "Deportes",
+    title: "Título de noticia secundaria",
+    date: "—/—/——",
+    image: PLACEHOLDER,
+    href: "#",
+  },
+  {
+    id: "n3",
+    category: "Socios",
+    title: "Otra novedad relevante para la comunidad",
+    date: "—/—/——",
+    image: PLACEHOLDER,
+    href: "#",
+  },
+  {
+    id: "n4",
+    category: "Eventos",
+    title: "Tercera noticia con su título informativo",
+    date: "—/—/——",
+    image: PLACEHOLDER,
+    href: "#",
+  },
+];
+
+const [featured, ...rest] = noticias;
+const small = rest.slice(0, 3);
+---
+
+<section
+  class="bg-white py-16 sm:py-20"
+  aria-labelledby="home-noticias-title"
+>
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <header class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <p class="text-xs font-bold uppercase tracking-[0.22em] text-vj-green">Novedades</p>
+        <h2
+          id="home-noticias-title"
+          class="mt-2 font-display text-4xl font-extrabold uppercase tracking-wide text-slate-900 sm:text-5xl"
+        >
+          Noticias
+        </h2>
+      </div>
+      <span
+        class="inline-flex w-fit items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-amber-700"
+      >
+        <span class="inline-block h-1.5 w-1.5 rounded-full bg-amber-500" aria-hidden="true"></span>
+        En desarrollo
+      </span>
+    </header>
+
+    <div class="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <!-- Destacada -->
+      <a
+        href={featured.href}
+        class="group relative block aspect-[16/11] overflow-hidden bg-slate-900 ring-1 ring-slate-200 transition lg:aspect-auto"
+      >
+        <img
+          src={featured.image}
+          alt=""
+          class="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
+          loading="lazy"
+          decoding="async"
+        />
+        <div
+          class="absolute inset-0 bg-gradient-to-t from-slate-900/95 via-slate-900/55 to-slate-900/10"
+          aria-hidden="true"
+        ></div>
+        <div class="relative flex h-full flex-col justify-end p-6 sm:p-8">
+          <span
+            class="inline-flex w-fit items-center gap-2 bg-vj-green px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-white"
+          >
+            {featured.category}
+          </span>
+          <h3
+            class="mt-4 max-w-xl font-display text-2xl font-extrabold uppercase leading-tight tracking-wide text-white sm:text-3xl"
+          >
+            {featured.title}
+          </h3>
+          {featured.excerpt && (
+            <p class="mt-3 max-w-xl text-sm text-slate-200 sm:text-base">
+              {featured.excerpt}
+            </p>
+          )}
+          <div class="mt-4 flex items-center gap-2 text-xs text-slate-300">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              class="h-3.5 w-3.5"
+              aria-hidden="true"
+            >
+              <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+              <path d="M16 2v4M8 2v4M3 10h18"></path>
+            </svg>
+            <span>{featured.date}</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- Lista derecha -->
+      <ul class="flex flex-col divide-y divide-slate-200 border-y border-slate-200">
+        {
+          small.map((n) => (
+            <li>
+              <a
+                href={n.href}
+                class="group flex items-stretch gap-4 py-4 transition hover:bg-slate-50 sm:gap-5"
+              >
+                <div class="relative aspect-[4/3] w-28 shrink-0 overflow-hidden bg-slate-100 sm:w-36">
+                  <img
+                    src={n.image}
+                    alt=""
+                    class="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </div>
+                <div class="flex min-w-0 flex-1 flex-col justify-center">
+                  <span class="text-[11px] font-bold uppercase tracking-[0.18em] text-vj-green">
+                    {n.category}
+                  </span>
+                  <h3 class="mt-1 line-clamp-3 text-sm font-extrabold leading-snug text-slate-900 sm:text-base">
+                    {n.title}
+                  </h3>
+                  <div class="mt-2 flex items-center gap-2 text-[11px] text-slate-400">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.6"
+                      class="h-3 w-3"
+                      aria-hidden="true"
+                    >
+                      <rect x="3" y="4" width="18" height="18" rx="2" />
+                      <path d="M16 2v4M8 2v4M3 10h18" />
+                    </svg>
+                    <span>{n.date}</span>
+                  </div>
+                </div>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </div>
+</section>

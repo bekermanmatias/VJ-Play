@@ -28,7 +28,7 @@ export function captureFrameFromVideoSource(
       command.inputOptions([
         '-rtsp_transport',
         'tcp',
-        '-stimeout',
+        '-timeout',
         '5000000',
       ]);
     }
@@ -48,10 +48,40 @@ export function captureFrameFromVideoSource(
 }
 
 /**
- * Extrae un clip en contenedor MP4 con video H.265 (HEVC) y audio AAC.
+ * Captura un frame de una fuente de video en un tiempo específico.
+ */
+export function captureFrameAtTime(
+  inputUrl: string,
+  outputFilePath: string,
+  atSeconds: number,
+): Promise<void> {
+  const safeTime = Number.isFinite(atSeconds) && atSeconds > 0 ? atSeconds : 0;
+  return new Promise((resolve, reject) => {
+    const command = ffmpeg(inputUrl);
+    if (isRtspUrl(inputUrl)) {
+      command.inputOptions(['-rtsp_transport', 'tcp']);
+    }
+    command
+      .setStartTime(safeTime)
+      .frames(1)
+      .outputOptions([
+        '-vf',
+        'scale=320:-2',
+        '-q:v',
+        '24',
+      ])
+      .output(outputFilePath)
+      .on('end', () => resolve())
+      .on('error', (err: Error) => reject(err))
+      .run();
+  });
+}
+
+/**
+ * Extrae un clip en MP4 con H.264 + AAC (yuv420p): reproducible en la mayoría de navegadores, móviles y TVs.
  * La decodificación/codificación ocurre en el proceso FFmpeg, no en el hilo principal.
  */
-export function extractHevcMp4Clip(
+export function extractCompatibleMp4Clip(
   inputUrl: string,
   outputFilePath: string,
   startSeconds: number,
@@ -74,14 +104,22 @@ export function extractHevcMp4Clip(
       .setStartTime(startSeconds)
       .duration(durationSeconds)
       .outputOptions([
+        '-map',
+        '0:v:0',
+        '-map',
+        '0:a?',
         '-c:v',
-        'libx265',
+        'libx264',
         '-preset',
         'medium',
         '-crf',
-        '28',
-        '-tag:v',
-        'hvc1',
+        '23',
+        '-profile:v',
+        'high',
+        '-level',
+        '4.0',
+        '-pix_fmt',
+        'yuv420p',
         '-c:a',
         'aac',
         '-b:a',

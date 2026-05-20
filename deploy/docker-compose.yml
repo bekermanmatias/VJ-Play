@@ -1,0 +1,85 @@
+# VJ Play — stack para GCP / VPS (prueba y producción inicial).
+# Uso: cp .env.example .env → editar → docker compose up -d --build
+#
+# Perfiles:
+#   (default)     backend + frontend + caddy
+#   --profile recorder   recorder (requiere WireGuard en el HOST; network_mode: host)
+
+name: vjplay
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: "4000"
+    expose:
+      - "4000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 25s
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        PUBLIC_REPLAY_API_BASE: ${PUBLIC_REPLAY_API_BASE:-http://localhost:4000}
+    restart: unless-stopped
+    environment:
+      HOST: 0.0.0.0
+      PORT: "4321"
+    expose:
+      - "4321"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:4321/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
+  recorder:
+    profiles: ["recorder"]
+    build:
+      context: ../recorder
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    network_mode: host
+    volumes:
+      - vjplay-recorder-buffer:/var/lib/vjplay-recorder
+
+volumes:
+  vjplay-recorder-buffer:

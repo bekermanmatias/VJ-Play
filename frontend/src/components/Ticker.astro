@@ -1,20 +1,11 @@
 ---
+import { deportes } from "@/data/deportes";
+
 interface Props {
   items?: string[];
 }
 
-const {
-  items = [
-    "Fútbol",
-    "Básquet",
-    "Tenis",
-    "Vóley",
-    "Natación",
-    "Hockey",
-    "Gimnasia",
-  ],
-} = Astro.props;
-
+const { items = deportes.map((d) => d.displayName) } = Astro.props;
 ---
 
 <div

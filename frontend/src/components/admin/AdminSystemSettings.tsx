@@ -1,4 +1,5 @@
 import { Power, ShieldCheck } from "lucide-react";
+import AdminReplaysModeration from "@/components/admin/AdminReplaysModeration";
 
 export default function AdminSystemSettings() {
   const runProtectedAction = (label: string) => {
@@ -51,6 +52,10 @@ export default function AdminSystemSettings() {
             </button>
           </div>
         </article>
+      </section>
+
+      <section className="mt-8">
+        <AdminReplaysModeration showSettings showMatches={false} />
       </section>
     </div>
   );

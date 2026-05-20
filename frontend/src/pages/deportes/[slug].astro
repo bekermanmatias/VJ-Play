@@ -1,0 +1,25 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import TopBar from "@/components/TopBar.astro";
+import Navbar from "@/components/Navbar.astro";
+import DeporteSplitLayout from "@/components/deportes/DeporteSplitLayout.astro";
+import DeporteNoticias from "@/components/deportes/DeporteNoticias.astro";
+import { getDeporteBySlug } from "@/data/deportes";
+
+const slug = Astro.params.slug ?? "";
+const data = getDeporteBySlug(slug);
+
+if (!data) {
+  return new Response(null, { status: 404, statusText: "Deporte no encontrado" });
+}
+---
+
+<Layout title={data.metaTitle} description={data.metaDescription}>
+  <TopBar />
+  <Navbar />
+
+  <main>
+    <DeporteSplitLayout data={data} />
+    <DeporteNoticias displayName={data.displayName} />
+  </main>
+</Layout>

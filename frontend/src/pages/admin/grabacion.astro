@@ -1,0 +1,20 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import AdminSidebar from "@/components/admin/AdminSidebar.astro";
+import AdminRecorderConfig from "@/components/admin/AdminRecorderConfig";
+---
+
+<Layout
+  title="Admin Grabación | Club Social Varela Junior"
+  description="Configurar grabación de canchas y monitorear el recorder."
+>
+  <main class="min-h-screen bg-slate-100">
+    <div class="grid min-h-screen grid-cols-1 lg:grid-cols-[280px_1fr]">
+      <AdminSidebar currentPath={Astro.url.pathname} />
+
+      <section class="px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
+        <AdminRecorderConfig client:load />
+      </section>
+    </div>
+  </main>
+</Layout>

@@ -34,6 +34,17 @@ function parseCorsOrigins(raw: string | undefined): string[] {
     .filter((s) => s.length > 0);
 }
 
+function parseWatermarkPercent(raw: string | undefined, fallback: number): number {
+  if (!raw || raw.trim() === '') {
+    return fallback;
+  }
+  const n = Number.parseFloat(raw);
+  if (!Number.isFinite(n) || n < 0 || n > 100) {
+    return fallback;
+  }
+  return n;
+}
+
 function parseReplaySessionTtlSeconds(): number {
   const raw = process.env.REPLAY_SESSION_TTL_SECONDS;
   if (!raw || raw.trim() === '') {
@@ -48,14 +59,93 @@ function parseReplaySessionTtlSeconds(): number {
   return n;
 }
 
+/** Duración de cada grabación por turno (segmentación ingest / validaciones). Default 3600 s (1 h). */
+function parseRecordingShiftDurationSeconds(): number {
+  const raw = process.env.RECORDING_SHIFT_DURATION_SECONDS;
+  if (!raw || raw.trim() === '') {
+    return 3600;
+  }
+  const n = Number.parseInt(raw, 10);
+  if (!Number.isFinite(n) || n < 300 || n > 28_800) {
+    throw new Error(
+      'RECORDING_SHIFT_DURATION_SECONDS debe ser un entero entre 300 y 28800 (8 h)',
+    );
+  }
+  return n;
+}
+
+function parseRecordingShiftsWindowStartHour(): number {
+  const raw = process.env.RECORDING_SHIFTS_WINDOW_START_HOUR;
+  if (!raw || raw.trim() === '') {
+    return 8;
+  }
+  const n = Number.parseInt(raw, 10);
+  if (!Number.isFinite(n) || n < 0 || n > 23) {
+    throw new Error(
+      'RECORDING_SHIFTS_WINDOW_START_HOUR debe ser un entero entre 0 y 23',
+    );
+  }
+  return n;
+}
+
+/** TTL de URLs firmadas para descargar el partido completo desde R2 (60 s – 24 h). */
+function parseReplayFullVideoPresignExpiresSeconds(): number {
+  const raw = process.env.REPLAY_FULL_VIDEO_PRESIGN_EXPIRES_SECONDS;
+  if (!raw || raw.trim() === '') {
+    return 900;
+  }
+  const n = Number.parseInt(raw, 10);
+  if (!Number.isFinite(n)) {
+    return 900;
+  }
+  return Math.min(Math.max(n, 60), 86_400);
+}
+
+function parseRecordingShiftsWindowEndHour(): number {
+  const raw = process.env.RECORDING_SHIFTS_WINDOW_END_HOUR;
+  if (!raw || raw.trim() === '') {
+    return 24;
+  }
+  const n = Number.parseInt(raw, 10);
+  if (!Number.isFinite(n) || n < 1 || n > 24) {
+    throw new Error(
+      'RECORDING_SHIFTS_WINDOW_END_HOUR debe ser un entero entre 1 y 24',
+    );
+  }
+  return n;
+}
+
+function parseOptionalVjRuntime(raw: string | undefined): 'local' | 'vps' | undefined {
+  if (!raw || raw.trim() === '') {
+    return undefined;
+  }
+  const t = raw.trim().toLowerCase();
+  if (t === 'vps' || t === 'production' || t === 'prod') return 'vps';
+  if (t === 'local' || t === 'development' || t === 'dev') return 'local';
+  console.warn(
+    `[env] VJ_RUNTIME inválido (${JSON.stringify(raw)}); use local o vps. Ignorado.`,
+  );
+  return undefined;
+}
+
 export const env = {
   port: Number.parseInt(process.env.PORT ?? '4000', 10),
   nodeEnv: process.env.NODE_ENV ?? 'development',
+  /**
+   * Dónde corre el API: PC local vs VPS (producción con túnel/Mikrotik).
+   * Default `local` si no está definida (alinear con recorder).
+   */
+  vjRuntime: parseOptionalVjRuntime(optionalEnv('VJ_RUNTIME')) ?? 'local',
 
   jwtSessionSecret: requireEnv('JWT_SESSION_SECRET'),
   adminSecret: optionalEnv('ADMIN_SECRET'),
   corsOrigins: parseCorsOrigins(optionalEnv('CORS_ORIGINS')),
   replaySessionTtlSeconds: parseReplaySessionTtlSeconds(),
+  /** Misma semántica que PUBLIC_REPLAY_SHIFT_DURATION_SECONDS en el front (alinear ingest con UI). */
+  recordingShiftDurationSeconds: parseRecordingShiftDurationSeconds(),
+  /** Fallback si no hay fila en replay_shift_settings (o sin Supabase). */
+  recordingShiftsWindowStartHour: parseRecordingShiftsWindowStartHour(),
+  recordingShiftsWindowEndHour: parseRecordingShiftsWindowEndHour(),
   devMatchAccessRaw: optionalEnv('DEV_MATCH_ACCESS'),
 
   supabaseUrl: optionalEnv('SUPABASE_URL'),
@@ -69,11 +159,37 @@ export const env = {
     optionalEnv('R2_ENDPOINT') ??
     `https://${r2AccountId}.r2.cloudflarestorage.com`,
   r2PublicBaseUrl: optionalEnv('R2_PUBLIC_BASE_URL'),
+  replayFullVideoPresignExpiresSeconds: parseReplayFullVideoPresignExpiresSeconds(),
 
   ffmpegPath: optionalEnv('FFMPEG_PATH'),
   ffprobePath: optionalEnv('FFPROBE_PATH'),
+  /** PNG a aplicar como marca en clips y descargas. Vacío = sin marca. */
   watermarkPngPath: optionalEnv('WATERMARK_PNG_PATH'),
+  /** Centro horizontal de la marca (% del ancho del video, 0–100). Default 50. */
+  watermarkXPercent: parseWatermarkPercent(process.env.WATERMARK_X_PERCENT, 50),
+  /** Borde inferior de la marca (% desde arriba del video). Default 93. */
+  watermarkBottomPercent: parseWatermarkPercent(process.env.WATERMARK_BOTTOM_PERCENT, 93),
+  /** Ancho máximo de la marca (% del ancho del video). 0 = tamaño nativo del PNG. Default 44. */
+  watermarkWidthPercent: parseWatermarkPercent(process.env.WATERMARK_WIDTH_PERCENT, 44),
+  /** Alto máximo de la marca (% del alto del video). Default 42. */
+  watermarkMaxHeightPercent: parseWatermarkPercent(process.env.WATERMARK_MAX_HEIGHT_PERCENT, 42),
   defaultRtspUrl: optionalEnv('DEFAULT_RTSP_URL'),
+
+  /** DVR Dahua (mismas variables que recorder/.env) — probe RTSP desde admin. */
+  dvr: {
+    user: optionalEnv('DVR_RTSP_USER'),
+    password: optionalEnv('DVR_RTSP_PASSWORD'),
+    host: optionalEnv('DVR_HOST'),
+    port: (() => {
+      const raw = optionalEnv('DVR_RTSP_PORT');
+      if (!raw) return 554;
+      const n = Number.parseInt(raw, 10);
+      return Number.isFinite(n) && n > 0 ? n : 554;
+    })(),
+    urlTemplate:
+      optionalEnv('DVR_RTSP_URL_TEMPLATE') ??
+      'rtsp://{user}:{password}@{host}:{port}/cam/realmonitor?channel={channel}&subtype={subtype}',
+  },
 
   replayFallbackVideoUrl:
     optionalEnv('REPLAY_FALLBACK_VIDEO_URL') ??

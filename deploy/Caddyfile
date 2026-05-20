@@ -1,0 +1,14 @@
+# Proxy único en :80 — sitio Astro + API Express (/api ya incluido en el backend).
+:80 {
+	handle /health {
+		reverse_proxy backend:4000
+	}
+
+	handle /api/* {
+		reverse_proxy backend:4000
+	}
+
+	handle {
+		reverse_proxy frontend:4321
+	}
+}

@@ -1,13 +1,31 @@
 // @ts-check
 import { defineConfig } from "astro/config";
+import node from "@astrojs/node";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@astrojs/react";
 
 // https://astro.build/config
 export default defineConfig({
   site: "https://varelajunior.com.ar",
+  output: "server",
+  adapter: node({ mode: "standalone" }),
   integrations: [react()],
   vite: {
-    plugins: [tailwindcss()],
+    plugins: [
+      tailwindcss(),
+      {
+        name: "vj-ignore-broken-sourcemap-sources",
+        configureServer(server) {
+          server.middlewares.use((req, res, next) => {
+            if (req.url?.startsWith("/node_modules/src/")) {
+              res.statusCode = 204;
+              res.end();
+              return;
+            }
+            next();
+          });
+        },
+      },
+    ],
   },
 });

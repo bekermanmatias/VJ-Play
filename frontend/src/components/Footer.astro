@@ -1,4 +1,6 @@
 ---
+import { deportesNav } from "@/data/deportes";
+
 const year = new Date().getFullYear();
 
 const quickLinks = [
@@ -9,14 +11,7 @@ const quickLinks = [
   { label: "Contacto", href: "/contacto" },
 ];
 
-const sportsLinks = [
-  { label: "Padel", href: "/deportes/padel" },
-  { label: "Futbol", href: "/deportes/futbol" },
-  { label: "Basquet", href: "/deportes/basquet" },
-  { label: "Voley", href: "/deportes/voley" },
-  { label: "Hockey", href: "/deportes/hockey" },
-  { label: "Tenis", href: "/deportes/tenis" },
-];
+const sportsLinks = deportesNav;
 ---
 
 <footer class="border-t border-slate-800 bg-slate-950 text-slate-200">
