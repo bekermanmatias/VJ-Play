@@ -1,60 +1,65 @@
 /**
  * Contenido de cada pestaña en /deportes/[slug].
  *
- * FOTO IDEAL (panel derecho, 50% del ancho en desktop):
- *   - Tamaño recomendado: 1200 × 800 px (proporción 3:2)
- *   - Retina / pantallas grandes: 1600 × 1067 px
+ * FOTO (panel derecho, 50% en desktop — object-cover):
+ *   - Tamaño: 1200 × 1200 px (cuadrado)
  *   - Formato: JPG o WebP, calidad 80–85, ideal < 400 KB
- *   - Guardar en: public/images/deportes/[slug].jpg (o .webp)
+ *   - Guardar en: public/images/deportes/[slug].jpg
  *
  * Redes: completá whatsappUrl e instagramUrl por actividad.
- *   WhatsApp: https://wa.me/549XXXXXXXXXX?text=Hola%2C%20consulta%20por%20PADEL
- *   Instagram: https://www.instagram.com/tu_cuenta_padel/
  */
 
 export type DeportePageData = {
   slug: string;
-  /** Título grande en el panel oscuro (ej. PÁDEL) */
   title: string;
-  /** Nombre tipo título usado en "Noticias sobre [X]" y en menús (ej. Pádel). */
   displayName: string;
   metaTitle: string;
   metaDescription: string;
-  /** Párrafos en orden (texto blanco) */
   paragraphs: string[];
-  /** Bloque opcional de horarios / categorías */
   scheduleTitle?: string;
   scheduleItems?: string[];
-  /** Encabezado del bloque de contacto (ej. "Reservas", "Coordinadores"). */
   contactLabel?: string;
-  /** Teléfono único: si hay uno solo, usar estos dos campos. */
   contactPhone?: string;
   contactPhoneHref?: string;
-  /** Si hay varios teléfonos, usar este array (tiene prioridad sobre contactPhone). */
   contactPhones?: Array<{
-    /** Nombre del responsable, opcional (ej. "Thiago"). */
     name?: string;
-    /** Número visible (ej. "+54 9 11 6426-5720"). */
     phone: string;
-    /** Link tel: (ej. "tel:+5491164265720"). */
     phoneHref: string;
   }>;
-  /** Vacío = no se muestra el botón */
   whatsappUrl: string;
   instagramUrl: string;
-  /** Ruta bajo /public */
   imageSrc: string;
   imageAlt: string;
-  /** Dimensiones reales del archivo (para width/height del img) */
   imageWidth: number;
   imageHeight: number;
 };
 
 const PLACEHOLDER_IMG = "/images/deportes/placeholder.svg";
+const IMG = 1200;
+const CLUB_IG = "https://www.instagram.com/clubsocialvarelajunior/";
 
-/** Genera URL wa.me con texto pre-armado. */
 function wsp(phone: string, text: string): string {
   return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+}
+
+/** 11-XXXX-XXXX → tel:+54911... */
+function tel(phoneLocal: string): string {
+  const digits = phoneLocal.replace(/\D/g, "");
+  const full = digits.startsWith("549") ? digits : `549${digits}`;
+  return `tel:+${full}`;
+}
+
+function phoneDisplay(phoneLocal: string): string {
+  const d = phoneLocal.replace(/\D/g, "");
+  if (d.length >= 10) {
+    return `+54 9 11 ${d.slice(-8, -4)}-${d.slice(-4)}`;
+  }
+  return phoneLocal;
+}
+
+function wspFromLocal(phoneLocal: string, text: string): string {
+  const digits = phoneLocal.replace(/\D/g, "");
+  return wsp(digits.startsWith("549") ? digits : `549${digits}`, text);
 }
 
 export const deportes: DeportePageData[] = [
@@ -68,6 +73,7 @@ export const deportes: DeportePageData[] = [
     paragraphs: [
       "Canchas de fútbol 5 del CVJ para reservar todos los días de la semana.",
       "Lunes a viernes abrimos desde las 12 hs. Sábados desde las 9 hs. Domingos desde las 13:30 hs.",
+      "Alquiler de canchas: también coordinamos fútbol, pádel, vóley y tenis nocturno por el mismo canal de reservas.",
     ],
     scheduleTitle: "Horarios de apertura",
     scheduleItems: [
@@ -78,31 +84,18 @@ export const deportes: DeportePageData[] = [
     contactLabel: "Reservas",
     contactPhones: [
       { phone: "4237-6276", phoneHref: "tel:+541142376276" },
-      { phone: "+54 9 11 7026-7446", phoneHref: "tel:+5491170267446" },
+      {
+        name: "Alquiler de canchas",
+        phone: phoneDisplay("1170267446"),
+        phoneHref: tel("1170267446"),
+      },
     ],
-    whatsappUrl: wsp("5491170267446", "Hola, quiero reservar fútbol 5 en el CVJ"),
+    whatsappUrl: wspFromLocal("1170267446", "Hola, quiero reservar fútbol 5 en el CVJ"),
     instagramUrl: "https://www.instagram.com/varelajrfutbol/",
-    imageSrc: "/images/deportes/f5.png",
+    imageSrc: "/images/deportes/f5.jpg",
     imageAlt: "Fútbol 5 — Club Social Varela Junior",
-    imageWidth: 1200,
-    imageHeight: 800,
-  },
-  {
-    slug: "futbol-femenino",
-    title: "FÚTBOL FEMENINO",
-    displayName: "Fútbol Femenino",
-    metaTitle: "Fútbol Femenino | Club Social Varela Junior",
-    metaDescription: "Fútbol femenino del Club Social Varela Junior.",
-    paragraphs: [
-      "Sumate al equipo de fútbol femenino del CVJ.",
-      "Seguinos en Instagram para enterarte de entrenamientos, partidos y novedades.",
-    ],
-    whatsappUrl: "",
-    instagramUrl: "https://www.instagram.com/clubvarelajuniorfem/",
-    imageSrc: PLACEHOLDER_IMG,
-    imageAlt: "Fútbol femenino — Club Social Varela Junior",
-    imageWidth: 1200,
-    imageHeight: 800,
+    imageWidth: IMG,
+    imageHeight: IMG,
   },
   {
     slug: "padel",
@@ -114,6 +107,7 @@ export const deportes: DeportePageData[] = [
     paragraphs: [
       "Canchas de pádel del Club Social Varela Junior para socios y visitantes.",
       "Lunes a viernes abrimos desde las 12 hs. Sábados desde las 9 hs. Domingos desde las 13:30 hs.",
+      "Reservas y alquiler de canchas (fútbol, pádel, vóley y tenis nocturno) por teléfono o WhatsApp.",
     ],
     scheduleTitle: "Horarios de apertura",
     scheduleItems: [
@@ -124,14 +118,80 @@ export const deportes: DeportePageData[] = [
     contactLabel: "Reservas",
     contactPhones: [
       { phone: "4237-6276", phoneHref: "tel:+541142376276" },
-      { phone: "+54 9 11 7026-7446", phoneHref: "tel:+5491170267446" },
+      {
+        name: "Alquiler de canchas",
+        phone: phoneDisplay("1170267446"),
+        phoneHref: tel("1170267446"),
+      },
     ],
-    whatsappUrl: wsp("5491170267446", "Hola, quiero reservar pádel en el CVJ"),
+    whatsappUrl: wspFromLocal("1170267446", "Hola, quiero reservar pádel en el CVJ"),
     instagramUrl: "https://www.instagram.com/varelajrfutbol/",
-    imageSrc: "/images/deportes/padel.png",
+    imageSrc: "/images/deportes/padel.jpg",
     imageAlt: "Canchas de pádel del Club Social Varela Junior",
-    imageWidth: 1200,
-    imageHeight: 800,
+    imageWidth: IMG,
+    imageHeight: IMG,
+  },
+  {
+    slug: "futbol-femenino",
+    title: "FÚTBOL FEMENINO",
+    displayName: "Fútbol Femenino",
+    metaTitle: "Fútbol Femenino | Club Social Varela Junior",
+    metaDescription: "Fútbol femenino del Club Social Varela Junior.",
+    paragraphs: [
+      "Equipo y escuela de fútbol femenino del Club Varela Juniors.",
+      "Consultá por entrenamientos, categorías e inscripciones por teléfono o Instagram.",
+    ],
+    contactLabel: "Coordinación",
+    contactPhone: phoneDisplay("1131519970"),
+    contactPhoneHref: tel("1131519970"),
+    whatsappUrl: wspFromLocal("1131519970", "Hola, consulta por fútbol femenino del CVJ"),
+    instagramUrl: "https://www.instagram.com/clubvarelajuniorfem/",
+    imageSrc: "/images/deportes/futbolfemenino.jpg",
+    imageAlt: "Fútbol femenino — Club Social Varela Junior",
+    imageWidth: IMG,
+    imageHeight: IMG,
+  },
+  {
+    slug: "futbol-infantil",
+    title: "FÚTBOL INFANTIL",
+    displayName: "Fútbol Infantil",
+    metaTitle: "Fútbol Infantil | Club Social Varela Junior",
+    metaDescription: "Fútbol infantil del Club Social Varela Junior.",
+    paragraphs: [
+      "Formación y competencia de fútbol infantil en el Club Varela Juniors.",
+      "Escribinos para conocer categorías, horarios de entrenamiento e inscripciones.",
+    ],
+    contactLabel: "Coordinación",
+    contactPhone: phoneDisplay("1132948266"),
+    contactPhoneHref: tel("1132948266"),
+    whatsappUrl: wspFromLocal("1132948266", "Hola, consulta por fútbol infantil del CVJ"),
+    instagramUrl: CLUB_IG,
+    imageSrc: "/images/deportes/futbolinfantil.jpg",
+    imageAlt: "Fútbol infantil — Club Social Varela Junior",
+    imageWidth: IMG,
+    imageHeight: IMG,
+  },
+  {
+    slug: "tenis",
+    title: "TENIS",
+    displayName: "Tenis",
+    metaTitle: "Tenis · Varela Open | Club Social Varela Junior",
+    metaDescription:
+      "Tenis y Varela Open en el Club Social Varela Junior. Canchas y tenis nocturno.",
+    paragraphs: [
+      "Tenis y comunidad alrededor del Varela Open: desde 2019 creciendo sin parar.",
+      "Pasamos de 10 jugadores a una comunidad que vive el tenis como deporte, competencia y encuentro con amigos.",
+      "Alquiler de canchas (fútbol, pádel, vóley y tenis nocturno) — consultá disponibilidad por teléfono.",
+    ],
+    contactLabel: "Reservas · tenis nocturno",
+    contactPhone: phoneDisplay("1170267446"),
+    contactPhoneHref: tel("1170267446"),
+    whatsappUrl: wspFromLocal("1170267446", "Hola, consulta por tenis / reserva de cancha en el CVJ"),
+    instagramUrl: "https://www.instagram.com/varelaopen/",
+    imageSrc: "/images/deportes/tenis.jpg",
+    imageAlt: "Tenis — Varela Open",
+    imageWidth: IMG,
+    imageHeight: IMG,
   },
   {
     slug: "basquet",
@@ -157,63 +217,50 @@ export const deportes: DeportePageData[] = [
       "Mar · Jue — Superior Femenino · 20 hs",
       "Mar · Jue — Superior Flex · 21 hs",
     ],
-    contactLabel: "Coordinadores",
+    contactLabel: "Coordinación",
     contactPhones: [
       { name: "Thiago", phone: "+54 9 11 6426-5720", phoneHref: "tel:+5491164265720" },
-      { name: "Pablo", phone: "+54 9 11 3690-1392", phoneHref: "tel:+5491136901392" },
+      {
+        name: "Pablo",
+        phone: phoneDisplay("1136901392"),
+        phoneHref: tel("1136901392"),
+      },
     ],
-    whatsappUrl: wsp("5491164265720", "Hola Thiago, consulta por básquet del CVJ"),
+    whatsappUrl: wspFromLocal("1136901392", "Hola, consulta por básquet del CVJ"),
     instagramUrl: "https://www.instagram.com/varelajuniorsbasquet/",
-    imageSrc: PLACEHOLDER_IMG,
+    imageSrc: "/images/deportes/basquet.jpg",
     imageAlt: "Básquet — Club Social Varela Junior",
-    imageWidth: 1200,
-    imageHeight: 800,
+    imageWidth: IMG,
+    imageHeight: IMG,
   },
   {
     slug: "voley",
     title: "VÓLEY",
     displayName: "Vóley",
     metaTitle: "Vóley | Club Social Varela Junior",
-    metaDescription: "Vóley del Club Social Varela Junior.",
+    metaDescription: "Vóley femenino, masculino y mixto en el Club Social Varela Junior.",
     paragraphs: [
-      "Sumate al vóley del CVJ. Escribinos por WhatsApp para conocer horarios, categorías y costos.",
+      "Vóley en el CVJ: propuestas femeninas, masculinas y mixtas.",
+      "Consultá horarios, categorías y alquiler de cancha por teléfono o WhatsApp.",
     ],
     contactLabel: "Consultas",
-    contactPhone: "+54 9 11 5825-2571",
-    contactPhoneHref: "tel:+5491158252571",
-    whatsappUrl: wsp("5491158252571", "Hola, consulta por vóley del CVJ"),
+    contactPhone: phoneDisplay("1158252571"),
+    contactPhoneHref: tel("1158252571"),
+    whatsappUrl: wspFromLocal("1158252571", "Hola, consulta por vóley del CVJ"),
     instagramUrl: "https://www.instagram.com/clubvarelajrvoley/",
-    imageSrc: PLACEHOLDER_IMG,
+    imageSrc: "/images/deportes/voley.jpg",
     imageAlt: "Vóley — Club Social Varela Junior",
-    imageWidth: 1200,
-    imageHeight: 800,
-  },
-  {
-    slug: "tenis",
-    title: "TENIS",
-    displayName: "Tenis",
-    metaTitle: "Tenis · Varela Open | Club Social Varela Junior",
-    metaDescription:
-      "Tenis y Varela Open en el Club Social Varela Junior. Desde 2019 creciendo sin parar.",
-    paragraphs: [
-      "Tenis y comunidad alrededor del Varela Open: desde 2019 creciendo sin parar.",
-      "Pasamos de 10 jugadores a una comunidad que vive el tenis como deporte, competencia y encuentro con amigos.",
-    ],
-    whatsappUrl: "",
-    instagramUrl: "https://www.instagram.com/varelaopen/",
-    imageSrc: "/images/deportes/tenis.png",
-    imageAlt: "Tenis — Varela Open",
-    imageWidth: 1200,
-    imageHeight: 800,
+    imageWidth: IMG,
+    imageHeight: IMG,
   },
   {
     slug: "rugby",
     title: "RUGBY",
     displayName: "Rugby",
     metaTitle: "Rugby | Club Social Varela Junior",
-    metaDescription: "Rugby del CVJ: infantiles, juveniles y primera.",
+    metaDescription: "Rugby del CVJ: infantiles, juveniles y superior.",
     paragraphs: [
-      "Rugby del CVJ con tres etapas: Infantiles (nacidos entre 2012 y 2021), Juveniles (nacidos entre 2007 y 2011) y Primera.",
+      "Rugby del CVJ con tres etapas: Infantiles (nacidos entre 2012 y 2021), Juveniles (nacidos entre 2007 y 2011) y Superior.",
       "Juveniles entrena martes y jueves de 19 a 21 hs en La Capilla, con micro de ida y vuelta desde el centro de Varela.",
       "Seguinos en Instagram: @cvjrugby (Primera), @infantilcvjr (Infantiles) y @cvjuveniles (Juveniles).",
     ],
@@ -224,15 +271,30 @@ export const deportes: DeportePageData[] = [
       "Infantiles · 12 a 14 años (M12 · M13 · M14) — Lunes y miércoles 19 hs",
       "Juveniles (2007–2011) — Martes y jueves 19 a 21 hs · La Capilla",
     ],
-    contactLabel: "Infantiles",
-    contactPhone: "+54 9 11 3583-9110",
-    contactPhoneHref: "tel:+5491135839110",
-    whatsappUrl: wsp("5491135839110", "Hola, consulta por rugby infantiles del CVJ"),
+    contactLabel: "Coordinadores",
+    contactPhones: [
+      {
+        name: "Infantiles",
+        phone: phoneDisplay("1135839110"),
+        phoneHref: tel("1135839110"),
+      },
+      {
+        name: "Juveniles",
+        phone: phoneDisplay("1138301431"),
+        phoneHref: tel("1138301431"),
+      },
+      {
+        name: "Superior",
+        phone: phoneDisplay("1154104310"),
+        phoneHref: tel("1154104310"),
+      },
+    ],
+    whatsappUrl: wspFromLocal("1135839110", "Hola, consulta por rugby del CVJ"),
     instagramUrl: "https://www.instagram.com/cvjrugby/",
-    imageSrc: PLACEHOLDER_IMG,
+    imageSrc: "/images/deportes/rugby.jpg",
     imageAlt: "Rugby — Club Social Varela Junior",
-    imageWidth: 1200,
-    imageHeight: 800,
+    imageWidth: IMG,
+    imageHeight: IMG,
   },
   {
     slug: "natacion",
@@ -243,7 +305,7 @@ export const deportes: DeportePageData[] = [
       "Natación del Club Social Varela Junior: pileta libre, escuelita, adultos y aquagym.",
     paragraphs: [
       "Natación con turnos para jubilados, adultos, niños y aquagym. Consultá horarios actualizados por WhatsApp.",
-      "Atención y consultas solamente por WhatsApp.",
+      "Atención y consultas por teléfono o WhatsApp.",
     ],
     scheduleTitle: "Turnos (referencia semanal)",
     scheduleItems: [
@@ -260,15 +322,15 @@ export const deportes: DeportePageData[] = [
       "Tarde · Adultos y niños 4 a 12 — 16:30 hs",
       "Pileta libre — 17:00 a 19:00 hs",
     ],
-    contactLabel: "Consultas (solo WhatsApp)",
-    contactPhone: "+54 9 11 5095-0559",
-    contactPhoneHref: "tel:+5491150950559",
-    whatsappUrl: wsp("5491150950559", "Hola, consulta por natación del CVJ"),
+    contactLabel: "Consultas",
+    contactPhone: phoneDisplay("1150950559"),
+    contactPhoneHref: tel("1150950559"),
+    whatsappUrl: wspFromLocal("1150950559", "Hola, consulta por natación del CVJ"),
     instagramUrl: "https://www.instagram.com/varelajuniornatacion/",
-    imageSrc: "/images/deportes/natacion.png",
+    imageSrc: "/images/deportes/natacion.jpg",
     imageAlt: "Natación — Club Social Varela Junior",
-    imageWidth: 1200,
-    imageHeight: 800,
+    imageWidth: IMG,
+    imageHeight: IMG,
   },
   {
     slug: "pelota-paleta",
@@ -282,12 +344,58 @@ export const deportes: DeportePageData[] = [
     ],
     scheduleTitle: "Horarios de apertura",
     scheduleItems: ["Lunes a sábados — 11 a 24 hs"],
-    whatsappUrl: "",
+    contactLabel: "El Trinquete",
+    contactPhone: phoneDisplay("1130670696"),
+    contactPhoneHref: tel("1130670696"),
+    whatsappUrl: wspFromLocal("1130670696", "Hola, consulta por pelota paleta en El Trinquete CVJ"),
     instagramUrl: "https://www.instagram.com/el.trinquete.cvj/",
-    imageSrc: PLACEHOLDER_IMG,
+    imageSrc: "/images/deportes/pelotapaleta.jpg",
     imageAlt: "Pelota Paleta — El Trinquete CVJ",
-    imageWidth: 1200,
-    imageHeight: 800,
+    imageWidth: IMG,
+    imageHeight: IMG,
+  },
+  {
+    slug: "fight-club",
+    title: "VARELA FIGHT CLUB",
+    displayName: "Varela Fight Club",
+    metaTitle: "Varela Fight Club | Club Social Varela Junior",
+    metaDescription:
+      "Boxeo, kick boxing, Muay Thai, K1, funcional y karate do en el Club Varela Juniors.",
+    paragraphs: [
+      "Varela Fight Club — espacio de artes marciales y entrenamiento funcional del CVJ.",
+      "Disciplinas: boxeo, kick boxing, Muay Thai, K1, entrenamiento funcional y karate do.",
+      "Consultá horarios, categorías y aranceles por teléfono o WhatsApp.",
+    ],
+    contactLabel: "Coordinación",
+    contactPhone: phoneDisplay("1135637870"),
+    contactPhoneHref: tel("1135637870"),
+    whatsappUrl: wspFromLocal("1135637870", "Hola, consulta por Varela Fight Club del CVJ"),
+    instagramUrl: CLUB_IG,
+    imageSrc: "/images/deportes/boxeo.jpg",
+    imageAlt: "Varela Fight Club — Club Social Varela Junior",
+    imageWidth: IMG,
+    imageHeight: IMG,
+  },
+  {
+    slug: "calidad",
+    title: "GIMNASIO NO LIMITS",
+    displayName: "Calidad · Gimnasio",
+    metaTitle: "Gimnasio No Limits | Club Social Varela Junior",
+    metaDescription:
+      "Gimnasio con aparatos No Limits en el Club Social Varela Junior.",
+    paragraphs: [
+      "Gimnasio No Limits (aparatos) en el Club Varela Juniors — entrenamiento con máquinas y sala de musculación.",
+      "Consultá planes, horarios y aranceles por teléfono o WhatsApp.",
+    ],
+    contactLabel: "Gimnasio",
+    contactPhone: phoneDisplay("1140724034"),
+    contactPhoneHref: tel("1140724034"),
+    whatsappUrl: wspFromLocal("1140724034", "Hola, consulta por el gimnasio No Limits del CVJ"),
+    instagramUrl: CLUB_IG,
+    imageSrc: PLACEHOLDER_IMG,
+    imageAlt: "Gimnasio No Limits — Club Social Varela Junior",
+    imageWidth: IMG,
+    imageHeight: IMG,
   },
 ];
 
@@ -299,18 +407,14 @@ export function getAllDeporteSlugs(): string[] {
   return deportes.map((d) => d.slug);
 }
 
-/** Lista compacta para Navbar / Footer. */
 export const deportesNav: { label: string; href: string }[] = deportes.map((d) => ({
   label: d.displayName,
   href: `/deportes/${d.slug}`,
 }));
 
-/** Medidas recomendadas (documentación para quien edita fotos). */
 export const DEPORTE_IMAGE_SPEC = {
   width: 1200,
-  height: 800,
-  retinaWidth: 1600,
-  retinaHeight: 1067,
-  ratio: "3:2",
+  height: 1200,
+  ratio: "1:1",
   folder: "public/images/deportes/",
 } as const;

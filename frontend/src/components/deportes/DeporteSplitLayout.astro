@@ -23,11 +23,11 @@ const hasInstagram = data.instagramUrl.trim() !== "";
 ---
 
 <section
-  class="grid min-h-[calc(100dvh-8.25rem)] w-full grid-cols-1 lg:grid-cols-2 lg:min-h-[520px]"
-    aria-labelledby="deporte-title"
-  >
+  class="grid w-full grid-cols-1 lg:grid-cols-2 lg:items-stretch lg:min-h-[min(50vw,720px)]"
+  aria-labelledby="deporte-title"
+>
     <div
-      class="flex min-h-[420px] flex-col justify-between bg-slate-900 px-6 py-12 text-slate-200 sm:px-10 lg:min-h-0 lg:px-14 xl:px-16 lg:py-16"
+      class="flex min-h-[420px] flex-col justify-between bg-slate-900 px-6 py-12 text-slate-200 sm:px-10 lg:min-h-[min(50vw,720px)] lg:px-14 xl:px-16 lg:py-16"
     >
       <div>
         <p class="text-xs font-bold uppercase tracking-[0.22em] text-vj-green">Deportes</p>
@@ -138,13 +138,17 @@ const hasInstagram = data.instagramUrl.trim() !== "";
       </div>
     </div>
 
-    <div class="relative min-h-[320px] bg-slate-900 sm:min-h-[400px] lg:min-h-0">
+    <!-- Misma altura que el texto: crece junto en básquet y demás; mínimo = mitad de pantalla -->
+    <div
+      class="relative min-h-[min(100vw,480px)] h-full w-full bg-slate-900 lg:min-h-[min(50vw,720px)]"
+    >
       <img
         src={data.imageSrc}
         alt={data.imageAlt}
         width={data.imageWidth}
         height={data.imageHeight}
-        class="absolute inset-0 h-full w-full object-cover"
+        sizes="(min-width: 1024px) 50vw, 100vw"
+        class="absolute inset-0 size-full object-cover object-center"
         loading="eager"
         decoding="async"
       />
