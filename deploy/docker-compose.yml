@@ -22,7 +22,7 @@ services:
         condition: service_healthy
 
   backend:
-    image: ${IMAGE_REGISTRY}/vjplay-backend:${IMAGE_TAG:-latest}
+    image: ${IMAGE_REGISTRY:-local}/vjplay-backend:${IMAGE_TAG:-latest}
     build:
       context: ../backend
       dockerfile: Dockerfile
@@ -47,7 +47,7 @@ services:
       start_period: 25s
 
   frontend:
-    image: ${IMAGE_REGISTRY}/vjplay-frontend:${IMAGE_TAG:-latest}
+    image: ${IMAGE_REGISTRY:-local}/vjplay-frontend:${IMAGE_TAG:-latest}
     build:
       context: ../frontend
       dockerfile: Dockerfile
@@ -74,7 +74,7 @@ services:
 
   recorder:
     profiles: ["recorder"]
-    image: ${IMAGE_REGISTRY}/vjplay-recorder:${IMAGE_TAG:-latest}
+    image: ${IMAGE_REGISTRY:-local}/vjplay-recorder:${IMAGE_TAG:-latest}
     build:
       context: ../recorder
       dockerfile: Dockerfile
