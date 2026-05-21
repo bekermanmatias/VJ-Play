@@ -1,0 +1,11 @@
+# VPS: solo pull (sin build en la VM). Uso:
+#   docker compose -f docker-compose.yml -f docker-compose.registry.yml pull
+#   docker compose -f docker-compose.yml -f docker-compose.registry.yml up -d
+
+services:
+  backend:
+    build: !reset null
+  frontend:
+    build: !reset null
+  recorder:
+    build: !reset null

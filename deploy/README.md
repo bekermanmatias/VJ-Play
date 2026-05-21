@@ -62,25 +62,71 @@ docker compose build --no-cache frontend
 docker compose up -d
 ```
 
-## Imágenes pre-construidas (opcional)
+## Build en tu PC → push → pull en la VPS (recomendado)
 
-En tu PC o CI:
+Evita compilar Astro en una **e2-micro**. Las imágenes se arman en tu máquina y la VM solo las baja.
 
-```bash
-cd deploy
-docker compose build
-docker tag deploy-backend-1 gcr.io/TU_PROYECTO/vjplay-backend:latest
-docker push gcr.io/TU_PROYECTO/vjplay-backend:latest
+### 1. Docker Hub (o GHCR)
+
+1. Creá cuenta en [Docker Hub](https://hub.docker.com/) y un repo **público** (o privado + `docker login` en la VPS).
+2. En **tu PC**, en `deploy/.env`:
+
+```env
+IMAGE_REGISTRY=docker.io/tuusuario
+IMAGE_TAG=latest
+PUBLIC_REPLAY_API_BASE=http://IP_PUBLICA_DE_LA_VPS
+SITE_HOST=http://IP_PUBLICA_DE_LA_VPS
+CORS_ORIGINS=http://IP_PUBLICA_DE_LA_VPS
+# … resto de secretos igual que en la VPS
 ```
 
-En la VM: editar `docker-compose.yml` para usar `image:` en lugar de `build:` y `docker compose pull`.
+3. Login y build+push (PowerShell, desde `deploy/`):
+
+```powershell
+docker login
+.\scripts\build-push.ps1
+# Con recorder: .\scripts\build-push.ps1 -WithRecorder
+```
+
+Linux/macOS: `chmod +x scripts/build-push.sh && ./scripts/build-push.sh`
+
+Sube: `tuusuario/vjplay-backend`, `tuusuario/vjplay-frontend` (y `vjplay-recorder` si aplica).
+
+### 2. En la VPS (sin `--build`)
+
+Mismo `IMAGE_REGISTRY` e `IMAGE_TAG` en `deploy/.env`:
+
+```bash
+cd /opt/vjplay/source/deploy
+git pull
+docker login   # solo si las imágenes son privadas
+./scripts/vps-pull-up.sh
+# Con recorder: ./scripts/vps-pull-up.sh --recorder
+```
+
+Equivalente manual:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.registry.yml pull
+docker compose -f docker-compose.yml -f docker-compose.registry.yml up -d
+```
+
+### 3. Actualizar después de cambios en el código
+
+En la PC: `git pull` → `.\scripts\build-push.ps1` (sube tag `latest` o cambiá `IMAGE_TAG`).
+
+En la VPS: `git pull` → `./scripts/vps-pull-up.sh`.
+
+Si cambiás `PUBLIC_REPLAY_API_BASE`, rebuild del front en la PC (el script ya hace `build` completo).
 
 ## Variables clave
 
 | Variable | Dónde |
 |----------|--------|
+| `IMAGE_REGISTRY` | PC + VPS (`docker.io/usuario` o `ghcr.io/usuario`) |
+| `IMAGE_TAG` | PC + VPS (ej. `latest`) |
 | `VJ_RUNTIME=vps` | backend + recorder |
-| `PUBLIC_REPLAY_API_BASE` | build frontend (= URL que ve el usuario) |
+| `PUBLIC_REPLAY_API_BASE` | build frontend en la PC (= URL que ve el usuario) |
 | `CORS_ORIGINS` | backend (= mismo origen que el sitio) |
 | Secretos Supabase/R2 | `.env` compartido |
 

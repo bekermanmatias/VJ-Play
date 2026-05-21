@@ -37,6 +37,8 @@ curl -s http://127.0.0.1/health
 
 Abrir en el navegador: `http://<IP_PUBLICA>`.
 
+**Build lento en e2-micro:** compilá en tu PC y subí imágenes a Docker Hub → `deploy/README.md` § «Build en tu PC → push → pull en la VPS».
+
 **Recorder** (cuando Mikrotik esté listo): WireGuard en el host (§3) y luego:
 
 ```bash
