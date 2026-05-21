@@ -1,0 +1,65 @@
+---
+import { homeSponsors } from "@/data/sponsors";
+---
+
+<section class="border-t border-slate-800" aria-labelledby="home-sponsors-title">
+  <div class="bg-slate-900 py-12 sm:py-16">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <header class="text-center">
+        <p class="text-xs font-bold uppercase tracking-[0.22em] text-vj-green">Nos acompañan</p>
+        <h2
+          id="home-sponsors-title"
+          class="mt-2 font-display text-4xl font-extrabold uppercase tracking-wide text-white sm:text-5xl"
+        >
+          Sponsors
+        </h2>
+      </header>
+
+      <ul
+        class="mt-12 flex flex-wrap items-center justify-center gap-x-12 gap-y-10 sm:gap-x-16 lg:mt-14 lg:gap-x-20"
+        role="list"
+      >
+        {
+          homeSponsors.map((sponsor) => {
+            const inner = sponsor.logoSrc ? (
+              <img
+                src={sponsor.logoSrc}
+                alt={sponsor.logoAlt ?? sponsor.name}
+                class="max-h-14 w-auto max-w-[11rem] object-contain grayscale opacity-50 transition duration-300 ease-out group-hover:grayscale-0 group-hover:opacity-100 sm:max-h-[4.5rem] sm:max-w-[13rem] lg:max-h-20 lg:max-w-[15rem]"
+                loading="lazy"
+                decoding="async"
+              />
+            ) : (
+              <span class="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500 transition duration-300 group-hover:text-vj-green sm:text-base">
+                {sponsor.name}
+              </span>
+            );
+
+            const wrapClass =
+              "group inline-flex min-h-[4.5rem] items-center justify-center px-3 transition sm:min-h-[5.5rem] lg:min-h-[6rem]";
+
+            return (
+              <li>
+                {sponsor.href ? (
+                  <a
+                    href={sponsor.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class={wrapClass}
+                    aria-label={sponsor.name}
+                  >
+                    {inner}
+                  </a>
+                ) : (
+                  <span class={wrapClass} title={sponsor.name}>
+                    {inner}
+                  </span>
+                )}
+              </li>
+            );
+          })
+        }
+      </ul>
+    </div>
+  </div>
+</section>

@@ -379,7 +379,7 @@ export const deportes: DeportePageData[] = [
   {
     slug: "calidad",
     title: "GIMNASIO NO LIMITS",
-    displayName: "Calidad · Gimnasio",
+    displayName: "Gimnasio",
     metaTitle: "Gimnasio No Limits | Club Social Varela Junior",
     metaDescription:
       "Gimnasio con aparatos No Limits en el Club Social Varela Junior.",

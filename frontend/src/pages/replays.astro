@@ -1,114 +1,118 @@
----
-import Layout from "@/layouts/Layout.astro";
-import TopBar from "@/components/TopBar.astro";
-import Navbar from "@/components/Navbar.astro";
-import ReplaysVerPartido from "@/components/replays/ReplaysVerPartido";
-
-/**
- * Videos destacados (máx. 3, embebidos desde YouTube).
- * `videoId` = código del enlace (ej. dQw4w9WgXcQ). Vacío = espacio reservado.
- */
-const ytClips: { videoId: string; title: string }[] = [
-  { videoId: "", title: "" },
-  { videoId: "", title: "" },
-  { videoId: "", title: "" },
-];
----
-
-<Layout title="Replays | Club Social Varela Junior">
-  <TopBar />
-  <Navbar />
-
-  <main class="bg-white">
-    <header class="mx-auto max-w-7xl px-4 pt-10 sm:px-6 lg:px-8 lg:pt-12">
-      <p class="text-xs font-bold uppercase tracking-[0.22em] text-vj-green">Club</p>
-      <h1 class="mt-2 font-display text-4xl font-extrabold uppercase tracking-wide text-slate-900 sm:text-5xl">
-        Replays
-      </h1>
-      <p class="mt-3 max-w-2xl text-sm text-slate-600 sm:text-base">
-        Buscá tu turno, descargá el video completo o recortá tus mejores clips.
-      </p>
-      <hr class="mt-6 border-0 border-t border-dotted border-slate-300" />
-    </header>
-
-    <section class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-      <div class="border border-slate-200 border-l-4 border-l-vj-green bg-white p-5 sm:p-6 lg:p-8">
-        <h2 class="text-xs font-bold uppercase tracking-[0.22em] text-vj-green">
-          Buscador
-        </h2>
-        <p class="mt-2 text-lg font-extrabold uppercase tracking-tight text-slate-900 sm:text-xl">
-          Busca tu partido
-        </p>
-
-        <div class="mt-6">
-          <ReplaysVerPartido client:load />
-        </div>
-
-        <p class="mt-5 border-t border-slate-200 pt-4 text-xs text-slate-500">
-          Solo podés buscar partidos de los últimos 7 días. Las grabaciones se eliminan automáticamente
-          después de ese plazo.
-        </p>
-      </div>
-    </section>
-
-    <section id="momentos" class="border-t border-slate-200 bg-white py-10 sm:py-14">
-      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <p class="text-xs font-bold uppercase tracking-[0.22em] text-vj-green">Momentos</p>
-        <h2 class="mt-3 font-display text-4xl font-extrabold uppercase leading-[1.05] tracking-wide text-slate-900 sm:text-5xl">
-          Destacados
-        </h2>
-        <hr class="mt-6 border-0 border-t border-dotted border-slate-300" />
-
-        <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {
-            ytClips.map((clip, index) => {
-              const hasVideo = Boolean(clip.videoId?.trim());
-              const embedSrc = hasVideo
-                ? `https://www.youtube-nocookie.com/embed/${clip.videoId.trim()}?rel=0`
-                : null;
-
-              return (
-                <article class="flex flex-col">
-                  <div class="relative aspect-video w-full overflow-hidden border border-slate-200 bg-white">
-                    {embedSrc ? (
-                      <iframe
-                        src={embedSrc}
-                        title={clip.title || `Momento ${index + 1} — Club Varela Junior`}
-                        class="absolute inset-0 h-full w-full"
-                        loading="lazy"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        allowfullscreen
-                      />
-                    ) : (
-                      <div class="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
-                        <span
-                          class="inline-flex h-12 w-12 items-center justify-center border border-slate-200 text-slate-400"
-                          aria-hidden="true"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 24 24"
-                            fill="currentColor"
-                            class="h-6 w-6"
-                          >
-                            <path d="M23.5 6.5a3 3 0 0 0-2.11-2.12C19.55 4 12 4 12 4s-7.55 0-9.39.38A3 3 0 0 0 .5 6.5C.12 8.34.12 12 .12 12s0 3.66.38 5.5a3 3 0 0 0 2.11 2.12C4.45 20 12 20 12 20s7.55 0 9.39-.38a3 3 0 0 0 2.11-2.12c.38-1.84.38-5.5.38-5.5s0-3.66-.38-5.5ZM9.75 15.5v-7l6.5 3.5-6.5 3.5Z" />
-                          </svg>
-                        </span>
-                        <p class="text-xs font-bold uppercase tracking-wider text-slate-500">
-                          Próximo video
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  {clip.title ? (
-                    <p class="mt-3 text-sm font-semibold text-slate-900">{clip.title}</p>
-                  ) : null}
-                </article>
-              );
-            })
-          }
-        </div>
-      </div>
-    </section>
-  </main>
-</Layout>
+---
+import Layout from "@/layouts/Layout.astro";
+import TopBar from "@/components/TopBar.astro";
+import Navbar from "@/components/Navbar.astro";
+import ReplaysVerPartido from "@/components/replays/ReplaysVerPartido";
+
+/**
+ * Videos destacados (máx. 3, embebidos desde YouTube).
+ * `videoId` = código del enlace (ej. dQw4w9WgXcQ). Vacío = espacio reservado.
+ */
+const ytClips: { videoId: string; title: string }[] = [
+  { videoId: "", title: "" },
+  { videoId: "", title: "" },
+  { videoId: "", title: "" },
+];
+---
+
+<Layout title="Replays | Club Social Varela Junior">
+  <TopBar />
+  <Navbar />
+
+  <main class="bg-white">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <header class="pt-10 lg:pt-12">
+        <p class="text-xs font-bold uppercase tracking-[0.22em] text-vj-green">Club</p>
+        <h1 class="mt-2 font-display text-4xl font-extrabold uppercase tracking-wide text-slate-900 sm:text-5xl">
+          Replays
+        </h1>
+        <p class="mt-3 max-w-2xl text-sm text-slate-600 sm:text-base">
+          Buscá tu turno, descargá el video completo o recortá tus mejores clips.
+        </p>
+        <hr class="mt-6 border-0 border-t border-dotted border-slate-300" />
+      </header>
+
+      <section class="py-8 lg:py-10" aria-labelledby="replays-buscador-heading">
+        <p class="text-xs font-bold uppercase tracking-[0.22em] text-vj-green">Buscador</p>
+        <h2
+          id="replays-buscador-heading"
+          class="mt-2 text-lg font-extrabold uppercase tracking-tight text-slate-900 sm:text-xl"
+        >
+          Busca tu partido
+        </h2>
+
+        <div class="mt-6 border border-slate-200 border-l-4 border-l-vj-green bg-white">
+          <div class="p-5 sm:p-6 lg:p-8">
+            <ReplaysVerPartido client:load />
+          </div>
+          <p class="border-t border-slate-200 px-5 py-4 text-xs text-slate-500 sm:px-6 lg:px-8">
+            Solo podés buscar partidos de los últimos 7 días. Las grabaciones se eliminan automáticamente
+            después de ese plazo.
+          </p>
+        </div>
+      </section>
+
+      <section id="momentos" class="border-t border-slate-200 py-10 sm:py-14" aria-labelledby="replays-momentos-heading">
+        <p class="text-xs font-bold uppercase tracking-[0.22em] text-vj-green">Momentos</p>
+        <h2
+          id="replays-momentos-heading"
+          class="mt-2 font-display text-4xl font-extrabold uppercase leading-[1.05] tracking-wide text-slate-900 sm:text-5xl"
+        >
+          Destacados
+        </h2>
+        <hr class="mt-6 border-0 border-t border-dotted border-slate-300" />
+
+        <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {
+            ytClips.map((clip, index) => {
+              const hasVideo = Boolean(clip.videoId?.trim());
+              const embedSrc = hasVideo
+                ? `https://www.youtube-nocookie.com/embed/${clip.videoId.trim()}?rel=0`
+                : null;
+
+              return (
+                <article class="flex flex-col">
+                  <div class="relative aspect-video w-full overflow-hidden border border-slate-200 bg-white">
+                    {embedSrc ? (
+                      <iframe
+                        src={embedSrc}
+                        title={clip.title || `Momento ${index + 1} — Club Varela Junior`}
+                        class="absolute inset-0 h-full w-full"
+                        loading="lazy"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowfullscreen
+                      />
+                    ) : (
+                      <div class="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
+                        <span
+                          class="inline-flex h-12 w-12 items-center justify-center border border-slate-200 text-slate-400"
+                          aria-hidden="true"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            class="h-6 w-6"
+                          >
+                            <path d="M23.5 6.5a3 3 0 0 0-2.11-2.12C19.55 4 12 4 12 4s-7.55 0-9.39.38A3 3 0 0 0 .5 6.5C.12 8.34.12 12 .12 12s0 3.66.38 5.5a3 3 0 0 0 2.11 2.12C4.45 20 12 20 12 20s7.55 0 9.39-.38a3 3 0 0 0 2.11-2.12c.38-1.84.38-5.5.38-5.5s0-3.66-.38-5.5ZM9.75 15.5v-7l6.5 3.5-6.5 3.5Z" />
+                          </svg>
+                        </span>
+                        <p class="text-xs font-bold uppercase tracking-wider text-slate-500">
+                          Próximo video
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  {clip.title ? (
+                    <p class="mt-3 text-sm font-semibold text-slate-900">{clip.title}</p>
+                  ) : null}
+                </article>
+              );
+            })
+          }
+        </div>
+      </section>
+    </div>
+  </main>
+</Layout>
+

@@ -45,7 +45,7 @@ body {
   display: flex;
   flex-shrink: 0;
   min-width: max-content;
-  animation: vj-marquee 30s linear infinite;
+  animation: vj-marquee 45s linear infinite;
 }
 
 /* Scrollbar personalizada para paneles internos */
