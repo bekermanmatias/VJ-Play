@@ -39,6 +39,41 @@ Abrir en el navegador: `http://<IP_PUBLICA>`.
 
 **Build lento en e2-micro:** compilá en tu PC y subí imágenes a Docker Hub → `deploy/README.md` § «Build en tu PC → push → pull en la VPS».
 
+### Noticias de ejemplo (Supabase + R2)
+
+El deploy **no** crea noticias ni sube fotos solo. Los datos viven en **Supabase** (tablas) y las imágenes en **R2** (mismo bucket que replays). Si en GCP no ves noticias:
+
+1. **Migración** (una vez, en el proyecto Supabase que usa `deploy/.env`):
+   - Supabase → SQL Editor → pegar y ejecutar `backend/supabase/012_news.sql`.
+
+2. **Mismo `.env` en la VPS** que en local para datos compartidos:
+   - `SUPABASE_URL`, `SUPABASE_KEY`, `R2_*`, `R2_PUBLIC_BASE_URL`, `ADMIN_SECRET`.
+
+3. **Frontend** embebido con la URL pública del sitio al hacer build:
+   - `PUBLIC_REPLAY_API_BASE=http://<IP_PUBLICA>` (sin barra final).
+   - Si cambiás la IP, rebuild del contenedor `frontend`.
+
+4. **Cargar las 6 noticias de muestra** (desde tu PC, con el stack en GCP ya arriba):
+
+```bash
+cd backend
+# backend/.env: ADMIN_SECRET igual que en deploy/.env de la VPS
+npm run scripts:seed-news
+npm run scripts:seed-news-images
+# Si el API no es localhost:
+node scripts/seed-news-examples.mjs --api http://<IP_PUBLICA>
+node scripts/seed-news-images.mjs --api http://<IP_PUBLICA>
+```
+
+5. **Comprobar API** (en la VPS o desde el navegador):
+
+```bash
+curl -s http://127.0.0.1/api/news | head -c 400
+curl -s http://127.0.0.1/api/news/categories
+```
+
+Si devuelve `{"news":[],...}` → faltan seeds o migración. Si devuelve JSON con noticias pero el sitio está vacío → revisá `PUBLIC_REPLAY_API_BASE` del build del frontend.
+
 **Recorder** (cuando Mikrotik esté listo): WireGuard en el host (§3) y luego:
 
 ```bash
