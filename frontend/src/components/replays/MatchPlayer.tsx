@@ -98,6 +98,14 @@ const CONTRAST_MAX = 130;
 const FILTER_STEP = 5;
 const SUPPORT_EMAIL = "info@varelajunior.com.ar";
 
+/** Ciclo del botón de velocidad: 1x → … → 6x → 0.5x → 1x. */
+const PLAYBACK_SPEEDS = [1, 1.25, 1.5, 2, 2.5, 3, 6, 0.5] as const;
+
+function formatPlaybackSpeedLabel(rate: number): string {
+  const text = Number.isInteger(rate) ? String(rate) : String(rate);
+  return `${text}x`;
+}
+
 const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
   {
     videoSrc,
@@ -192,6 +200,12 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
       v.removeEventListener("loadedmetadata", syncTime);
     };
   }, [syncTime]);
+
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.playbackRate = speed;
+  }, [speed, videoSrc]);
 
   useEffect(() => {
     const getFullscreenHost = () => {
@@ -546,7 +560,9 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
   const cycleSpeed = () => {
     const v = videoRef.current;
     if (!v) return;
-    const next = speed === 1 ? 1.25 : speed === 1.25 ? 1.5 : 1;
+    const idx = PLAYBACK_SPEEDS.findIndex((s) => Math.abs(s - speed) < 0.001);
+    const nextIdx = idx < 0 ? 0 : (idx + 1) % PLAYBACK_SPEEDS.length;
+    const next = PLAYBACK_SPEEDS[nextIdx]!;
     v.playbackRate = next;
     setSpeed(next);
   };
@@ -978,12 +994,13 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
             onClick={cycleSpeed}
             className={
               ghost
-                ? `${sideIconBtn} text-xs font-black`
-                : "grid h-11 w-11 place-items-center bg-black/55 ring-1 ring-white/45 hover:bg-black/70 text-xs font-black"
+                ? `${sideIconBtn} min-w-11 px-1 text-[10px] font-black tabular-nums`
+                : "grid h-11 min-w-11 place-items-center bg-black/55 px-1 ring-1 ring-white/45 hover:bg-black/70 text-[10px] font-black tabular-nums text-white/95"
             }
-            aria-label="Velocidad de reproducción"
+            aria-label={`Velocidad de reproducción (${formatPlaybackSpeedLabel(speed)})`}
+            title="Cambiar velocidad (1x → 6x → 0.5x)"
           >
-            {speed}x
+            {formatPlaybackSpeedLabel(speed)}
           </button>
           {!ghost && (
             <button
@@ -1014,16 +1031,16 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
               onClick={toggleClipRecording}
               className={
                 ghost
-                  ? "grid h-11 w-11 place-items-center bg-red-600/90 text-white ring-2 ring-white/70 transition hover:bg-red-500 [filter:drop-shadow(0_2px_10px_rgba(0,0,0,0.65))]"
-                  : "grid h-11 w-11 place-items-center bg-red-600 text-white ring-2 ring-white/85 transition hover:bg-red-500"
+                  ? "grid h-11 w-11 place-items-center rounded-full bg-red-600/90 text-white ring-2 ring-white/70 transition hover:bg-red-500 [filter:drop-shadow(0_2px_10px_rgba(0,0,0,0.65))]"
+                  : "grid h-11 w-11 place-items-center rounded-full bg-red-600 text-white ring-2 ring-white/85 transition hover:bg-red-500"
               }
               aria-label={isClipRecording ? "Detener grabación de clip" : "Iniciar grabación de clip"}
               title={isClipRecording ? "Detener grabación de clip" : "Iniciar grabación de clip"}
             >
               {isClipRecording ? (
-                <span className="h-3.5 w-3.5 bg-white" aria-hidden />
+                <span className="h-3.5 w-3.5 rounded-sm bg-white" aria-hidden />
               ) : (
-                <span className="h-5 w-5 bg-white" aria-hidden />
+                <span className="h-5 w-5 rounded-full bg-white" aria-hidden />
               )}
             </button>
           </div>
