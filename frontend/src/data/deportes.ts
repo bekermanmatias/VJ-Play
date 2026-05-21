@@ -392,7 +392,7 @@ export const deportes: DeportePageData[] = [
     contactPhoneHref: tel("1140724034"),
     whatsappUrl: wspFromLocal("1140724034", "Hola, consulta por el gimnasio No Limits del CVJ"),
     instagramUrl: CLUB_IG,
-    imageSrc: PLACEHOLDER_IMG,
+    imageSrc: "/images/deportes/gimnasio.jpg",
     imageAlt: "Gimnasio No Limits — Club Social Varela Junior",
     imageWidth: IMG,
     imageHeight: IMG,

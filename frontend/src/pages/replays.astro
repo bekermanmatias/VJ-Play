@@ -3,80 +3,112 @@ import Layout from "@/layouts/Layout.astro";
 import TopBar from "@/components/TopBar.astro";
 import Navbar from "@/components/Navbar.astro";
 import ReplaysVerPartido from "@/components/replays/ReplaysVerPartido";
+
+/**
+ * Videos destacados (máx. 3, embebidos desde YouTube).
+ * `videoId` = código del enlace (ej. dQw4w9WgXcQ). Vacío = espacio reservado.
+ */
+const ytClips: { videoId: string; title: string }[] = [
+  { videoId: "", title: "" },
+  { videoId: "", title: "" },
+  { videoId: "", title: "" },
+];
 ---
 
 <Layout title="Replays | Club Social Varela Junior">
   <TopBar />
   <Navbar />
 
-  <main class="bg-slate-50 min-h-[calc(100vh-7rem)]">
-    <!-- Hero minimalista -->
-    <section>
-      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-7">
-        <h1 class="text-4xl sm:text-5xl font-black tracking-tight text-slate-900">
-          Reviví tu partido
-        </h1>
-        <p class="mt-3 max-w-3xl text-base sm:text-lg text-slate-600">
-          Busca tu turno, descarga el partido completo o recorta tus mejores clips gratis.
-        </p>
-      </div>
-    </section>
+  <main class="bg-white">
+    <header class="mx-auto max-w-7xl px-4 pt-10 sm:px-6 lg:px-8 lg:pt-12">
+      <p class="text-xs font-bold uppercase tracking-[0.22em] text-vj-green">Club</p>
+      <h1 class="mt-2 font-display text-4xl font-extrabold uppercase tracking-wide text-slate-900 sm:text-5xl">
+        Replays
+      </h1>
+      <p class="mt-3 max-w-2xl text-sm text-slate-600 sm:text-base">
+        Buscá tu turno, descargá el video completo o recortá tus mejores clips.
+      </p>
+      <hr class="mt-6 border-0 border-t border-dotted border-slate-300" />
+    </header>
 
-    <!-- Buscador inteligente -->
-    <section class="py-2 sm:py-3">
-      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div class="border border-slate-200 bg-white shadow-lg p-5 sm:p-6 lg:p-8">
-          <ReplaysVerPartido client:load />
-
-          <p class="mt-4 text-xs text-slate-500">
-            Nota: solo podes buscar partidos de los ultimos 7 dias.
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Muro de la comunidad -->
-    <section id="muro" class="pt-6 sm:pt-8 pb-12 sm:pb-16">
-      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <h2 class="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
-          Ultimas postales
+    <section class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+      <div class="border border-slate-200 border-l-4 border-l-vj-green bg-white p-5 sm:p-6 lg:p-8">
+        <h2 class="text-xs font-bold uppercase tracking-[0.22em] text-vj-green">
+          Buscador
         </h2>
-        <p class="mt-2 text-sm text-slate-600">
-          Vos tambien podes ser parte.
+        <p class="mt-2 text-lg font-extrabold uppercase tracking-tight text-slate-900 sm:text-xl">
+          Busca tu partido
         </p>
 
-        <div class="mt-6 columns-1 sm:columns-2 lg:columns-3 gap-4 [column-fill:_balance]">
-          <img class="mb-4 w-full border border-slate-200" src="/images/padel.png" alt="Postales del club - cancha padel" loading="lazy" decoding="async" />
-          <img class="mb-4 w-full border border-slate-200" src="/images/f5.png" alt="Postales del club - cancha futbol 5" loading="lazy" decoding="async" />
-          <img class="mb-4 w-full border border-slate-200" src="https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=900&q=70" alt="Postales del club 1" loading="lazy" decoding="async" />
-          <img class="mb-4 w-full border border-slate-200" src="https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=900&q=70" alt="Postales del club 2" loading="lazy" decoding="async" />
-          <img class="mb-4 w-full border border-slate-200" src="https://images.unsplash.com/photo-1434648957308-5e6a859697e8?auto=format&fit=crop&w=900&q=70" alt="Postales del club 3" loading="lazy" decoding="async" />
-          <img class="mb-4 w-full border border-slate-200" src="https://images.unsplash.com/photo-1505250469679-203ad9ced0cb?auto=format&fit=crop&w=900&q=70" alt="Postales del club 4" loading="lazy" decoding="async" />
-          <img class="mb-4 w-full border border-slate-200" src="https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=900&q=70" alt="Postales del club 5" loading="lazy" decoding="async" />
-          <img class="mb-4 w-full border border-slate-200" src="https://images.unsplash.com/photo-1471295253337-3ceaaedca402?auto=format&fit=crop&w=900&q=70" alt="Postales del club 6" loading="lazy" decoding="async" />
+        <div class="mt-6">
+          <ReplaysVerPartido client:load />
         </div>
+
+        <p class="mt-5 border-t border-slate-200 pt-4 text-xs text-slate-500">
+          Solo podés buscar partidos de los últimos 7 días. Las grabaciones se eliminan automáticamente
+          después de ese plazo.
+        </p>
       </div>
     </section>
 
-    <!-- Pie de sección -->
-    <section class="border-t border-slate-200 py-8 sm:py-10 bg-white">
+    <section id="momentos" class="border-t border-slate-200 bg-white py-10 sm:py-14">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div class="grid gap-4 sm:grid-cols-3">
-          <div class="border border-slate-200 p-4">
-            <p class="text-xs uppercase tracking-wider font-bold text-slate-500">Disponibilidad</p>
-            <p class="mt-2 text-sm text-slate-700">Los partidos estan disponibles a los 5 minutos de finalizado el turno.</p>
-          </div>
-          <div class="border border-slate-200 p-4">
-            <p class="text-xs uppercase tracking-wider font-bold text-slate-500">Privacidad y Espacio</p>
-            <p class="mt-2 text-sm text-slate-700">Por seguridad, las grabaciones se eliminan automaticamente a los 7 dias.</p>
-          </div>
-          <div class="border border-slate-200 p-4">
-            <p class="text-xs uppercase tracking-wider font-bold text-slate-500">100% Gratis</p>
-            <p class="mt-2 text-sm text-slate-700">Descargar y recortar tus jugadas no tiene costo extra.</p>
-          </div>
+        <p class="text-xs font-bold uppercase tracking-[0.22em] text-vj-green">Momentos</p>
+        <h2 class="mt-3 font-display text-4xl font-extrabold uppercase leading-[1.05] tracking-wide text-slate-900 sm:text-5xl">
+          Destacados
+        </h2>
+        <hr class="mt-6 border-0 border-t border-dotted border-slate-300" />
+
+        <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {
+            ytClips.map((clip, index) => {
+              const hasVideo = Boolean(clip.videoId?.trim());
+              const embedSrc = hasVideo
+                ? `https://www.youtube-nocookie.com/embed/${clip.videoId.trim()}?rel=0`
+                : null;
+
+              return (
+                <article class="flex flex-col">
+                  <div class="relative aspect-video w-full overflow-hidden border border-slate-200 bg-white">
+                    {embedSrc ? (
+                      <iframe
+                        src={embedSrc}
+                        title={clip.title || `Momento ${index + 1} — Club Varela Junior`}
+                        class="absolute inset-0 h-full w-full"
+                        loading="lazy"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowfullscreen
+                      />
+                    ) : (
+                      <div class="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
+                        <span
+                          class="inline-flex h-12 w-12 items-center justify-center border border-slate-200 text-slate-400"
+                          aria-hidden="true"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            class="h-6 w-6"
+                          >
+                            <path d="M23.5 6.5a3 3 0 0 0-2.11-2.12C19.55 4 12 4 12 4s-7.55 0-9.39.38A3 3 0 0 0 .5 6.5C.12 8.34.12 12 .12 12s0 3.66.38 5.5a3 3 0 0 0 2.11 2.12C4.45 20 12 20 12 20s7.55 0 9.39-.38a3 3 0 0 0 2.11-2.12c.38-1.84.38-5.5.38-5.5s0-3.66-.38-5.5ZM9.75 15.5v-7l6.5 3.5-6.5 3.5Z" />
+                          </svg>
+                        </span>
+                        <p class="text-xs font-bold uppercase tracking-wider text-slate-500">
+                          Próximo video
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  {clip.title ? (
+                    <p class="mt-3 text-sm font-semibold text-slate-900">{clip.title}</p>
+                  ) : null}
+                </article>
+              );
+            })
+          }
         </div>
       </div>
     </section>
   </main>
-
 </Layout>
