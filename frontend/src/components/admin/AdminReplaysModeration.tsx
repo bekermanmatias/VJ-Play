@@ -244,7 +244,7 @@ export default function AdminReplaysModeration({
       </section>
 
       {showSettings && (
-      <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <section className="mt-6 border border-slate-200 bg-white p-5 shadow-sm">
         <h3 className="text-sm font-black uppercase tracking-wider text-slate-700">Canchas</h3>
         <p className="mt-1 text-sm text-slate-600">
           El <span className="font-semibold">slug</span> se usa en el enlace interno del replay (minúsculas y guiones); el{" "}
@@ -262,7 +262,7 @@ export default function AdminReplaysModeration({
                     const v = e.target.value;
                     setCourtRows((prev) => prev.map((r, i) => (i === idx ? { ...r, slug: v } : r)));
                   }}
-                  className="mt-1.5 h-10 w-full rounded-md border border-slate-300 px-2 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
+                  className="mt-1.5 h-10 w-full border border-slate-300 px-2 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
                   spellCheck={false}
                   autoCapitalize="off"
                 />
@@ -276,14 +276,14 @@ export default function AdminReplaysModeration({
                     const v = e.target.value;
                     setCourtRows((prev) => prev.map((r, i) => (i === idx ? { ...r, label: v } : r)));
                   }}
-                  className="mt-1.5 h-10 w-full rounded-md border border-slate-300 px-2 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
+                  className="mt-1.5 h-10 w-full border border-slate-300 px-2 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
                 />
               </label>
               <button
                 type="button"
                 disabled={courtRows.length <= 1}
                 onClick={() => setCourtRows((prev) => prev.filter((_, i) => i !== idx))}
-                className="inline-flex h-10 items-center gap-1 rounded-md border border-rose-200 bg-rose-50 px-3 text-xs font-bold text-rose-700 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex h-10 items-center gap-1 border border-rose-200 bg-rose-50 px-3 text-xs font-bold text-rose-700 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Trash2 size={14} />
                 Quitar
@@ -296,7 +296,7 @@ export default function AdminReplaysModeration({
               onClick={() =>
                 setCourtRows((prev) => [...prev, { slug: "", label: "" }])
               }
-              className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-bold text-slate-700 hover:bg-slate-50"
+              className="inline-flex h-10 items-center gap-2 border border-slate-300 bg-white px-3 text-sm font-bold text-slate-700 hover:bg-slate-50"
             >
               <Plus size={16} />
               Agregar cancha
@@ -304,7 +304,7 @@ export default function AdminReplaysModeration({
             <button
               type="submit"
               disabled={courtsSaving}
-              className="inline-flex h-10 items-center gap-2 rounded-md bg-emerald-800 px-4 text-sm font-bold text-white hover:bg-emerald-900 disabled:opacity-60"
+              className="inline-flex h-10 items-center gap-2 bg-emerald-800 px-4 text-sm font-bold text-white hover:bg-emerald-900 disabled:opacity-60"
             >
               <Save size={16} />
               {courtsSaving ? "Guardando…" : "Guardar canchas"}
@@ -318,7 +318,7 @@ export default function AdminReplaysModeration({
       )}
 
       {showSettings && (
-      <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <section className="mt-6 border border-slate-200 bg-white p-5 shadow-sm">
         <h3 className="text-sm font-black uppercase tracking-wider text-slate-700">
           Turnos (base de datos)
         </h3>
@@ -339,7 +339,7 @@ export default function AdminReplaysModeration({
               step={1}
               value={formDurMin}
               onChange={(e) => setFormDurMin(Number(e.target.value))}
-              className="mt-1.5 h-11 w-full rounded-md border border-slate-300 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
+              className="mt-1.5 h-11 w-full border border-slate-300 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
             />
           </label>
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
@@ -350,7 +350,7 @@ export default function AdminReplaysModeration({
               max={23}
               value={formStart}
               onChange={(e) => setFormStart(Number(e.target.value))}
-              className="mt-1.5 h-11 w-full rounded-md border border-slate-300 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
+              className="mt-1.5 h-11 w-full border border-slate-300 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
             />
           </label>
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
@@ -361,14 +361,14 @@ export default function AdminReplaysModeration({
               max={24}
               value={formEnd}
               onChange={(e) => setFormEnd(Number(e.target.value))}
-              className="mt-1.5 h-11 w-full rounded-md border border-slate-300 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
+              className="mt-1.5 h-11 w-full border border-slate-300 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
             />
           </label>
           <div className="flex items-end sm:col-span-3 lg:col-span-3">
             <button
               type="submit"
               disabled={shiftSaving}
-              className="inline-flex h-11 items-center gap-2 rounded-md bg-slate-900 px-4 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-60"
+              className="inline-flex h-11 items-center gap-2 bg-slate-900 px-4 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-60"
             >
               <Save size={16} />
               {shiftSaving ? "Guardando…" : "Guardar turnos en la base"}
@@ -382,7 +382,7 @@ export default function AdminReplaysModeration({
       )}
 
       {showMatches && (
-      <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <section className="mt-6 border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="text-sm font-black uppercase tracking-wider text-slate-700">
             Partidos
@@ -404,7 +404,7 @@ export default function AdminReplaysModeration({
                 void loadMatches(query);
               }}
               disabled={matchesLoading}
-              className="rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              className="border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
             >
               {matchesLoading ? "Actualizando..." : "Actualizar"}
             </button>
@@ -420,12 +420,12 @@ export default function AdminReplaysModeration({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Ej: 10452231, cancha-padel, 2026-05-08, 10:00"
-            className="h-11 w-full rounded-md border border-slate-300 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
+            className="h-11 w-full border border-slate-300 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
           />
           <button
             type="submit"
             disabled={matchesLoading}
-            className="h-11 rounded-md bg-vj-green px-4 text-sm font-bold uppercase tracking-wider text-white hover:bg-vj-green-600 disabled:opacity-50"
+            className="h-11 bg-vj-green px-4 text-sm font-bold uppercase tracking-wider text-white hover:bg-vj-green-600 disabled:opacity-50"
           >
             Buscar
           </button>
@@ -437,7 +437,7 @@ export default function AdminReplaysModeration({
             <select
               value={filterCourt}
               onChange={(e) => setFilterCourt(e.target.value)}
-              className="mt-1.5 h-10 w-full rounded-md border border-slate-300 bg-white px-2 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
+              className="mt-1.5 h-10 w-full border border-slate-300 bg-white px-2 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
             >
               <option value="">Todas</option>
               {courtRows.map((c) => (
@@ -452,7 +452,7 @@ export default function AdminReplaysModeration({
             <select
               value={filterDate}
               onChange={(e) => setFilterDate(e.target.value)}
-              className="mt-1.5 h-10 w-full rounded-md border border-slate-300 bg-white px-2 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
+              className="mt-1.5 h-10 w-full border border-slate-300 bg-white px-2 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
             >
               <option value="">Todas</option>
               {dateOptions.map((d) => (
@@ -467,7 +467,7 @@ export default function AdminReplaysModeration({
             <select
               value={filterShift}
               onChange={(e) => setFilterShift(e.target.value)}
-              className="mt-1.5 h-10 w-full rounded-md border border-slate-300 bg-white px-2 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
+              className="mt-1.5 h-10 w-full border border-slate-300 bg-white px-2 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
             >
               <option value="">Seleccionar turno</option>
               {shiftOptions.map((t) => (
@@ -519,7 +519,7 @@ export default function AdminReplaysModeration({
                         type="button"
                         onClick={() => void onCopyCode(row)}
                         disabled={!row.code}
-                        className="h-8 w-24 rounded-md border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 text-center text-xs font-bold leading-none text-emerald-800 hover:bg-emerald-100 disabled:opacity-40"
+                        className="h-8 w-24 border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 text-center text-xs font-bold leading-none text-emerald-800 hover:bg-emerald-100 disabled:opacity-40"
                       >
                         {copiedMatchKey === row.matchKey ? "Copiado" : "Copiar código"}
                       </button>
@@ -527,7 +527,7 @@ export default function AdminReplaysModeration({
                         href={`/replays/${encodeURIComponent(String(row.numericId))}?cinema=1`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex h-8 w-24 items-center justify-center rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-center text-xs font-bold leading-none text-slate-700 hover:bg-slate-50"
+                        className="inline-flex h-8 w-24 items-center justify-center border border-slate-300 bg-white px-2.5 py-1.5 text-center text-xs font-bold leading-none text-slate-700 hover:bg-slate-50"
                       >
                         Ver partido
                       </a>

@@ -7,6 +7,8 @@ const { currentPath } = Astro.props;
 
 const menuItems = [
   { label: "Inicio", href: "/admin" },
+  { label: "Noticias", href: "/admin/noticias" },
+  { label: "Categorías", href: "/admin/noticias/categorias" },
   { label: "Replays", href: "/admin/replays" },
   { label: "Grabación", href: "/admin/grabacion" },
   { label: "Incidencias", href: "/admin/incidencias" },
@@ -14,8 +16,16 @@ const menuItems = [
   { label: "Configuracion", href: "/admin/configuracion" },
 ];
 
-const isActive = (href: string) =>
-  href === "/admin" ? currentPath === "/admin" : currentPath.startsWith(href);
+const isActive = (href: string) => {
+  if (href === "/admin") return currentPath === "/admin";
+  if (href === "/admin/noticias") {
+    return currentPath === "/admin/noticias" && !currentPath.startsWith("/admin/noticias/categorias");
+  }
+  if (href === "/admin/noticias/categorias") {
+    return currentPath.startsWith("/admin/noticias/categorias");
+  }
+  return currentPath.startsWith(href);
+};
 ---
 
 <aside class="border-r border-slate-200 bg-slate-950 text-white">
@@ -46,7 +56,7 @@ const isActive = (href: string) =>
               <a
                 href={item.href}
                 class:list={[
-                  "block rounded-md px-3 py-2.5 text-sm font-bold uppercase tracking-wide transition",
+                  "block px-3 py-2.5 text-sm font-bold uppercase tracking-wide transition",
                   active ? "bg-vj-green text-white" : "text-white/80 hover:bg-white/10 hover:text-white",
                 ]}
                 aria-current={active ? "page" : undefined}

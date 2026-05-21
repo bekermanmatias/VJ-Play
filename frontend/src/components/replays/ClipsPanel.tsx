@@ -106,8 +106,8 @@ export default function ClipsPanel({
 
   const cardShell =
     isDark
-      ? "group/card overflow-hidden rounded-lg border border-white/15 bg-white/5 text-left ring-1 ring-transparent transition hover:border-vj-green hover:ring-vj-green/30"
-      : "group/card overflow-hidden rounded-lg border border-slate-200 bg-transparent text-left transition hover:border-vj-green";
+      ? "group/card overflow-hidden border border-white/15 bg-white/5 text-left ring-1 ring-transparent transition hover:border-vj-green hover:ring-vj-green/30"
+      : "group/card overflow-hidden border border-slate-200 bg-transparent text-left transition hover:border-vj-green";
 
   const labelBtn =
     isDark
@@ -193,7 +193,7 @@ export default function ClipsPanel({
                         e.preventDefault();
                       }
                     }}
-                    className={`pointer-events-auto absolute right-1 top-1 z-10 grid size-8 place-items-center rounded-full shadow-md ring-1 ring-white/25 transition ${
+                    className={`pointer-events-auto absolute right-1 top-1 z-10 grid size-8 place-items-center shadow-md ring-1 ring-white/25 transition ${
                       clip.status === "processing"
                         ? "cursor-wait bg-black/45 text-white/60"
                         : clip.status === "failed"
@@ -213,14 +213,14 @@ export default function ClipsPanel({
                         e.stopPropagation();
                         setMenuOpenFor((prev) => (prev === clip.id ? null : clip.id));
                       }}
-                      className="grid size-8 place-items-center rounded-full bg-black/70 text-white shadow-md ring-1 ring-white/25 transition hover:bg-black/85"
+                      className="grid size-8 place-items-center bg-black/70 text-white shadow-md ring-1 ring-white/25 transition hover:bg-black/85"
                       aria-label={`Opciones del clip ${clip.label}`}
                     >
                       <EllipsisVertical size={15} strokeWidth={2.6} />
                     </button>
                     {menuOpenFor === clip.id && (
                       <div
-                        className="absolute right-0 mt-1 w-40 overflow-hidden rounded-md border border-white/15 bg-black/90 shadow-xl ring-1 ring-black/40"
+                        className="absolute right-0 mt-1 w-40 overflow-hidden border border-white/15 bg-black/90 shadow-xl ring-1 ring-black/40"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <button
@@ -326,7 +326,7 @@ export default function ClipsPanel({
               setFullMatchDownloadPending(false);
             });
           }}
-          className={`mt-4 flex w-full flex-col items-center justify-center gap-1 rounded-lg px-4 py-3 text-sm font-bold uppercase tracking-wide text-white shadow-sm ring-1 ring-black/10 transition ${
+          className={`mt-4 flex w-full flex-col items-center justify-center gap-1 px-4 py-3 text-sm font-bold uppercase tracking-wide text-white shadow-sm ring-1 ring-black/10 transition ${
             fullMatchDownloadPending
               ? "cursor-wait bg-vj-green/85 ring-black/10"
               : "cursor-pointer bg-vj-green hover:brightness-110"
@@ -361,7 +361,7 @@ export default function ClipsPanel({
         <a
           href={videoSrc}
           download={resolvedFullMatchDownloadName}
-          className="mt-4 flex w-full flex-col items-center justify-center gap-1 rounded-lg bg-vj-green px-4 py-3 text-sm font-bold uppercase tracking-wide text-white shadow-sm ring-1 ring-black/10 transition hover:brightness-110"
+          className="mt-4 flex w-full flex-col items-center justify-center gap-1 bg-vj-green px-4 py-3 text-sm font-bold uppercase tracking-wide text-white shadow-sm ring-1 ring-black/10 transition hover:brightness-110"
         >
           <span className="flex items-center justify-center gap-2">
             <Download size={18} strokeWidth={2.5} className="shrink-0" aria-hidden />

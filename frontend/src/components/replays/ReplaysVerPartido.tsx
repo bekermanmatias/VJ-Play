@@ -47,7 +47,7 @@ function DropdownField({
           id={id}
           value={value}
           onChange={(e) => onPick(e.target.value)}
-          className={`h-12 w-full appearance-none rounded-md border border-slate-300 bg-white pl-3 pr-10 text-sm font-semibold text-slate-800 outline-none transition hover:border-slate-400 focus:border-vj-green ${showCalendarIcon ? "pr-14" : "pr-10"}`}
+          className={`h-12 w-full appearance-none border border-slate-300 bg-white pl-3 pr-10 text-sm font-semibold text-slate-800 outline-none transition hover:border-slate-400 focus:border-vj-green ${showCalendarIcon ? "pr-14" : "pr-10"}`}
         >
           <option value="">{placeholder}</option>
           {options.map((opt) => (
@@ -262,7 +262,7 @@ export default function ReplaysVerPartido() {
           <button
             type="submit"
             disabled={checkingMatch || !cancha || !fecha || !hora}
-            className="h-12 w-full rounded-md bg-vj-green px-4 text-sm font-bold uppercase tracking-wider text-white transition-colors hover:bg-vj-green-600 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600"
+            className="h-12 w-full bg-vj-green px-4 text-sm font-bold uppercase tracking-wider text-white transition-colors hover:bg-vj-green-600 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600"
           >
             {checkingMatch ? "Cargando..." : "VER PARTIDO"}
           </button>
@@ -275,13 +275,13 @@ export default function ReplaysVerPartido() {
           onClick={() => setNotFoundOpen(false)}
         >
           <div
-            className="relative w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-2xl"
+            className="relative w-full max-w-md border border-slate-200 bg-white p-5 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               type="button"
               onClick={() => setNotFoundOpen(false)}
-              className="absolute right-3 top-3 rounded-md p-1 text-slate-500 transition hover:bg-slate-100"
+              className="absolute right-3 top-3 p-1 text-slate-500 transition hover:bg-slate-100"
               aria-label="Cerrar"
             >
               <X size={18} />
@@ -297,7 +297,7 @@ export default function ReplaysVerPartido() {
               <button
                 type="button"
                 onClick={() => setNotFoundOpen(false)}
-                className="inline-flex h-10 items-center rounded-md bg-vj-green px-4 text-sm font-bold uppercase tracking-wider text-white hover:bg-vj-green-600"
+                className="inline-flex h-10 items-center bg-vj-green px-4 text-sm font-bold uppercase tracking-wider text-white hover:bg-vj-green-600"
               >
                 Entendido
               </button>

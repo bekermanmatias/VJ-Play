@@ -71,7 +71,7 @@ export default function AdminRecorderStatusWidget() {
 
   if (!adminSecret) {
     return (
-      <div className="rounded-xl border border-amber-300 bg-amber-50 p-4">
+      <div className="border border-amber-300 bg-amber-50 p-4">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-bold uppercase tracking-wider text-amber-800">
@@ -84,7 +84,7 @@ export default function AdminRecorderStatusWidget() {
         </div>
         <input
           type="password"
-          className="mt-2 w-full rounded-md border border-amber-300 bg-white px-3 py-2 text-sm"
+          className="mt-2 w-full border border-amber-300 bg-white px-3 py-2 text-sm"
           placeholder="admin secret"
           onBlur={(e) => persistAdminSecret(e.target.value.trim())}
         />
@@ -93,7 +93,7 @@ export default function AdminRecorderStatusWidget() {
   }
 
   return (
-    <div className="rounded-xl border border-slate-300 bg-white shadow-sm">
+    <div className="border border-slate-300 bg-white shadow-sm">
       <header className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
         <div className="flex items-center gap-2">
           <Video size={16} className="text-slate-500" />
@@ -176,9 +176,9 @@ function SummaryDot({
   return (
     <span
       title={title}
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${cls}`}
+      className={`inline-flex items-center gap-1 px-2 py-0.5 ${cls}`}
     >
-      <span className="h-1.5 w-1.5 rounded-full bg-current" />
+      <span className="h-1.5 w-1.5 bg-current" />
       {count}
     </span>
   );
@@ -215,7 +215,7 @@ function StatusBadge({ row }: { row: RecorderHeartbeatRow }) {
   }
   return (
     <span
-      className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ring-1 ${cls}`}
+      className={`inline-flex shrink-0 items-center gap-1 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ring-1 ${cls}`}
     >
       <Icon size={10} className={row.status === "starting" ? "animate-spin" : ""} />
       {label}

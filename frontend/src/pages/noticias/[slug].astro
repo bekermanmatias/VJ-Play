@@ -1,0 +1,328 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import TopBar from "@/components/TopBar.astro";
+import Navbar from "@/components/Navbar.astro";
+import {
+  fetchPublicNews,
+  fetchPublicNewsBySlug,
+  getNewsApiBase,
+  newsDate,
+  newsHref,
+  type News,
+} from "@/utils/news-api";
+
+export const prerender = false;
+
+const slug = Astro.params.slug;
+if (!slug || typeof slug !== "string") {
+  return Astro.redirect("/noticias");
+}
+
+const apiBase = getNewsApiBase();
+const news = await fetchPublicNewsBySlug(apiBase, slug);
+
+if (!news) {
+  return new Response("Noticia no encontrada", { status: 404 });
+}
+
+const main = news.images.find((i) => i.isMain) ?? news.images[0] ?? null;
+const gallery = news.images.filter((i) => i.id !== main?.id);
+
+// Últimas 5 noticias para el sidebar (excluyendo la actual).
+let latest: News[] = [];
+try {
+  const res = await fetchPublicNews(apiBase, { limit: 6 });
+  latest = res.news.filter((n) => n.id !== news.id).slice(0, 5);
+} catch {
+  // ignoramos errores: el sidebar puede quedar vacío sin romper la página
+}
+
+const bodyParagraphs = news.body
+  .split(/\n\s*\n/)
+  .map((p) => p.trim())
+  .filter((p) => p.length > 0);
+
+const headCat = news.categories[0];
+const headHref = headCat
+  ? `/noticias?categoria=${encodeURIComponent(headCat.slug)}`
+  : "/noticias";
+const headLabel = headCat ? headCat.label : "Noticias";
+---
+
+<Layout title={`${news.title} | Club Social Varela Junior`} description={news.summary}>
+  <TopBar />
+  <Navbar />
+
+  <main class="bg-white">
+    <div class="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+      <div class="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-14">
+        <article class="min-w-0">
+          <div class="flex items-center justify-between gap-3">
+            <a
+              href={headHref}
+              class="inline-flex items-center bg-vj-green px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-white transition hover:brightness-110"
+            >
+              {headLabel}
+            </a>
+            <span class="text-xs uppercase tracking-[0.18em] text-slate-400">
+              {newsDate(news)}
+            </span>
+          </div>
+
+          <h1 class="mt-5 text-3xl font-black uppercase leading-[1.02] tracking-[-0.01em] text-slate-900 antialiased sm:text-4xl lg:text-5xl">
+            {news.title}
+          </h1>
+
+          {news.summary && (
+            <p class="mt-5 max-w-3xl text-base font-semibold leading-relaxed text-slate-700 sm:text-lg">
+              {news.summary}
+            </p>
+          )}
+
+          {main && (
+            <figure class="mt-8">
+              <button
+                type="button"
+                class="block w-full cursor-zoom-in"
+                data-lightbox-src={main.url}
+                data-lightbox-alt={main.altText ?? news.title}
+                aria-label="Ampliar imagen"
+              >
+                <img
+                  src={main.url}
+                  alt={main.altText ?? news.title}
+                  class="mx-auto h-auto w-full max-w-[640px] object-cover"
+                  loading="eager"
+                  decoding="async"
+                />
+              </button>
+              {main.altText && (
+                <figcaption class="mt-2 text-center text-xs italic text-slate-500">
+                  {main.altText}
+                </figcaption>
+              )}
+            </figure>
+          )}
+
+          <div class="mt-10 max-w-3xl">
+            {bodyParagraphs.length === 0 ? (
+              <p class="text-slate-500">Esta noticia aún no tiene cuerpo.</p>
+            ) : (
+              bodyParagraphs.map((p) => (
+                <p class="mb-5 text-[15px] leading-relaxed text-slate-700 sm:text-base">{p}</p>
+              ))
+            )}
+          </div>
+
+          {gallery.length > 0 && (
+            <section class="mt-12 max-w-3xl border-t border-slate-200 pt-8">
+              <h2 class="text-xs font-bold uppercase tracking-[0.22em] text-slate-500">
+                Galería
+              </h2>
+              <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {gallery.map((img) => (
+                  <button
+                    type="button"
+                    class="group block aspect-[4/3] cursor-zoom-in overflow-hidden bg-slate-100"
+                    data-lightbox-src={img.url}
+                    data-lightbox-alt={img.altText ?? news.title}
+                    aria-label="Ampliar imagen"
+                  >
+                    <img
+                      src={img.url}
+                      alt={img.altText ?? news.title}
+                      class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
+          <div class="mt-10 max-w-3xl border-t border-slate-200 pt-4">
+            {news.author && (
+              <p class="text-xs uppercase tracking-[0.18em] text-slate-500">
+                Por {news.author}
+              </p>
+            )}
+
+            {news.categories.length > 0 && (
+              <ul class="mt-4 flex flex-wrap gap-2">
+                {news.categories.map((c) => (
+                  <li>
+                    <a
+                      href={`/noticias?categoria=${encodeURIComponent(c.slug)}`}
+                      class="inline-flex items-center border border-slate-300 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-700 transition hover:border-vj-green hover:text-vj-green"
+                    >
+                      {c.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </article>
+
+        <aside class="lg:sticky lg:top-28 lg:self-start">
+          <h2 class="text-sm font-black uppercase tracking-wider text-slate-900">
+            Últimas noticias
+          </h2>
+          {latest.length === 0 ? (
+            <p class="mt-3 text-xs text-slate-500">No hay otras noticias por ahora.</p>
+          ) : (
+            <ul class="mt-3 space-y-3">
+              {latest.map((n) => {
+                const cat = n.categories[0];
+                const img = n.mainImageUrl ?? "/images/deportes/placeholder.svg";
+                return (
+                  <li>
+                    <a
+                      href={newsHref(n)}
+                      class="group relative block aspect-[16/10] overflow-hidden bg-slate-900"
+                    >
+                      <img
+                        src={img}
+                        alt={n.title}
+                        class="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                      <div
+                        class="absolute inset-0 bg-gradient-to-t from-slate-900/95 via-slate-900/35 to-transparent"
+                        aria-hidden="true"
+                      />
+                      {cat && (
+                        <span class="absolute right-0 top-0 bg-vj-green px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white">
+                          {cat.label}
+                        </span>
+                      )}
+                      <h3 class="absolute inset-x-0 bottom-0 p-3 text-sm font-extrabold leading-snug text-white">
+                        {n.title}
+                      </h3>
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          <a
+            href="/noticias"
+            class="mt-4 inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-vj-green hover:underline"
+          >
+            Ver todas
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              class="h-3 w-3"
+              aria-hidden="true"
+            >
+              <path d="M5 12h14" />
+              <path d="m13 5 7 7-7 7" />
+            </svg>
+          </a>
+        </aside>
+      </div>
+    </div>
+
+    <dialog
+      id="news-lightbox"
+      class="m-0 max-h-none max-w-none bg-transparent p-0 backdrop:bg-slate-950/90 backdrop:backdrop-blur-sm"
+      aria-label="Vista ampliada de la imagen"
+    >
+      <div class="fixed inset-0 flex items-center justify-center p-4 sm:p-8">
+        <button
+          type="button"
+          data-lightbox-close
+          class="absolute right-4 top-4 z-10 inline-flex h-10 w-10 items-center justify-center bg-white/10 text-white transition hover:bg-white/20"
+          aria-label="Cerrar"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            class="h-5 w-5"
+            aria-hidden="true"
+          >
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
+          </svg>
+        </button>
+        <img
+          id="news-lightbox-img"
+          src=""
+          alt=""
+          class="max-h-[90vh] max-w-[95vw] object-contain shadow-2xl"
+        />
+      </div>
+    </dialog>
+  </main>
+
+  <script is:inline>
+    (() => {
+      const dialog = document.getElementById("news-lightbox");
+      const img = document.getElementById("news-lightbox-img");
+      if (!(dialog instanceof HTMLDialogElement) || !(img instanceof HTMLImageElement)) return;
+
+      const closeBtn = dialog.querySelector("[data-lightbox-close]");
+
+      const open = (src, alt) => {
+        if (!src) return;
+        img.src = src;
+        img.alt = alt || "";
+        if (typeof dialog.showModal === "function") {
+          dialog.showModal();
+        } else {
+          dialog.setAttribute("open", "");
+        }
+        document.body.style.overflow = "hidden";
+      };
+
+      const close = () => {
+        if (typeof dialog.close === "function") {
+          dialog.close();
+        } else {
+          dialog.removeAttribute("open");
+        }
+        img.src = "";
+        img.alt = "";
+        document.body.style.overflow = "";
+      };
+
+      document.querySelectorAll("[data-lightbox-src]").forEach((el) => {
+        el.addEventListener("click", (ev) => {
+          ev.preventDefault();
+          open(el.getAttribute("data-lightbox-src") || "", el.getAttribute("data-lightbox-alt") || "");
+        });
+      });
+
+      closeBtn?.addEventListener("click", close);
+
+      // Click sobre el backdrop cierra el modal (no sobre la imagen).
+      dialog.addEventListener("click", (ev) => {
+        const target = ev.target;
+        if (target === dialog) {
+          close();
+          return;
+        }
+        if (target instanceof HTMLElement && target.closest("img, [data-lightbox-close]")) {
+          return;
+        }
+        close();
+      });
+
+      dialog.addEventListener("close", () => {
+        document.body.style.overflow = "";
+        img.src = "";
+        img.alt = "";
+      });
+    })();
+  </script>
+</Layout>

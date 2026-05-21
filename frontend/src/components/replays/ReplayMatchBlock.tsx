@@ -30,7 +30,7 @@ export default function ReplayMatchBlock({
 
   return (
     <>
-      <div className="overflow-hidden rounded-lg border border-slate-200 bg-black shadow-xl">
+      <div className="overflow-hidden border border-slate-200 bg-black shadow-xl">
         <MatchPlayer
           ref={playerRef}
           videoSrc={videoSrc}

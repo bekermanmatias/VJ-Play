@@ -121,11 +121,11 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
   const ghost = chromeVariant === "ghost";
 
   const sideIconBtn = ghost
-    ? "grid h-11 w-11 place-items-center rounded-full text-white transition hover:bg-white/15 [filter:drop-shadow(0_2px_8px_rgba(0,0,0,0.85))]"
-    : "grid h-11 w-11 place-items-center rounded-lg bg-black/55 text-white/95 ring-1 ring-white/45 hover:bg-black/70";
+    ? "grid h-11 w-11 place-items-center text-white transition hover:bg-white/15 [filter:drop-shadow(0_2px_8px_rgba(0,0,0,0.85))]"
+    : "grid h-11 w-11 place-items-center bg-black/55 text-white/95 ring-1 ring-white/45 hover:bg-black/70";
 
   const seekDefaultBtn =
-    "grid h-10 w-10 place-items-center rounded-lg bg-black/55 text-white/95 ring-1 ring-white/45 hover:bg-black/70";
+    "grid h-10 w-10 place-items-center bg-black/55 text-white/95 ring-1 ring-white/45 hover:bg-black/70";
 
   const shellRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -765,8 +765,8 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
             onClick={togglePlay}
             className={
               ghost
-                ? "pointer-events-auto absolute left-1/2 top-1/2 grid h-16 w-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white/15 text-white ring-2 ring-white/45 backdrop-blur-[2px] transition hover:bg-white/25 [filter:drop-shadow(0_4px_20px_rgba(0,0,0,0.6))]"
-                : "pointer-events-auto absolute left-1/2 top-1/2 grid h-14 w-14 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white/20 text-white ring-2 ring-white/50 backdrop-blur-sm transition hover:bg-white/30"
+                ? "pointer-events-auto absolute left-1/2 top-1/2 grid h-16 w-16 -translate-x-1/2 -translate-y-1/2 place-items-center bg-white/15 text-white ring-2 ring-white/45 backdrop-blur-[2px] transition hover:bg-white/25 [filter:drop-shadow(0_4px_20px_rgba(0,0,0,0.6))]"
+                : "pointer-events-auto absolute left-1/2 top-1/2 grid h-14 w-14 -translate-x-1/2 -translate-y-1/2 place-items-center bg-white/20 text-white ring-2 ring-white/50 backdrop-blur-sm transition hover:bg-white/30"
             }
             aria-label="Reproducir"
           >
@@ -781,7 +781,7 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
           <button
             type="button"
             onClick={togglePiP}
-            className={ghost ? sideIconBtn : "grid h-11 w-11 place-items-center rounded-lg bg-black/55 ring-1 ring-white/45 hover:bg-black/70"}
+            className={ghost ? sideIconBtn : "grid h-11 w-11 place-items-center bg-black/55 ring-1 ring-white/45 hover:bg-black/70"}
             aria-label="Vista cámara / PiP"
           >
             <Video size={20} strokeWidth={2.8} />
@@ -795,7 +795,7 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
                   ? settingsOpen
                     ? `${sideIconBtn} bg-white/25 ring-1 ring-white/40`
                     : sideIconBtn
-                  : `grid h-11 w-11 place-items-center rounded-lg ring-1 ring-white/45 transition hover:bg-black/70 ${
+                  : `grid h-11 w-11 place-items-center ring-1 ring-white/45 transition hover:bg-black/70 ${
                       settingsOpen ? "bg-black/75 ring-white/70" : "bg-black/55"
                     }`
               }
@@ -811,8 +811,8 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
                 aria-label="Ajustes de reproducción"
                 className={
                   ghost
-                    ? "absolute bottom-0 left-0 right-0 z-30 mx-auto w-[min(calc(100vw-2rem),18rem)] rounded-2xl p-3 sm:left-full sm:right-auto sm:mx-0 sm:ml-3 sm:w-[min(calc(100vw-5rem),17.5rem)]"
-                    : "absolute bottom-0 left-full z-30 ml-3 w-[min(calc(100vw-5rem),17.5rem)] rounded-2xl bg-black/80 p-3 shadow-xl ring-1 ring-white/25 backdrop-blur-md"
+                    ? "absolute bottom-0 left-0 right-0 z-30 mx-auto w-[min(calc(100vw-2rem),18rem)] p-3 sm:left-full sm:right-auto sm:mx-0 sm:ml-3 sm:w-[min(calc(100vw-5rem),17.5rem)]"
+                    : "absolute bottom-0 left-full z-30 ml-3 w-[min(calc(100vw-5rem),17.5rem)] bg-black/80 p-3 shadow-xl ring-1 ring-white/25 backdrop-blur-md"
                 }
                 style={
                   ghost
@@ -830,14 +830,14 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
                     <button
                       type="button"
                       onClick={reportProblem}
-                      className="min-h-[42px] flex-1 rounded-full bg-neutral-200 px-4 py-2 text-center text-sm font-semibold text-neutral-900 transition hover:bg-white"
+                      className="min-h-[42px] flex-1 bg-neutral-200 px-4 py-2 text-center text-sm font-semibold text-neutral-900 transition hover:bg-white"
                     >
                       Report problem
                     </button>
                     <button
                       type="button"
                       onClick={toggleMute}
-                      className="grid size-[42px] shrink-0 place-items-center rounded-full bg-neutral-200 text-neutral-900 transition hover:bg-white"
+                      className="grid size-[42px] shrink-0 place-items-center bg-neutral-200 text-neutral-900 transition hover:bg-white"
                       aria-label={muted ? "Activar sonido" : "Silenciar"}
                     >
                       {muted ? (
@@ -848,10 +848,10 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
                     </button>
                   </div>
                   <div className="flex gap-2">
-                    <div className="flex min-h-[42px] flex-1 items-center justify-between gap-1 rounded-full bg-neutral-200 px-2 py-1.5 text-neutral-900">
+                    <div className="flex min-h-[42px] flex-1 items-center justify-between gap-1 bg-neutral-200 px-2 py-1.5 text-neutral-900">
                       <button
                         type="button"
-                        className="grid size-8 shrink-0 place-items-center rounded-full hover:bg-neutral-300 disabled:pointer-events-none disabled:opacity-35"
+                        className="grid size-8 shrink-0 place-items-center hover:bg-neutral-300 disabled:pointer-events-none disabled:opacity-35"
                         aria-label="Reducir brillo"
                         disabled={brightnessPct <= BRIGHTNESS_MIN}
                         onClick={() =>
@@ -867,7 +867,7 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
                       </span>
                       <button
                         type="button"
-                        className="grid size-8 shrink-0 place-items-center rounded-full hover:bg-neutral-300 disabled:pointer-events-none disabled:opacity-35"
+                        className="grid size-8 shrink-0 place-items-center hover:bg-neutral-300 disabled:pointer-events-none disabled:opacity-35"
                         aria-label="Aumentar brillo"
                         disabled={brightnessPct >= BRIGHTNESS_MAX}
                         onClick={() =>
@@ -879,10 +879,10 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
                         <Plus size={18} strokeWidth={2.6} />
                       </button>
                     </div>
-                    <div className="flex min-h-[42px] flex-1 items-center justify-between gap-1 rounded-full bg-neutral-200 px-2 py-1.5 text-neutral-900">
+                    <div className="flex min-h-[42px] flex-1 items-center justify-between gap-1 bg-neutral-200 px-2 py-1.5 text-neutral-900">
                       <button
                         type="button"
-                        className="grid size-8 shrink-0 place-items-center rounded-full hover:bg-neutral-300 disabled:pointer-events-none disabled:opacity-35"
+                        className="grid size-8 shrink-0 place-items-center hover:bg-neutral-300 disabled:pointer-events-none disabled:opacity-35"
                         aria-label="Reducir contraste"
                         disabled={contrastPct <= CONTRAST_MIN}
                         onClick={() =>
@@ -898,7 +898,7 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
                       </span>
                       <button
                         type="button"
-                        className="grid size-8 shrink-0 place-items-center rounded-full hover:bg-neutral-300 disabled:pointer-events-none disabled:opacity-35"
+                        className="grid size-8 shrink-0 place-items-center hover:bg-neutral-300 disabled:pointer-events-none disabled:opacity-35"
                         aria-label="Aumentar contraste"
                         disabled={contrastPct >= CONTRAST_MAX}
                         onClick={() =>
@@ -934,7 +934,7 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
             className={
               ghost
                 ? sideIconBtn
-                : "grid h-11 w-11 place-items-center rounded-lg bg-black/55 ring-1 ring-white/45 hover:bg-black/70"
+                : "grid h-11 w-11 place-items-center bg-black/55 ring-1 ring-white/45 hover:bg-black/70"
             }
             aria-label={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
           >
@@ -952,7 +952,7 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
                 ? clipsOpen
                   ? `${sideIconBtn} bg-white/20 text-vj-green ring-1 ring-vj-green/60 [filter:none]`
                   : sideIconBtn
-                : `grid h-11 w-11 place-items-center rounded-lg ring-1 ring-white/45 transition ${
+                : `grid h-11 w-11 place-items-center ring-1 ring-white/45 transition ${
                     clipsOpen ? "bg-vj-green/80 hover:bg-vj-green" : "bg-black/55 hover:bg-black/70"
                   }`
             }
@@ -967,7 +967,7 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
             className={
               ghost
                 ? sideIconBtn
-                : "grid h-11 w-11 place-items-center rounded-lg bg-black/55 ring-1 ring-white/45 hover:bg-black/70"
+                : "grid h-11 w-11 place-items-center bg-black/55 ring-1 ring-white/45 hover:bg-black/70"
             }
             aria-label="Compartir"
           >
@@ -979,7 +979,7 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
             className={
               ghost
                 ? `${sideIconBtn} text-xs font-black`
-                : "grid h-11 w-11 place-items-center rounded-lg bg-black/55 ring-1 ring-white/45 hover:bg-black/70 text-xs font-black"
+                : "grid h-11 w-11 place-items-center bg-black/55 ring-1 ring-white/45 hover:bg-black/70 text-xs font-black"
             }
             aria-label="Velocidad de reproducción"
           >
@@ -989,7 +989,7 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
             <button
               type="button"
               onClick={toggleMute}
-              className="grid h-11 w-11 place-items-center rounded-lg bg-black/55 ring-1 ring-white/45 hover:bg-black/70"
+              className="grid h-11 w-11 place-items-center bg-black/55 ring-1 ring-white/45 hover:bg-black/70"
               aria-label={muted ? "Activar sonido" : "Silenciar"}
             >
               {muted ? <VolumeX size={20} strokeWidth={2.8} /> : <Volume2 size={20} strokeWidth={2.8} />}
@@ -1014,23 +1014,23 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
               onClick={toggleClipRecording}
               className={
                 ghost
-                  ? "grid h-11 w-11 place-items-center rounded-full bg-red-600/90 text-white ring-2 ring-white/70 transition hover:bg-red-500 [filter:drop-shadow(0_2px_10px_rgba(0,0,0,0.65))]"
-                  : "grid h-11 w-11 place-items-center rounded-full bg-red-600 text-white ring-2 ring-white/85 transition hover:bg-red-500"
+                  ? "grid h-11 w-11 place-items-center bg-red-600/90 text-white ring-2 ring-white/70 transition hover:bg-red-500 [filter:drop-shadow(0_2px_10px_rgba(0,0,0,0.65))]"
+                  : "grid h-11 w-11 place-items-center bg-red-600 text-white ring-2 ring-white/85 transition hover:bg-red-500"
               }
               aria-label={isClipRecording ? "Detener grabación de clip" : "Iniciar grabación de clip"}
               title={isClipRecording ? "Detener grabación de clip" : "Iniciar grabación de clip"}
             >
               {isClipRecording ? (
-                <span className="h-3.5 w-3.5 rounded-sm bg-white" aria-hidden />
+                <span className="h-3.5 w-3.5 bg-white" aria-hidden />
               ) : (
-                <span className="h-5 w-5 rounded-full bg-white" aria-hidden />
+                <span className="h-5 w-5 bg-white" aria-hidden />
               )}
             </button>
           </div>
           {isClipRecording && (
             <div className="mb-2 text-center">
-              <span className="inline-flex items-center gap-1 rounded-full bg-red-600/90 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
-                <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" aria-hidden />
+              <span className="inline-flex items-center gap-1 bg-red-600/90 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
+                <span className="h-1.5 w-1.5 bg-white animate-pulse" aria-hidden />
                 Grabando clip{clipStart !== null ? ` (${formatTime(current - clipStart)})` : ""}
               </span>
             </div>
@@ -1085,7 +1085,7 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
         </div>
         {pendingClip && (
           <div className="pointer-events-auto absolute inset-0 z-40 grid place-items-center bg-black/55 p-3">
-            <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-4 shadow-2xl">
+            <div className="w-full max-w-md border border-slate-200 bg-white p-4 shadow-2xl">
               <h4 className="text-sm font-black uppercase tracking-wide text-slate-800">
                 Guardar clip
               </h4>
@@ -1093,7 +1093,7 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
                 Tu recorte termino correctamente. Podes guardarlo con nombre opcional.
               </p>
 
-              <div className="mt-3 grid grid-cols-3 gap-2 rounded-lg bg-slate-50 p-2 text-[11px] font-semibold text-slate-700">
+              <div className="mt-3 grid grid-cols-3 gap-2 bg-slate-50 p-2 text-[11px] font-semibold text-slate-700">
                 <div>
                   <p className="text-[10px] uppercase tracking-wide text-slate-500">Inicio</p>
                   <p>{formatTime(pendingClip.start)}</p>
@@ -1117,7 +1117,7 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
                   value={clipDraftName}
                   onChange={(e) => setClipDraftName(e.target.value)}
                   placeholder="Ej: Punto final set 2"
-                  className="h-10 w-full rounded-md border border-slate-300 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
+                  className="h-10 w-full border border-slate-300 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-vj-green"
                 />
               </label>
 
@@ -1125,14 +1125,14 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
                 <button
                   type="button"
                   onClick={closeClipModal}
-                  className="rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-700 transition hover:bg-slate-50"
+                  className="border border-slate-300 bg-white px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-700 transition hover:bg-slate-50"
                 >
                   Cancelar
                 </button>
                 <button
                   type="button"
                   onClick={saveClipDraft}
-                  className="rounded-md bg-vj-green px-3 py-2 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-vj-green-600"
+                  className="bg-vj-green px-3 py-2 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-vj-green-600"
                 >
                   Guardar clip
                 </button>
@@ -1142,7 +1142,7 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
         )}
         {savedClipNotice && (
           <div className="pointer-events-auto absolute inset-0 z-50 grid place-items-center bg-black/60 p-3">
-            <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-4 shadow-2xl">
+            <div className="w-full max-w-sm border border-slate-200 bg-white p-4 shadow-2xl">
               <h4 className="text-sm font-black uppercase tracking-wide text-slate-800">
                 Clip guardado
               </h4>
@@ -1157,7 +1157,7 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
                 <button
                   type="button"
                   onClick={() => setSavedClipNotice(null)}
-                  className="rounded-md bg-vj-green px-3 py-2 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-vj-green-600"
+                  className="bg-vj-green px-3 py-2 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-vj-green-600"
                 >
                   Aceptar
                 </button>
@@ -1167,7 +1167,7 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
         )}
         {clipJobNotice && (
           <div className="pointer-events-auto absolute inset-0 z-50 grid place-items-center bg-black/60 p-3">
-            <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-4 shadow-2xl">
+            <div className="w-full max-w-sm border border-slate-200 bg-white p-4 shadow-2xl">
               <h4 className="text-sm font-black uppercase tracking-wide text-slate-800">
                 {clipJobNotice.status === "processing" ? "Generando clip" : "Error al generar clip"}
               </h4>
@@ -1179,8 +1179,8 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
                   <p className="mt-1 text-xs text-slate-600">
                     Esperá unos instantes. El clip aparecerá listo para descargar automáticamente.
                   </p>
-                  <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-slate-200">
-                    <div className="h-full w-1/3 animate-pulse rounded-full bg-vj-green" />
+                  <div className="mt-4 h-2 w-full overflow-hidden bg-slate-200">
+                    <div className="h-full w-1/3 animate-pulse bg-vj-green" />
                   </div>
                 </>
               ) : (
@@ -1195,7 +1195,7 @@ const MatchPlayer = forwardRef<MatchPlayerHandle, Props>(function MatchPlayer(
                 <button
                   type="button"
                   onClick={() => setClipJobNotice(null)}
-                  className="rounded-md bg-vj-green px-3 py-2 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-vj-green-600"
+                  className="bg-vj-green px-3 py-2 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-vj-green-600"
                 >
                   {clipJobNotice.status === "processing" ? "Entendido" : "Cerrar"}
                 </button>

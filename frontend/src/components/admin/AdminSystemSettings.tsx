@@ -19,12 +19,12 @@ export default function AdminSystemSettings() {
         </p>
       </section>
 
-      <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+      <div className="mt-4 border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
         Acceso sensible: ejecutar acciones solo con autorizacion.
       </div>
 
       <section className="mt-6">
-        <article className="rounded-xl border border-slate-300 bg-white p-5 shadow-sm">
+        <article className="border border-slate-300 bg-white p-5 shadow-sm">
           <h3 className="text-sm font-black uppercase tracking-wider text-slate-700">
             Modulo de Hardware
           </h3>
@@ -36,7 +36,7 @@ export default function AdminSystemSettings() {
             <button
               type="button"
               onClick={() => runProtectedAction("Reiniciar router a distancia")}
-              className="inline-flex items-center gap-2 rounded-md border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 transition hover:bg-rose-100"
+              className="inline-flex items-center gap-2 border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700 transition hover:bg-rose-100"
             >
               <Power size={16} />
               Reiniciar router a distancia
@@ -45,7 +45,7 @@ export default function AdminSystemSettings() {
             <button
               type="button"
               onClick={() => runProtectedAction("Forzar reconexion de VPN")}
-              className="inline-flex items-center gap-2 rounded-md border border-sky-300 bg-sky-50 px-3 py-2 text-sm font-bold text-sky-700 transition hover:bg-sky-100"
+              className="inline-flex items-center gap-2 border border-sky-300 bg-sky-50 px-3 py-2 text-sm font-bold text-sky-700 transition hover:bg-sky-100"
             >
               <ShieldCheck size={16} />
               Forzar reconexion de VPN

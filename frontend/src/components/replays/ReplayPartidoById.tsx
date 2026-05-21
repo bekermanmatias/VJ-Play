@@ -135,7 +135,7 @@ export default function ReplayPartidoById({ apiBase, cinema = false, matchId = n
       );
     }
     return (
-      <div className="rounded-xl border border-slate-200 bg-white p-6 text-center text-sm font-semibold text-slate-600">
+      <div className="border border-slate-200 bg-white p-6 text-center text-sm font-semibold text-slate-600">
         Cargando partido...
       </div>
     );
@@ -150,7 +150,7 @@ export default function ReplayPartidoById({ apiBase, cinema = false, matchId = n
           <p className="mt-2 max-w-md text-sm text-slate-300">{error ?? "No existe un partido para ese ID."}</p>
           <a
             href="/replays"
-            className="mt-6 inline-flex h-11 items-center justify-center rounded-md bg-vj-green px-5 text-sm font-black uppercase tracking-wider text-white transition hover:bg-vj-green-600"
+            className="mt-6 inline-flex h-11 items-center justify-center bg-vj-green px-5 text-sm font-black uppercase tracking-wider text-white transition hover:bg-vj-green-600"
           >
             Volver al buscador
           </a>
@@ -158,13 +158,13 @@ export default function ReplayPartidoById({ apiBase, cinema = false, matchId = n
       );
     }
     return (
-      <div className="rounded-xl border border-rose-200 bg-white p-6 shadow-sm">
+      <div className="border border-rose-200 bg-white p-6 shadow-sm">
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-rose-700">Replay</p>
         <h2 className="mt-2 text-xl font-black tracking-tight text-slate-900">Partido no encontrado</h2>
         <p className="mt-2 text-sm text-slate-600">{error ?? "No existe un partido para ese ID."}</p>
         <a
           href="/replays"
-          className="mt-5 inline-flex h-11 w-full items-center justify-center rounded-md bg-vj-green px-4 text-sm font-black uppercase tracking-wider text-white transition hover:bg-vj-green-600"
+          className="mt-5 inline-flex h-11 w-full items-center justify-center bg-vj-green px-4 text-sm font-black uppercase tracking-wider text-white transition hover:bg-vj-green-600"
         >
           Volver al buscador
         </a>
@@ -195,7 +195,7 @@ export default function ReplayPartidoById({ apiBase, cinema = false, matchId = n
         <div>
           <a
             href="/replays"
-            className="inline-flex h-9 items-center rounded-md border border-slate-300 bg-white px-3 text-xs font-bold uppercase tracking-wider text-slate-700 transition hover:bg-slate-50"
+            className="inline-flex h-9 items-center border border-slate-300 bg-white px-3 text-xs font-bold uppercase tracking-wider text-slate-700 transition hover:bg-slate-50"
           >
             Volver al buscador
           </a>

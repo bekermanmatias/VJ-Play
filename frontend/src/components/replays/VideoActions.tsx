@@ -30,8 +30,8 @@ export default function VideoActions({ variant = "light" }: Props) {
 
   const link =
     variant === "dark"
-      ? "inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs sm:text-sm font-bold uppercase tracking-wide text-white/85 transition-colors hover:border-vj-green hover:text-vj-green"
-      : "inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-xs sm:text-sm font-bold uppercase tracking-wide text-slate-700 transition-colors hover:border-vj-green hover:text-vj-green";
+      ? "inline-flex items-center gap-2 border border-white/20 px-3 py-2 text-xs sm:text-sm font-bold uppercase tracking-wide text-white/85 transition-colors hover:border-vj-green hover:text-vj-green"
+      : "inline-flex items-center gap-2 border border-slate-300 px-3 py-2 text-xs sm:text-sm font-bold uppercase tracking-wide text-slate-700 transition-colors hover:border-vj-green hover:text-vj-green";
 
   return (
     <div className={shell}>
