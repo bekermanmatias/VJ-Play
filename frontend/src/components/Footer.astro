@@ -1,23 +1,21 @@
 ---
-import { deportesNav } from "@/data/deportes";
+import { navDropdowns, navSimpleLinks } from "@/data/nav";
 
 const year = new Date().getFullYear();
 
 const quickLinks = [
   { label: "Inicio", href: "/" },
-  { label: "Replays", href: "/replays" },
-  { label: "Institucional", href: "/club/institucional" },
-  { label: "Socios", href: "/socios" },
+  ...navSimpleLinks,
   { label: "Contacto", href: "/#contacto" },
 ];
 
-const sportsLinks = deportesNav;
+const footerNavColumns = [navDropdowns.slice(0, 2), navDropdowns.slice(2, 4)];
 ---
 
 <footer class="border-t border-slate-800 bg-slate-950 text-slate-200">
   <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-12">
-    <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-      <section>
+    <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-[1.2fr_0.8fr_1fr_1fr_0.9fr] lg:gap-10">
+      <section class="max-w-xs">
         <a href="/" class="inline-flex items-center gap-3" aria-label="Club Social Varela Junior - Inicio">
           <img
             src="/images/escudo-varela-junior.png"
@@ -36,7 +34,7 @@ const sportsLinks = deportesNav;
         </p>
       </section>
 
-      <section>
+      <section class="lg:pt-1">
         <h3 class="text-xs font-black uppercase tracking-[0.16em] text-white/85">Accesos</h3>
         <ul class="mt-3 space-y-2">
           {
@@ -51,34 +49,49 @@ const sportsLinks = deportesNav;
         </ul>
       </section>
 
-      <section>
-        <h3 class="text-xs font-black uppercase tracking-[0.16em] text-white/85">Deportes</h3>
-        <ul class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-1">
+      {
+        footerNavColumns.map((column) => (
+          <section class="space-y-6 lg:pt-1">
+            {
+              column.map((group) => (
+                <div>
+                  <h3 class="text-xs font-black uppercase tracking-[0.16em] text-white/85">
+                    {group.label}
+                  </h3>
+                  <ul class="mt-3 space-y-1.5">
+                    {group.items.map((item) => (
+                      <li>
+                        <a
+                          href={item.href}
+                          class="text-sm font-semibold text-slate-300 transition hover:text-vj-green"
+                        >
+                          {item.label}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))
+            }
+          </section>
+        ))
+      }
+
+      <section class="lg:pt-1">
+        <h3 class="text-xs font-black uppercase tracking-[0.16em] text-white/85">Contacto</h3>
+        <ul class="mt-3 space-y-2 text-sm text-slate-300">
           {
-            sportsLinks.map((link) => (
+            [
+              { href: "mailto:info@varelajunior.com.ar", label: "info@varelajunior.com.ar" },
+              { href: "tel:+5491100000000", label: "+54 9 11 0000-0000" },
+            ].map((item) => (
               <li>
-                <a href={link.href} class="text-sm font-semibold text-slate-300 transition hover:text-vj-green">
-                  {link.label}
+                <a href={item.href} class="font-semibold transition hover:text-vj-green">
+                  {item.label}
                 </a>
               </li>
             ))
           }
-        </ul>
-      </section>
-
-      <section>
-        <h3 class="text-xs font-black uppercase tracking-[0.16em] text-white/85">Contacto</h3>
-        <ul class="mt-3 space-y-2 text-sm text-slate-300">
-          <li>
-            <a href="mailto:info@varelajunior.com.ar" class="font-semibold transition hover:text-vj-green">
-              info@varelajunior.com.ar
-            </a>
-          </li>
-          <li>
-            <a href="tel:+5491100000000" class="font-semibold transition hover:text-vj-green">
-              +54 9 11 0000-0000
-            </a>
-          </li>
           <li class="text-slate-400">Varela, Buenos Aires, Argentina</li>
         </ul>
       </section>

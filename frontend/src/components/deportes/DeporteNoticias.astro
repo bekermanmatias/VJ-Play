@@ -84,68 +84,70 @@ const verMasHref = noticiasListHref({ categorySlug });
 
     {
       hasNews && (
-        <div class="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {news.map((n) => (
-            <article class="group flex flex-col overflow-hidden border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
-              <a href={newsHref(n)} class="block">
-                <div class="aspect-[16/10] w-full bg-slate-100 overflow-hidden">
-                  <img
-                    src={newsImageOrPlaceholder(n)}
-                    alt={n.images[0]?.altText ?? n.title}
-                    class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                    loading="lazy"
-                    decoding="async"
-                  />
+        <>
+          <div class="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {news.map((n) => (
+              <article class="group flex flex-col overflow-hidden border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
+                <a href={newsHref(n)} class="block">
+                  <div class="aspect-[16/10] w-full bg-slate-100 overflow-hidden">
+                    <img
+                      src={newsImageOrPlaceholder(n)}
+                      alt={n.images[0]?.altText ?? n.title}
+                      class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </div>
+                </a>
+                <div class="flex flex-1 flex-col p-5">
+                  <div class="flex items-center justify-between gap-3">
+                    <span class="text-[11px] font-bold uppercase tracking-[0.18em] text-vj-green">
+                      {newsCategoryLabel(n)}
+                    </span>
+                    <span class="shrink-0 text-[11px] text-slate-400">
+                      {newsDate(n)}
+                    </span>
+                  </div>
+                  <h3 class="mt-2 text-lg font-extrabold leading-snug text-slate-900">
+                    <a href={newsHref(n)} class="hover:underline">
+                      {n.title}
+                    </a>
+                  </h3>
+                  {n.summary && (
+                    <p class="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-600">
+                      {n.summary}
+                    </p>
+                  )}
                 </div>
-              </a>
-              <div class="flex flex-1 flex-col p-5">
-                <div class="flex items-center justify-between gap-3">
-                  <span class="text-[11px] font-bold uppercase tracking-[0.18em] text-vj-green">
-                    {newsCategoryLabel(n)}
-                  </span>
-                  <span class="shrink-0 text-[11px] text-slate-400">
-                    {newsDate(n)}
-                  </span>
-                </div>
-                <h3 class="mt-2 text-lg font-extrabold leading-snug text-slate-900">
-                  <a href={newsHref(n)} class="hover:underline">
-                    {n.title}
-                  </a>
-                </h3>
-                {n.summary && (
-                  <p class="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-600">
-                    {n.summary}
-                  </p>
-                )}
-              </div>
-            </article>
-          ))}
-        </div>
+              </article>
+            ))}
+          </div>
 
-        {
-          hasMore && (
-            <div class="mt-8 flex justify-center sm:hidden">
-              <a
-                href={verMasHref}
-                class="inline-flex items-center gap-2 border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-[0.14em] text-slate-700 transition hover:border-vj-green hover:text-vj-green"
-              >
-                Ver más
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  class="h-3.5 w-3.5"
-                  aria-hidden="true"
+          {
+            hasMore && (
+              <div class="mt-8 flex justify-center sm:hidden">
+                <a
+                  href={verMasHref}
+                  class="inline-flex items-center gap-2 border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-[0.14em] text-slate-700 transition hover:border-vj-green hover:text-vj-green"
                 >
-                  <path d="M5 12h14" />
-                  <path d="m13 5 7 7-7 7" />
-                </svg>
-              </a>
-            </div>
-          )
-        }
+                  Ver más
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    class="h-3.5 w-3.5"
+                    aria-hidden="true"
+                  >
+                    <path d="M5 12h14" />
+                    <path d="m13 5 7 7-7 7" />
+                  </svg>
+                </a>
+              </div>
+            )
+          }
+        </>
       )
     }
   </div>
