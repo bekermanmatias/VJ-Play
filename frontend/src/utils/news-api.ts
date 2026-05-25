@@ -140,6 +140,25 @@ export function newsHref(n: News): string {
   return `/noticias/${n.slug}`;
 }
 
+/** Cantidad de noticias por página en /noticias. */
+export const NEWS_PAGE_SIZE = 6;
+
+/** Vista previa en páginas de deportes. */
+export const NEWS_DEPORTE_PREVIEW_SIZE = 3;
+
+export function noticiasListHref(opts: {
+  categorySlug?: string;
+  search?: string;
+  page?: number;
+} = {}): string {
+  const params = new URLSearchParams();
+  if (opts.categorySlug) params.set("categoria", opts.categorySlug);
+  if (opts.search) params.set("q", opts.search);
+  if (opts.page && opts.page > 1) params.set("page", String(opts.page));
+  const qs = params.toString();
+  return `/noticias${qs ? `?${qs}` : ""}`;
+}
+
 // ---------------------------------------------------------------------------
 // Admin (browser)
 // ---------------------------------------------------------------------------

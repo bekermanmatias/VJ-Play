@@ -3,6 +3,8 @@ const phone = "+54 9 11 0000-0000";
 const phoneHref = "tel:+5491100000000";
 const email = "info@varelajunior.com.ar";
 const emailHref = `mailto:${email}`;
+const contactHref = "/#contacto";
+const isContactPage = false;
 
 const socials = [
   {
@@ -80,8 +82,8 @@ const socials = [
       </a>
     </div>
 
-    <!-- Bloque Derecho: redes -->
-    <div class="flex items-center gap-3 sm:gap-4">
+    <!-- Bloque Derecho: redes + contacto -->
+    <div class="flex items-center gap-3 sm:gap-4 shrink-0">
       <ul class="hidden sm:flex items-center gap-3">
         {
           socials.map((s) => (
@@ -105,6 +107,20 @@ const socials = [
           ))
         }
       </ul>
+
+      <span class="hidden sm:block h-3.5 w-px bg-slate-600" aria-hidden="true"></span>
+
+      <a
+        href={contactHref}
+        class:list={[
+          "font-bold uppercase tracking-wide transition-colors",
+          isContactPage ? "text-vj-green" : "text-slate-200 hover:text-white",
+        ]}
+        aria-current={isContactPage ? "page" : undefined}
+        title="Formulario, ubicación y horarios"
+      >
+        Contacto
+      </a>
     </div>
   </div>
 </div>

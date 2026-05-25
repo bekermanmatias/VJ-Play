@@ -2,14 +2,13 @@
 import Layout from "@/layouts/Layout.astro";
 import TopBar from "@/components/TopBar.astro";
 import Navbar from "@/components/Navbar.astro";
+import NewsLoadMoreList from "@/components/news/NewsLoadMoreList";
 import {
   fetchPublicCategories,
   fetchPublicNews,
   getNewsApiBase,
-  newsCategoryLabel,
-  newsDate,
-  newsHref,
-  newsImageOrPlaceholder,
+  NEWS_PAGE_SIZE,
+  noticiasListHref,
   type News,
   type NewsCategory,
 } from "@/utils/news-api";
@@ -20,6 +19,8 @@ const apiBase = getNewsApiBase();
 const url = Astro.url;
 const categorySlug = url.searchParams.get("categoria")?.trim().toLowerCase() || "";
 const search = url.searchParams.get("q")?.trim() || "";
+const pageRaw = Number.parseInt(url.searchParams.get("page") ?? "1", 10);
+const page = Number.isFinite(pageRaw) && pageRaw > 0 ? pageRaw : 1;
 
 let news: News[] = [];
 let categories: NewsCategory[] = [];
@@ -31,7 +32,7 @@ try {
     fetchPublicNews(apiBase, {
       categorySlug: categorySlug || undefined,
       search: search || undefined,
-      limit: 24,
+      limit: NEWS_PAGE_SIZE * page,
     }),
     fetchPublicCategories(apiBase),
     fetchPublicNews(apiBase, { limit: 200 }),
@@ -73,7 +74,7 @@ const pageTitle = activeCategory
           <ul class="flex flex-wrap items-center gap-x-1 gap-y-2">
             <li>
               <a
-                href={search ? `/noticias?q=${encodeURIComponent(search)}` : "/noticias"}
+                href={noticiasListHref({ search: search || undefined })}
                 class:list={[
                   "inline-block px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition",
                   !categorySlug
@@ -87,7 +88,10 @@ const pageTitle = activeCategory
             </li>
             {categories.map((c) => {
               const active = c.slug === categorySlug;
-              const href = `/noticias?categoria=${encodeURIComponent(c.slug)}${search ? `&q=${encodeURIComponent(search)}` : ""}`;
+              const href = noticiasListHref({
+                categorySlug: c.slug,
+                search: search || undefined,
+              });
               return (
                 <li>
                   <a
@@ -134,45 +138,16 @@ const pageTitle = activeCategory
         )}
 
         {news.length > 0 && (
-          <>
-            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {news.map((n) => (
-                <article class="group flex flex-col overflow-hidden border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
-                  <a href={newsHref(n)} class="block">
-                    <div class="aspect-[16/10] w-full bg-slate-100 overflow-hidden">
-                      <img
-                        src={newsImageOrPlaceholder(n)}
-                        alt={n.images[0]?.altText ?? n.title}
-                        class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                        loading="lazy"
-                        decoding="async"
-                      />
-                    </div>
-                  </a>
-                  <div class="flex flex-1 flex-col p-5">
-                    <div class="flex items-center justify-between gap-3">
-                      <span class="text-[11px] font-bold uppercase tracking-[0.18em] text-vj-green">
-                        {newsCategoryLabel(n)}
-                      </span>
-                      <span class="shrink-0 text-[11px] text-slate-400">
-                        {newsDate(n)}
-                      </span>
-                    </div>
-                    <h2 class="mt-2 text-lg font-extrabold leading-snug text-slate-900">
-                      <a href={newsHref(n)} class="hover:underline">
-                        {n.title}
-                      </a>
-                    </h2>
-                    {n.summary && (
-                      <p class="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-600">
-                        {n.summary}
-                      </p>
-                    )}
-                  </div>
-                </article>
-              ))}
-            </div>
-          </>
+          <NewsLoadMoreList
+            client:load
+            apiBase={apiBase}
+            initialNews={news}
+            initialTotal={total}
+            initialPage={page}
+            pageSize={NEWS_PAGE_SIZE}
+            categorySlug={categorySlug || undefined}
+            search={search || undefined}
+          />
         )}
       </div>
     </section>

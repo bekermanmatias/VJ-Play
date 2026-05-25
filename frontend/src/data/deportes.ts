@@ -1,3 +1,5 @@
+import { espacioHref } from "./espacios";
+
 /**
  * Contenido de cada pestaña en /deportes/[slug].
  *
@@ -411,6 +413,54 @@ export const deportesNav: { label: string; href: string }[] = deportes.map((d) =
   label: d.displayName,
   href: `/deportes/${d.slug}`,
 }));
+
+/**
+ * Agrupaciones de la navegación principal.
+ */
+export type NavGroup = {
+  label: string;
+  href: string;
+  items: { label: string; href: string }[];
+};
+
+function deporteHref(slug: string): string {
+  return `/deportes/${slug}`;
+}
+
+export const deportesGrupos: NavGroup[] = [
+  {
+    label: "Deportes",
+    href: "/deportes",
+    items: [
+      { label: "Fútbol Infantil", href: deporteHref("futbol-infantil") },
+      { label: "Fútbol Femenino", href: deporteHref("futbol-femenino") },
+      { label: "Básquet", href: deporteHref("basquet") },
+      { label: "Vóley", href: deporteHref("voley") },
+      { label: "Rugby", href: deporteHref("rugby") },
+      { label: "Pelota Paleta · El Trinquete", href: deporteHref("pelota-paleta") },
+    ],
+  },
+  {
+    label: "Pileta & Gimnasio",
+    href: "/deportes",
+    items: [
+      { label: "Natación / Aquagym", href: deporteHref("natacion") },
+      { label: "Gimnasio No Limits", href: deporteHref("calidad") },
+      { label: "Varela Fight Club", href: deporteHref("fight-club") },
+    ],
+  },
+  {
+    label: "Espacios",
+    href: "/espacios/quincho",
+    items: [
+      { label: "Quincho", href: espacioHref("quincho") },
+      { label: "Salón Multieventos", href: espacioHref("salon-multieventos") },
+      { label: "Alquiler · Fútbol 5", href: deporteHref("futbol-5") },
+      { label: "Alquiler · Pádel", href: deporteHref("padel") },
+      { label: "Alquiler · Tenis", href: deporteHref("tenis") },
+    ],
+  },
+];
 
 export const DEPORTE_IMAGE_SPEC = {
   width: 1200,

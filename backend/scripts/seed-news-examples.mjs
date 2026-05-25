@@ -110,6 +110,33 @@ Esperamos tener un equipo competitivo para los torneos de la temporada y muchas 
     author: "Profe Diego",
     categorySlugs: ["basquet"],
   },
+  {
+    slug: "padel-clinica-fines-de-semana",
+    title: "Pádel: clínica de fines de semana para mejorar el saque",
+    summary:
+      "Sábado 14 y domingo 15 de junio, clínica abierta de pádel con foco en saque y volea. Cupos limitados.",
+    body: `La subcomisión de pádel organiza una clínica intensiva de fines de semana para socios y socias de todas las categorías.
+
+Sábado 14: técnica de saque y ubicación en red (10 a 12 h).
+Domingo 15: volea y definición (10 a 12 h).
+
+Inscripción en recepción o por WhatsApp. Traé paleta y ropa cómoda.`,
+    author: "Subcomisión de Pádel",
+    categorySlugs: ["padel"],
+  },
+  {
+    slug: "futbol-femenino-amistoso-fundacion",
+    title: "Fútbol Femenino: amistoso solidario el domingo",
+    summary:
+      "El plantel femenino juega un amistoso a beneficio de la fundación del barrio. Entrada libre y colaboración voluntaria.",
+    body: `El domingo a las 11 h el equipo de fútbol femenino del club enfrenta a un combinado invitado en un partido amistoso solidario.
+
+La recaudación voluntaria se destina a la fundación vecina. Habrá merchandising del club y merienda para las chicas después del partido.
+
+¡Sumate a alentar desde la tribuna!`,
+    author: "Subcomisión de Fútbol Femenino",
+    categorySlugs: ["futbol-femenino"],
+  },
 ];
 
 async function callApi(method, path, body) {

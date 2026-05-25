@@ -1,0 +1,41 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import TopBar from "@/components/TopBar.astro";
+import Navbar from "@/components/Navbar.astro";
+import { getAllClubSlugs, getClubSectionBySlug } from "@/data/club";
+
+export function getStaticPaths() {
+  return getAllClubSlugs().map((slug) => ({ params: { slug } }));
+}
+
+const slug = Astro.params.slug ?? "";
+const data = getClubSectionBySlug(slug);
+
+if (!data) {
+  return new Response(null, { status: 404, statusText: "Sección no encontrada" });
+}
+---
+
+<Layout title={data.metaTitle} description={data.metaDescription}>
+  <TopBar />
+  <Navbar />
+
+  <main class="mx-auto flex min-h-[calc(100dvh-8.25rem)] max-w-7xl items-center justify-center px-4 sm:px-6 lg:px-8">
+    <section class="text-center">
+      <p class="text-xs font-bold uppercase tracking-[0.2em] text-vj-green">Club</p>
+      <h1 class="mt-2 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
+        {data.displayName}
+      </h1>
+      <p class="mx-auto mt-3 max-w-2xl text-base text-slate-600">{data.lead}</p>
+      <p class="mx-auto mt-4 max-w-xl text-sm text-slate-500">
+        Esta sección se encuentra en desarrollo. Pronto vamos a publicar el contenido completo.
+      </p>
+      <a
+        href="/#contacto"
+        class="mt-8 inline-flex items-center gap-2 bg-vj-green px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-vj-green/90"
+      >
+        Contacto general
+      </a>
+    </section>
+  </main>
+</Layout>

@@ -2,10 +2,12 @@
 import {
   fetchPublicNews,
   getNewsApiBase,
+  NEWS_DEPORTE_PREVIEW_SIZE,
   newsCategoryLabel,
   newsDate,
   newsHref,
   newsImageOrPlaceholder,
+  noticiasListHref,
   type News,
 } from "@/utils/news-api";
 
@@ -20,14 +22,21 @@ const { categorySlug, displayName } = Astro.props;
 
 const apiBase = getNewsApiBase();
 let news: News[] = [];
+let total = 0;
 let loadError = false;
 try {
-  const result = await fetchPublicNews(apiBase, { categorySlug, limit: 6 });
+  const result = await fetchPublicNews(apiBase, {
+    categorySlug,
+    limit: NEWS_DEPORTE_PREVIEW_SIZE,
+  });
   news = result.news;
+  total = result.total;
 } catch {
   loadError = true;
 }
 const hasNews = news.length > 0;
+const hasMore = total > NEWS_DEPORTE_PREVIEW_SIZE;
+const verMasHref = noticiasListHref({ categorySlug });
 ---
 
 <section
@@ -49,24 +58,28 @@ const hasNews = news.length > 0;
           </p>
         )}
       </div>
-      <a
-        href={`/noticias?categoria=${encodeURIComponent(categorySlug)}`}
-        class="inline-flex w-fit items-center gap-2 border border-slate-300 bg-white px-3.5 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-700 transition hover:border-vj-green hover:text-vj-green"
-      >
-        Ver todas
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          class="h-3.5 w-3.5"
-          aria-hidden="true"
-        >
-          <path d="M5 12h14" />
-          <path d="m13 5 7 7-7 7" />
-        </svg>
-      </a>
+      {
+        hasMore && (
+          <a
+            href={verMasHref}
+            class="inline-flex w-fit items-center gap-2 border border-slate-300 bg-white px-3.5 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-700 transition hover:border-vj-green hover:text-vj-green"
+          >
+            Ver más
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              class="h-3.5 w-3.5"
+              aria-hidden="true"
+            >
+              <path d="M5 12h14" />
+              <path d="m13 5 7 7-7 7" />
+            </svg>
+          </a>
+        )
+      }
     </header>
 
     {
@@ -108,6 +121,31 @@ const hasNews = news.length > 0;
             </article>
           ))}
         </div>
+
+        {
+          hasMore && (
+            <div class="mt-8 flex justify-center sm:hidden">
+              <a
+                href={verMasHref}
+                class="inline-flex items-center gap-2 border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-[0.14em] text-slate-700 transition hover:border-vj-green hover:text-vj-green"
+              >
+                Ver más
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  class="h-3.5 w-3.5"
+                  aria-hidden="true"
+                >
+                  <path d="M5 12h14" />
+                  <path d="m13 5 7 7-7 7" />
+                </svg>
+              </a>
+            </div>
+          )
+        }
       )
     }
   </div>
