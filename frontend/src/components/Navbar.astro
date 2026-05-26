@@ -305,6 +305,11 @@ const linkTitle = (label: string): string | undefined => {
     const closeIcon = root.querySelector("[data-mobile-menu-icon-close]");
     if (!toggle || !panel) return;
 
+    const lockPageScroll = (locked) => {
+      document.documentElement.style.overflowY = locked ? "hidden" : "";
+      document.body.style.overflowY = locked ? "hidden" : "";
+    };
+
     const setGlobalOffset = () => {
       const expanded = toggle.getAttribute("aria-expanded") === "true";
       const offset = expanded ? `${Math.round(root.getBoundingClientRect().height)}px` : "0px";
@@ -316,14 +321,17 @@ const linkTitle = (label: string): string | undefined => {
         "max-h-0",
         "opacity-0",
         "translate-y-[-6px]",
+        "overflow-hidden",
         "py-0",
         "pointer-events-none",
         "border-transparent",
       );
       panel.classList.remove(
-        "max-h-[75vh]",
+        "max-h-[calc(100dvh-6rem)]",
         "opacity-100",
         "translate-y-0",
+        "overflow-y-auto",
+        "overscroll-contain",
         "py-3",
         "pointer-events-auto",
         "border-slate-200",
@@ -332,6 +340,7 @@ const linkTitle = (label: string): string | undefined => {
       toggle.setAttribute("aria-label", "Abrir menú");
       openIcon?.classList.remove("hidden");
       closeIcon?.classList.add("hidden");
+      lockPageScroll(false);
       setGlobalOffset();
     };
 
@@ -340,14 +349,17 @@ const linkTitle = (label: string): string | undefined => {
         "max-h-0",
         "opacity-0",
         "translate-y-[-6px]",
+        "overflow-hidden",
         "py-0",
         "pointer-events-none",
         "border-transparent",
       );
       panel.classList.add(
-        "max-h-[75vh]",
+        "max-h-[calc(100dvh-6rem)]",
         "opacity-100",
         "translate-y-0",
+        "overflow-y-auto",
+        "overscroll-contain",
         "py-3",
         "pointer-events-auto",
         "border-slate-200",
@@ -356,6 +368,7 @@ const linkTitle = (label: string): string | undefined => {
       toggle.setAttribute("aria-label", "Cerrar menú");
       openIcon?.classList.add("hidden");
       closeIcon?.classList.remove("hidden");
+      lockPageScroll(true);
       setGlobalOffset();
     };
 
