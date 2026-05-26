@@ -21,6 +21,10 @@ export type DeportePageData = {
   paragraphs: string[];
   scheduleTitle?: string;
   scheduleItems?: string[];
+  scheduleGroups?: Array<{
+    day: string;
+    lines: string[];
+  }>;
   contactLabel?: string;
   contactPhone?: string;
   contactPhoneHref?: string;
@@ -305,15 +309,15 @@ export const deportes: DeportePageData[] = [
     displayName: "Natación",
     metaTitle: "Natación | Club Social Varela Junior",
     metaDescription:
-      "Natación del Club Social Varela Junior: pileta libre, escuelita, adultos y aquagym.",
+      "Natación del Club Social Varela Junior: escuelita, adultos, niños, jubilados y aquagym.",
     paragraphs: [
       "Natación con turnos para jubilados, adultos, niños y aquagym. Consultá horarios actualizados por WhatsApp.",
       "Atención y consultas por teléfono o WhatsApp.",
     ],
-    scheduleTitle: "Turnos (referencia semanal)",
+    scheduleTitle: "Horarios",
     scheduleItems: [
-      "Mañana · Pileta libre — 07:00 hs",
-      "Mañana · Jubilados — 07:30 y 08:00 hs",
+      "Jubilados · Lunes, miércoles y viernes — 10:00 y 11:00 hs",
+      "Jubilados · Martes y jueves — 14:00 y 15:00 hs",
       "Mañana · Aquagym — 09:00 hs",
       "Mañana · Niños 7 a 12 años — 09:30 hs",
       "Mañana · Adultos — 10:30 y 11:30 hs",
@@ -322,7 +326,6 @@ export const deportes: DeportePageData[] = [
       "Tarde · Adultos — 14:00 y 15:30 hs",
       "Tarde · Adultos y niños desde 5 años — 14:30 hs",
       "Tarde · Adultos y niños 4 a 12 — 16:30 hs",
-      "Pileta libre — 17:00 a 19:00 hs",
     ],
     contactLabel: "Consultas",
     contactPhone: phoneDisplay("1150950559"),
@@ -340,24 +343,59 @@ export const deportes: DeportePageData[] = [
     displayName: "Aqua Gym",
     metaTitle: "Aqua Gym | Club Social Varela Junior",
     metaDescription:
-      "Aqua Gym del Club Social Varela Junior: clases en pileta para distintas edades y niveles.",
+      "Aqua Gym del Club Social Varela Junior con un enfoque actual: fitness híbrido, cardio y trabajo de fuerza en el agua.",
     paragraphs: [
-      "Aqua Gym en el CVJ para quienes buscan una actividad de bajo impacto, dinámica y guiada por profesores dentro del agua.",
-      "Es una propuesta ideal para mejorar movilidad, resistencia y bienestar general, con turnos semanales en la pileta del club.",
-      "Consultá vacantes, requisitos y horarios actualizados por WhatsApp.",
+      "En el CVJ adaptamos el Aqua Gym tradicional a una propuesta más actual, dinámica y guiada dentro del agua.",
+      "Trabajamos fitness híbrido, acuática HIT de alta intensidad con cardio, fuerza en el agua y variantes para entrenar dentro y fuera de la pileta.",
+      "Es una actividad pensada para moverse, entrenar y disfrutar, con mucha música y diversión. Consultá vacantes y horarios por WhatsApp.",
     ],
     scheduleTitle: "Turnos de Aqua Gym",
-    scheduleItems: [
-      "Mañana — 09:00 hs",
-      "Tarde — 12:30 hs",
-      "Consultá otros turnos y cupos disponibles",
+    scheduleGroups: [
+      {
+        day: "Lunes",
+        lines: [
+          "Pileta chica — 07:00, 08:15, 11:15, 12:15, 13:15, 17:15, 18:00 y 19:15 hs",
+        ],
+      },
+      {
+        day: "Martes",
+        lines: [
+          "Pileta chica — 06:15, 07:15, 08:15, 12:00, 13:00 y 17:00 hs",
+          "Pileta grande — 07:40, 08:00, 09:00 y 09:15 hs",
+        ],
+      },
+      {
+        day: "Miércoles",
+        lines: [
+          "Pileta chica — 07:00, 08:15, 11:15, 12:15, 13:15, 17:15, 18:00 y 19:15 hs",
+        ],
+      },
+      {
+        day: "Jueves",
+        lines: [
+          "Pileta chica — 06:15, 07:15, 08:15, 12:00, 13:00 y 17:00 hs",
+          "Pileta grande — 07:40, 08:00, 09:00 y 09:15 hs",
+        ],
+      },
+      {
+        day: "Viernes",
+        lines: [
+          "Pileta chica — 07:00, 08:15, 11:15, 12:15, 13:15, 17:15, 18:00 y 19:15 hs",
+        ],
+      },
+      {
+        day: "Sábados",
+        lines: [
+          "Pileta grande — 09:00 y 12:00 hs",
+        ],
+      },
     ],
     contactLabel: "Consultas",
     contactPhone: phoneDisplay("1150950559"),
     contactPhoneHref: tel("1150950559"),
     whatsappUrl: wspFromLocal("1150950559", "Hola, consulta por Aqua Gym del CVJ"),
     instagramUrl: "https://www.instagram.com/varelajuniornatacion/",
-    imageSrc: PLACEHOLDER_IMG,
+    imageSrc: "/images/deportes/aquagym.jpg",
     imageAlt: "Aqua Gym — Club Social Varela Junior",
     imageWidth: IMG,
     imageHeight: IMG,
@@ -368,23 +406,25 @@ export const deportes: DeportePageData[] = [
     displayName: "Terapia Acuática",
     metaTitle: "Terapia Acuática | Club Social Varela Junior",
     metaDescription:
-      "Terapia acuática en el Club Social Varela Junior con trabajo en pileta y seguimiento según cada necesidad.",
+      "Terapia acuática en el Club Social Varela Junior con turnos semanales en pileta y seguimiento según cada necesidad.",
     paragraphs: [
-      "La terapia acuática del CVJ está orientada a personas que necesitan una actividad de recuperación, movilidad o acompañamiento físico dentro del agua.",
-      "El trabajo en pileta permite reducir el impacto articular y mejorar fuerza, coordinación y bienestar general en un entorno cuidado.",
-      "Consultá requisitos, indicaciones y disponibilidad de turnos por WhatsApp antes de asistir.",
+      "La terapia acuática o hidroterapia se realiza dentro del agua con fines terapéuticos, de recuperación y también como actividad física de bajo impacto.",
+      "En el CVJ está orientada a personas que necesitan mejorar movilidad, coordinación, fuerza o acompañamiento físico en un entorno cuidado.",
+      "Consultá evaluación previa, indicaciones y cupos disponibles por WhatsApp antes de asistir.",
     ],
-    scheduleTitle: "Turno de referencia",
+    scheduleTitle: "Horarios de terapia acuática",
     scheduleItems: [
-      "Tarde — 13:00 hs",
-      "Consultá evaluación previa, requisitos y cupos disponibles",
+      "Martes y jueves — 14:00 hs",
+      "Martes y jueves — 15:00 hs",
+      "Sábados — 13:00 hs",
+      "Sábados — 14:00 hs",
     ],
     contactLabel: "Consultas",
     contactPhone: phoneDisplay("1150950559"),
     contactPhoneHref: tel("1150950559"),
     whatsappUrl: wspFromLocal("1150950559", "Hola, consulta por terapia acuática del CVJ"),
     instagramUrl: "https://www.instagram.com/varelajuniornatacion/",
-    imageSrc: PLACEHOLDER_IMG,
+    imageSrc: "/images/deportes/terapiaacuatica.jpg",
     imageAlt: "Terapia Acuática — Club Social Varela Junior",
     imageWidth: IMG,
     imageHeight: IMG,
@@ -403,16 +443,18 @@ export const deportes: DeportePageData[] = [
     ],
     scheduleTitle: "Horarios de pileta libre",
     scheduleItems: [
-      "Mañana — 07:00 hs",
-      "Tarde — 17:00 a 19:00 hs",
-      "Los horarios pueden variar según temporada",
+      "Lunes a viernes — 06:00 a 08:00 hs",
+      "Lunes a viernes — 11:00 a 14:00 hs",
+      "Lunes a viernes — 16:00 a 17:00 hs",
+      "Sábados — 07:00 a 09:00 hs",
+      "Sábados — 15:00 a 18:00 hs",
     ],
     contactLabel: "Consultas",
     contactPhone: phoneDisplay("1150950559"),
     contactPhoneHref: tel("1150950559"),
     whatsappUrl: wspFromLocal("1150950559", "Hola, consulta por pileta libre del CVJ"),
     instagramUrl: "https://www.instagram.com/varelajuniornatacion/",
-    imageSrc: PLACEHOLDER_IMG,
+    imageSrc: "/images/deportes/pilitalibre.jpg",
     imageAlt: "Pileta Libre — Club Social Varela Junior",
     imageWidth: IMG,
     imageHeight: IMG,
