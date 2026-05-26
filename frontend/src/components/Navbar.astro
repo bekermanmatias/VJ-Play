@@ -8,7 +8,7 @@ const isActive = (href: string) =>
   href === "/" ? currentPath === "/" : currentPath.startsWith(href);
 
 const isItemActive = (href: string) => {
-  const path = href.split("?")[0];
+  const path = href.split("#")[0]!.split("?")[0]!;
   return path === currentPath;
 };
 

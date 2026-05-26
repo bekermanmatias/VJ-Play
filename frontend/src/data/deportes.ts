@@ -22,8 +22,20 @@ export type DeportePageData = {
   scheduleTitle?: string;
   scheduleItems?: string[];
   scheduleGroups?: Array<{
-    day: string;
+    title: string;
     lines: string[];
+    entries?: Array<{
+      label: string;
+      value: string;
+    }>;
+    groups?: Array<{
+      title: string;
+      lines: string[];
+      entries?: Array<{
+        label: string;
+        value: string;
+      }>;
+    }>;
   }>;
   contactLabel?: string;
   contactPhone?: string;
@@ -304,36 +316,256 @@ export const deportes: DeportePageData[] = [
     imageHeight: IMG,
   },
   {
-    slug: "natacion",
-    title: "NATACIÓN",
-    displayName: "Natación",
-    metaTitle: "Natación | Club Social Varela Junior",
+    slug: "natacion-bebes",
+    title: "NATACIÓN BEBÉS",
+    displayName: "Natación Bebés",
+    metaTitle: "Natación Bebés | Club Social Varela Junior",
     metaDescription:
-      "Natación del Club Social Varela Junior: escuelita, adultos, niños, jubilados y aquagym.",
+      "Natación para bebés del Club Social Varela Junior con estimulación temprana, juego en el agua y clases acompañadas.",
+    newsCategorySlug: "natacion",
     paragraphs: [
-      "Natación con turnos para jubilados, adultos, niños y aquagym. Consultá horarios actualizados por WhatsApp.",
-      "Atención y consultas por teléfono o WhatsApp.",
+      "Clases de natación para bebés orientadas al juego, la diversión en el agua y la estimulación temprana.",
+      "La propuesta se realiza con mamá o papá, en un entorno cuidado para trabajar seguridad, confianza y vínculo con el agua.",
+      "Contamos con profesores especializados. Atención y consultas por Instagram o WhatsApp.",
     ],
     scheduleTitle: "Horarios",
-    scheduleItems: [
-      "Jubilados · Lunes, miércoles y viernes — 10:00 y 11:00 hs",
-      "Jubilados · Martes y jueves — 14:00 y 15:00 hs",
-      "Mañana · Aquagym — 09:00 hs",
-      "Mañana · Niños 7 a 12 años — 09:30 hs",
-      "Mañana · Adultos — 10:30 y 11:30 hs",
-      "Mañana · Niños 4 a 12 y adultos — 11:45 hs",
-      "Tarde · Aquagym — 12:30 hs",
-      "Tarde · Adultos — 14:00 y 15:30 hs",
-      "Tarde · Adultos y niños desde 5 años — 14:30 hs",
-      "Tarde · Adultos y niños 4 a 12 — 16:30 hs",
+    scheduleGroups: [
+      {
+        title: "Martes y jueves",
+        lines: ["13:00 hs"],
+      },
+      {
+        title: "Sábados",
+        lines: ["12:30 hs"],
+      },
     ],
     contactLabel: "Consultas",
     contactPhone: phoneDisplay("1150950559"),
     contactPhoneHref: tel("1150950559"),
-    whatsappUrl: wspFromLocal("1150950559", "Hola, consulta por natación del CVJ"),
+    whatsappUrl: wspFromLocal("1150950559", "Hola, consulta por natación bebés del CVJ"),
     instagramUrl: "https://www.instagram.com/varelajuniornatacion/",
-    imageSrc: "/images/deportes/natacion.jpg",
-    imageAlt: "Natación — Club Social Varela Junior",
+    imageSrc: "/images/deportes/natacionbebes.jpg",
+    imageAlt: "Natación Bebés — Club Social Varela Junior",
+    imageWidth: IMG,
+    imageHeight: IMG,
+  },
+  {
+    slug: "natacion-ninos",
+    title: "NATACIÓN NIÑOS",
+    displayName: "Natación Niños",
+    metaTitle: "Natación Niños | Club Social Varela Junior",
+    metaDescription:
+      "Natación niños del Club Social Varela Junior: escuelita desde 3 años, grupos por edad y niveles.",
+    newsCategorySlug: "natacion",
+    paragraphs: [
+      "Natación para niños y niñas desde los 3 años, con grupos organizados por edad y nivel.",
+      "La propuesta incluye categorías iniciales, intermedias y avanzadas, con distintos días y horarios según cada grupo.",
+      "Atención y consultas por Instagram o WhatsApp.",
+    ],
+    scheduleTitle: "Horarios de natación niños",
+    scheduleGroups: [
+      {
+        title: "De 3 años",
+        lines: [],
+        entries: [
+          { label: "Martes y jueves", value: "14:30 hs" },
+          { label: "Sábados", value: "14:30 hs" },
+        ],
+      },
+      {
+        title: "De 4 a 6 años",
+        lines: [],
+        entries: [
+          {
+            label: "Lunes, miércoles y viernes",
+            value: "14:30, 15:30, 16:30, 17:30, 18:30 y 19:30 hs — Inicial",
+          },
+          {
+            label: "Martes y jueves",
+            value: "15:30, 16:30, 17:30, 18:30 y 19:30 hs — Inicial",
+          },
+        ],
+      },
+      {
+        title: "De 7 a 12 años",
+        lines: [],
+        entries: [
+          { label: "Lunes, miércoles y viernes", value: "14:15 y 15:15 hs — Inicial" },
+          {
+            label: "Lunes, miércoles y viernes",
+            value: "16:15, 18:00 y 19:00 hs — Inicial, Intermedio y Avanzado",
+          },
+          { label: "Martes y jueves", value: "14:45 hs — Inicial" },
+          {
+            label: "Martes y jueves",
+            value: "15:45, 17:45 y 18:45 hs — Inicial, Intermedio y Avanzado",
+          },
+          { label: "Sábados", value: "09:30 hs — Inicial" },
+        ],
+      },
+      {
+        title: "De 4 a 12 años",
+        lines: [],
+        entries: [
+          { label: "Lunes, miércoles y viernes", value: "09:15 hs — Inicial" },
+          {
+            label: "Martes y jueves",
+            value: "09:45 hs — Inicial, Intermedio y Avanzado",
+          },
+          {
+            label: "Sábados",
+            value: "10:30, 11:30 y 15:30 hs — Inicial, Intermedio y Avanzado",
+          },
+          { label: "Sábados", value: "16:30 hs — Inicial" },
+          { label: "Sábados", value: "17:30 hs" },
+        ],
+      },
+    ],
+    contactLabel: "Consultas",
+    contactPhone: phoneDisplay("1150950559"),
+    contactPhoneHref: tel("1150950559"),
+    whatsappUrl: wspFromLocal("1150950559", "Hola, consulta por natación niños del CVJ"),
+    instagramUrl: "https://www.instagram.com/varelajuniornatacion/",
+    imageSrc: "/images/deportes/natacionninos.jpg",
+    imageAlt: "Natación Niños — Club Social Varela Junior",
+    imageWidth: IMG,
+    imageHeight: IMG,
+  },
+  {
+    slug: "natacion",
+    title: "NATACIÓN ADULTOS",
+    displayName: "Natación Adultos",
+    metaTitle: "Natación Adultos | Club Social Varela Junior",
+    metaDescription:
+      "Natación adultos del Club Social Varela Junior con turnos semanales y niveles Inicial, Intermedio y Avanzado.",
+    paragraphs: [
+      "Natación para adultos con distintos turnos semanales en pileta, pensados para entrenamiento, aprendizaje y continuidad en el agua.",
+      "Todos los turnos contemplan los niveles Inicial, Intermedio y Avanzado.",
+      "Atención y consultas por Instagram o WhatsApp.",
+    ],
+    scheduleTitle: "Horarios",
+    scheduleGroups: [
+      {
+        title: "Lunes, miércoles y viernes",
+        entries: [
+          { label: "Horario", value: "07:00, 09:00, 11:00, 14:00, 15:00, 19:15, 20:15 y 21:15 hs" },
+        ],
+        lines: [],
+      },
+      {
+        title: "Martes y jueves",
+        entries: [
+          { label: "Horario", value: "07:00, 10:00, 11:00, 14:00, 15:00, 17:00, 18:00, 19:00 y 20:00 hs" },
+        ],
+        lines: [],
+      },
+      {
+        title: "Sábados",
+        entries: [
+          { label: "Horario", value: "10:00, 11:00, 14:00, 15:00, 16:00 y 17:00 hs" },
+        ],
+        lines: [],
+      },
+      {
+        title: "Niveles",
+        lines: ["Todos los turnos: Inicial · Intermedio · Avanzado"],
+      },
+    ],
+    contactLabel: "Consultas",
+    contactPhone: phoneDisplay("1150950559"),
+    contactPhoneHref: tel("1150950559"),
+    whatsappUrl: wspFromLocal("1150950559", "Hola, consulta por natación adultos del CVJ"),
+    instagramUrl: "https://www.instagram.com/varelajuniornatacion/",
+    imageSrc: "/images/deportes/natacionadultos.jpg",
+    imageAlt: "Natación Adultos — Club Social Varela Junior",
+    imageWidth: IMG,
+    imageHeight: IMG,
+  },
+  {
+    slug: "natacion-master",
+    title: "NATACIÓN MASTER",
+    displayName: "Natación Master",
+    metaTitle: "Natación Master | Club Social Varela Junior",
+    metaDescription:
+      "Natación Master del Club Social Varela Junior con turnos semanales para entrenamiento de nadadores master.",
+    newsCategorySlug: "natacion",
+    paragraphs: [
+      "Natación Master en el CVJ: turnos pensados para entrenamiento continuo, técnica y resistencia para nadadores con experiencia.",
+      "Los horarios funcionan en paralelo al cronograma general de pileta y se ajustan al calendario de la temporada.",
+      "Atención y consultas por Instagram o WhatsApp.",
+    ],
+    scheduleTitle: "Horarios de Master",
+    scheduleGroups: [
+      {
+        title: "Lunes, miércoles y viernes",
+        entries: [
+          { label: "Horario", value: "12:30 hs" },
+        ],
+        lines: [],
+      },
+      {
+        title: "Martes y jueves",
+        entries: [
+          { label: "Horario", value: "12:30 hs" },
+          { label: "Horario", value: "21:00 hs (Compartido con Adultos)" },
+        ],
+        lines: [],
+      },
+      {
+        title: "Sábados",
+        entries: [
+          { label: "Horario", value: "12:30 hs" },
+        ],
+        lines: [],
+      },
+    ],
+    contactLabel: "Consultas",
+    contactPhone: phoneDisplay("1150950559"),
+    contactPhoneHref: tel("1150950559"),
+    whatsappUrl: wspFromLocal("1150950559", "Hola, consulta por natación master del CVJ"),
+    instagramUrl: "https://www.instagram.com/varelajuniornatacion/",
+    imageSrc: "/images/deportes/natacionmaster.jpg",
+    imageAlt: "Natación Master — Club Social Varela Junior",
+    imageWidth: IMG,
+    imageHeight: IMG,
+  },
+  {
+    slug: "natacion-jubilados",
+    title: "NATACIÓN JUBILADOS",
+    displayName: "Natación Jubilados",
+    metaTitle: "Natación Jubilados | Club Social Varela Junior",
+    metaDescription:
+      "Natación jubilados del Club Social Varela Junior con turnos semanales en pileta.",
+    newsCategorySlug: "natacion",
+    paragraphs: [
+      "Natación para jubilados con turnos semanales pensados para moverse, mantenerse activos y disfrutar de la pileta en un entorno cuidado.",
+      "Esta página reúne solo los horarios que en la planilla figuran específicamente como Natación.",
+      "Atención y consultas por Instagram o WhatsApp.",
+    ],
+    scheduleTitle: "Horarios de natación jubilados",
+    scheduleGroups: [
+      {
+        title: "Lunes, miércoles y viernes",
+        entries: [
+          { label: "Horario", value: "10:00 y 11:00 hs" },
+        ],
+        lines: [],
+      },
+      {
+        title: "Martes y jueves",
+        entries: [
+          { label: "Horario", value: "07:45, 11:00, 14:00 y 15:00 hs" },
+        ],
+        lines: [],
+      },
+    ],
+    contactLabel: "Consultas",
+    contactPhone: phoneDisplay("1150950559"),
+    contactPhoneHref: tel("1150950559"),
+    whatsappUrl: wspFromLocal("1150950559", "Hola, consulta por natación jubilados del CVJ"),
+    instagramUrl: "https://www.instagram.com/varelajuniornatacion/",
+    imageSrc: "/images/deportes/natacionjubilados.jpg",
+    imageAlt: "Natación Jubilados — Club Social Varela Junior",
     imageWidth: IMG,
     imageHeight: IMG,
   },
@@ -352,39 +584,39 @@ export const deportes: DeportePageData[] = [
     scheduleTitle: "Turnos de Aqua Gym",
     scheduleGroups: [
       {
-        day: "Lunes",
+        title: "Lunes",
         lines: [
           "Pileta chica — 07:00, 08:15, 11:15, 12:15, 13:15, 17:15, 18:00 y 19:15 hs",
         ],
       },
       {
-        day: "Martes",
+        title: "Martes",
         lines: [
           "Pileta chica — 06:15, 07:15, 08:15, 12:00, 13:00 y 17:00 hs",
           "Pileta grande — 07:40, 08:00, 09:00 y 09:15 hs",
         ],
       },
       {
-        day: "Miércoles",
+        title: "Miércoles",
         lines: [
           "Pileta chica — 07:00, 08:15, 11:15, 12:15, 13:15, 17:15, 18:00 y 19:15 hs",
         ],
       },
       {
-        day: "Jueves",
+        title: "Jueves",
         lines: [
           "Pileta chica — 06:15, 07:15, 08:15, 12:00, 13:00 y 17:00 hs",
           "Pileta grande — 07:40, 08:00, 09:00 y 09:15 hs",
         ],
       },
       {
-        day: "Viernes",
+        title: "Viernes",
         lines: [
           "Pileta chica — 07:00, 08:15, 11:15, 12:15, 13:15, 17:15, 18:00 y 19:15 hs",
         ],
       },
       {
-        day: "Sábados",
+        title: "Sábados",
         lines: [
           "Pileta grande — 09:00 y 12:00 hs",
         ],
@@ -408,16 +640,20 @@ export const deportes: DeportePageData[] = [
     metaDescription:
       "Terapia acuática en el Club Social Varela Junior con turnos semanales en pileta y seguimiento según cada necesidad.",
     paragraphs: [
-      "La terapia acuática o hidroterapia se realiza dentro del agua con fines terapéuticos, de recuperación y también como actividad física de bajo impacto.",
+      "La terapia acuática o hidroterapia se realiza dentro del agua con fines terapéuticos en distintos tratamientos de patologías, lesiones y también como actividad física de bajo impacto.",
       "En el CVJ está orientada a personas que necesitan mejorar movilidad, coordinación, fuerza o acompañamiento físico en un entorno cuidado.",
       "Consultá evaluación previa, indicaciones y cupos disponibles por WhatsApp antes de asistir.",
     ],
     scheduleTitle: "Horarios de terapia acuática",
-    scheduleItems: [
-      "Martes y jueves — 14:00 hs",
-      "Martes y jueves — 15:00 hs",
-      "Sábados — 13:00 hs",
-      "Sábados — 14:00 hs",
+    scheduleGroups: [
+      {
+        title: "Lunes, miércoles y viernes",
+        lines: ["10:15 a 11:15 hs"],
+      },
+      {
+        title: "Sábado",
+        lines: ["13:15 a 14:15 hs", "14:15 a 15:15 hs"],
+      },
     ],
     contactLabel: "Consultas",
     contactPhone: phoneDisplay("1150950559"),
@@ -442,12 +678,22 @@ export const deportes: DeportePageData[] = [
       "Antes de asistir, consultá por cupos, apto médico y condiciones de ingreso.",
     ],
     scheduleTitle: "Horarios de pileta libre",
-    scheduleItems: [
-      "Lunes a viernes — 06:00 a 08:00 hs",
-      "Lunes a viernes — 11:00 a 14:00 hs",
-      "Lunes a viernes — 16:00 a 17:00 hs",
-      "Sábados — 07:00 a 09:00 hs",
-      "Sábados — 15:00 a 18:00 hs",
+    scheduleGroups: [
+      {
+        title: "Lunes a viernes",
+        lines: [
+          "06:00 a 08:00 hs",
+          "11:00 a 14:00 hs",
+          "16:00 a 17:00 hs",
+        ],
+      },
+      {
+        title: "Sábados",
+        lines: [
+          "07:00 a 09:00 hs",
+          "15:00 a 18:00 hs",
+        ],
+      },
     ],
     contactLabel: "Consultas",
     contactPhone: phoneDisplay("1150950559"),
@@ -571,7 +817,11 @@ export const deportesGrupos: NavGroup[] = [
     label: "Pileta",
     href: "/deportes",
     items: [
-      { label: "Natación", href: deporteHref("natacion") },
+      { label: "Natación Bebés", href: deporteHref("natacion-bebes") },
+      { label: "Natación Niños", href: deporteHref("natacion-ninos") },
+      { label: "Natación Adultos", href: deporteHref("natacion") },
+      { label: "Natación Master", href: deporteHref("natacion-master") },
+      { label: "Natación Jubilados", href: deporteHref("natacion-jubilados") },
       { label: "Aqua Gym", href: deporteHref("aqua-gym") },
       { label: "Terapia Acuática", href: deporteHref("terapia-acuatica") },
       { label: "Pileta Libre", href: deporteHref("pileta-libre") },

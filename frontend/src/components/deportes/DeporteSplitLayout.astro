@@ -59,12 +59,55 @@ const hasInstagram = data.instagramUrl.trim() !== "";
                         aria-hidden="true"
                       />
                       <div>
-                        <p class="font-bold text-white">{group.day}</p>
-                        <ul class="mt-1 space-y-1.5">
-                          {group.lines.map((line) => (
-                            <li class="text-slate-300">{line}</li>
-                          ))}
-                        </ul>
+                        <p class="font-bold text-white">{group.title}</p>
+                        {group.groups && group.groups.length > 0 ? (
+                          <ul class="mt-2 space-y-3">
+                            {group.groups.map((subgroup) => (
+                              <li>
+                                <p class="font-semibold text-white">{subgroup.title}</p>
+                                {subgroup.entries && subgroup.entries.length > 0 ? (
+                                  <ul class="mt-1 space-y-1.5">
+                                    {subgroup.entries.map((entry) => (
+                                      <li class="text-slate-300">
+                                        <span class="font-semibold text-white">{entry.label}</span>
+                                        {" — "}
+                                        {entry.value}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                ) : (
+                                  <ul class="mt-1 space-y-1.5">
+                                    {subgroup.lines.map((line) => (
+                                      <li class="text-slate-300">{line}</li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : group.entries && group.entries.length > 0 ? (
+                          <ul class="mt-1 space-y-1.5">
+                            {group.entries.map((entry) => (
+                              <li class="text-slate-300">
+                                {entry.label === "Horario" ? (
+                                  entry.value
+                                ) : (
+                                  <>
+                                    <span class="font-semibold text-white">{entry.label}</span>
+                                    {" — "}
+                                    {entry.value}
+                                  </>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <ul class="mt-1 space-y-1.5">
+                            {group.lines.map((line) => (
+                              <li class="text-slate-300">{line}</li>
+                            ))}
+                          </ul>
+                        )}
                       </div>
                     </li>
                   ))}
