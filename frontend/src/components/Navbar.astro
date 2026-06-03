@@ -203,24 +203,63 @@ const linkTitle = (label: string): string | undefined => {
       </button>
     </div>
   </nav>
+</header>
 
-  <div
-    id="mobile-menu-panel"
-    class="max-h-0 translate-y-[-8px] overflow-hidden border-t border-transparent bg-white px-4 py-0 opacity-0 pointer-events-none transition-[max-height,opacity,transform,padding,border-color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] lg:hidden"
-    data-mobile-menu-panel
-  >
-    <nav aria-label="Menu movil principal">
+<!-- ═══ Menú mobile fullscreen (fuera del header, position: fixed) ═══ -->
+<div
+  id="mobile-menu-panel"
+  class="mobile-menu-fullscreen lg:hidden"
+  data-mobile-menu-panel
+  data-state="closed"
+  aria-label="Menu movil principal"
+  role="dialog"
+  aria-modal="true"
+>
+  <!-- Header del menú: escudo + cerrar -->
+  <div class="mobile-menu-header">
+    <a href="/" class="shrink-0" aria-label="Club Social Varela Junior - Inicio">
+      <img
+        src="/images/escudo-varela-junior.png"
+        alt="Escudo Club Social Varela Junior"
+        class="h-14 w-auto shrink-0 object-contain"
+        loading="eager"
+        decoding="async"
+      />
+    </a>
+
+    <button
+      type="button"
+      class="p-2 text-slate-400 hover:text-white transition-colors"
+      aria-label="Cerrar menú"
+      data-mobile-menu-close
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="w-6 h-6"
+        aria-hidden="true"
+      >
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Contenido scrolleable -->
+  <div class="mobile-menu-body">
+    <nav>
       {
         navDropdowns.map((grupo) => (
           <details
-            class="border-b border-slate-200 py-2"
+            class="mobile-menu-group"
             open={mobileOpenGroups.has(grupo.label)}
           >
-            <summary
-              class:list={[
-                "flex cursor-pointer list-none items-center justify-between px-3 py-2 text-sm font-black uppercase tracking-[0.15em] text-slate-700 transition-colors [&::-webkit-details-marker]:hidden",
-              ]}
-            >
+            <summary class="mobile-menu-summary">
               <span>{grupo.label}</span>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -230,14 +269,14 @@ const linkTitle = (label: string): string | undefined => {
                 stroke-width="2"
                 stroke-linecap="round"
                 stroke-linejoin="round"
-                class="h-4 w-4 shrink-0 transition-transform"
+                class="h-4 w-4 shrink-0 transition-transform duration-200"
                 aria-hidden="true"
               >
                 <path d="m6 9 6 6 6-6" />
               </svg>
             </summary>
             <div class="mobile-accordion-body">
-              <ul class="mt-1 space-y-1 pb-1">
+              <ul class="mt-1 space-y-0.5 pb-1">
                 {grupo.items.map((item) => {
                   const active = isItemActive(item.href);
                   return (
@@ -245,10 +284,8 @@ const linkTitle = (label: string): string | undefined => {
                       <a
                         href={item.href}
                         class:list={[
-                          "block px-3 py-2 text-sm font-bold uppercase tracking-wide transition-colors",
-                          active
-                          ? "bg-slate-100 text-slate-700"
-                          : "text-slate-700 hover:bg-slate-50",
+                          "mobile-menu-link",
+                          active && "mobile-menu-link--active",
                         ]}
                         aria-current={active ? "page" : undefined}
                         data-mobile-menu-link
@@ -264,150 +301,234 @@ const linkTitle = (label: string): string | undefined => {
         ))
       }
 
-      <ul class="py-2">
+      <div class="mobile-menu-simple-links">
         {
           navSimpleLinks.map((link) => {
             const active = isActive(link.href);
-            const isReplays = link.icon === "replays";
             return (
-              <li class="border-b border-slate-200 py-2 last:border-b-0">
-                <a
-                  href={link.href}
-                  class:list={[
-                    "flex items-center gap-2 px-3 py-2 text-sm font-black uppercase tracking-[0.15em] transition-colors",
-                    active
-                      ? "bg-slate-100 text-slate-900"
-                      : "text-slate-700 hover:bg-slate-50",
-                  ]}
-                  aria-current={active ? "page" : undefined}
-                  data-mobile-menu-link
-                >
-                  {link.label}
-                </a>
-              </li>
+              <a
+                href={link.href}
+                class:list={[
+                  "mobile-menu-simple-link",
+                  active && "mobile-menu-simple-link--active",
+                ]}
+                aria-current={active ? "page" : undefined}
+                data-mobile-menu-link
+              >
+                {link.label}
+              </a>
             );
           })
         }
-      </ul>
+      </div>
     </nav>
   </div>
-</header>
+</div>
 
 <script>
   (() => {
-    const root = document.querySelector("[data-mobile-nav]");
-    if (!root) return;
+    const toggle = document.querySelector("[data-mobile-menu-toggle]");
+    const panel = document.querySelector("[data-mobile-menu-panel]");
+    const closeBtn = document.querySelector("[data-mobile-menu-close]");
+    const links = document.querySelectorAll("[data-mobile-menu-link]");
+    const openIcon = document.querySelector("[data-mobile-menu-icon-open]");
+    const closeIcon = document.querySelector("[data-mobile-menu-icon-close]");
 
-    const toggle = root.querySelector("[data-mobile-menu-toggle]");
-    const panel = root.querySelector("[data-mobile-menu-panel]");
-    const links = root.querySelectorAll("[data-mobile-menu-link]");
-    const openIcon = root.querySelector("[data-mobile-menu-icon-open]");
-    const closeIcon = root.querySelector("[data-mobile-menu-icon-close]");
     if (!toggle || !panel) return;
 
-    const lockPageScroll = (locked) => {
-      document.documentElement.style.overflowY = locked ? "hidden" : "";
-      document.body.style.overflowY = locked ? "hidden" : "";
-    };
+    let isOpen = false;
+    let resizeTimer = 0;
 
-    const setGlobalOffset = () => {
-      const expanded = toggle.getAttribute("aria-expanded") === "true";
-      const offset = expanded ? `${Math.round(root.getBoundingClientRect().height)}px` : "0px";
-      document.documentElement.style.setProperty("--mobile-nav-offset", offset);
-    };
+    /* ── Abrir / Cerrar ── */
+    const setState = (open) => {
+      if (open === isOpen) return;
+      isOpen = open;
 
-    const closeMenu = () => {
-      panel.classList.add(
-        "max-h-0",
-        "opacity-0",
-        "translate-y-[-6px]",
-        "overflow-hidden",
-        "py-0",
-        "pointer-events-none",
-        "border-transparent",
-      );
-      panel.classList.remove(
-        "max-h-[calc(100dvh-6rem)]",
-        "opacity-100",
-        "translate-y-0",
-        "overflow-y-auto",
-        "overscroll-contain",
-        "py-3",
-        "pointer-events-auto",
-        "border-slate-200",
-      );
-      toggle.setAttribute("aria-expanded", "false");
-      toggle.setAttribute("aria-label", "Abrir menú");
-      openIcon?.classList.remove("hidden");
-      closeIcon?.classList.add("hidden");
-      lockPageScroll(false);
-      setGlobalOffset();
-    };
+      panel.setAttribute("data-state", open ? "open" : "closed");
 
-    const openMenu = () => {
-      panel.classList.remove(
-        "max-h-0",
-        "opacity-0",
-        "translate-y-[-6px]",
-        "overflow-hidden",
-        "py-0",
-        "pointer-events-none",
-        "border-transparent",
-      );
-      panel.classList.add(
-        "max-h-[calc(100dvh-6rem)]",
-        "opacity-100",
-        "translate-y-0",
-        "overflow-y-auto",
-        "overscroll-contain",
-        "py-3",
-        "pointer-events-auto",
-        "border-slate-200",
-      );
-      toggle.setAttribute("aria-expanded", "true");
-      toggle.setAttribute("aria-label", "Cerrar menú");
-      openIcon?.classList.add("hidden");
-      closeIcon?.classList.remove("hidden");
-      lockPageScroll(true);
-      setGlobalOffset();
-    };
+      // Accesibilidad del toggle en la barra
+      toggle.setAttribute("aria-expanded", String(open));
+      toggle.setAttribute("aria-label", open ? "Cerrar menú" : "Abrir menú");
 
-    toggle.addEventListener("click", () => {
-      const isOpen = toggle.getAttribute("aria-expanded") === "true";
-      if (isOpen) {
-        closeMenu();
-        return;
+      // Íconos del hamburger
+      if (open) {
+        openIcon?.classList.add("hidden");
+        closeIcon?.classList.remove("hidden");
+      } else {
+        openIcon?.classList.remove("hidden");
+        closeIcon?.classList.add("hidden");
       }
-      openMenu();
+
+      // Scroll lock en el body
+      if (open) {
+        document.documentElement.style.overflow = "hidden";
+        document.body.style.overflow = "hidden";
+      } else {
+        document.documentElement.style.overflow = "";
+        document.body.style.overflow = "";
+      }
+    };
+
+    const closeMenu = () => setState(false);
+
+    /* ── Events ── */
+
+    // Hamburger en la barra
+    toggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      setState(!isOpen);
     });
 
-    links.forEach((link) => {
-      link.addEventListener("click", closeMenu);
+    // Botón X dentro del panel fullscreen
+    closeBtn?.addEventListener("click", closeMenu);
+
+    // Links cierran el menú al navegar
+    links.forEach((link) => link.addEventListener("click", closeMenu));
+
+    // Escape
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && isOpen) {
+        closeMenu();
+        toggle.focus();
+      }
     });
 
+    // Custom event
     document.addEventListener("mobile-nav:close", closeMenu);
 
-    document.addEventListener("pointerdown", (event) => {
-      const isOpen = toggle.getAttribute("aria-expanded") === "true";
-      if (!isOpen) return;
-      if (!(event.target instanceof Node)) return;
-      if (root.contains(event.target)) return;
-      closeMenu();
-    });
-
+    // Resize → cerrar si pasa a desktop
     window.addEventListener("resize", () => {
-      if (window.innerWidth >= 1024) {
-        closeMenu();
-        return;
-      }
-      setGlobalOffset();
+      clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(() => {
+        if (window.innerWidth >= 1024) setState(false);
+      }, 100);
     });
-
-    setGlobalOffset();
   })();
 </script>
 
 <style>
+  /* ═══ Panel fullscreen ═══ */
+  .mobile-menu-fullscreen {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    background: rgb(15 23 42); /* slate-900 */
+    color: white;
+
+    /* Cerrado: invisible y desplazado */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(100%);
+    pointer-events: none;
+
+    transition:
+      opacity 350ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 400ms cubic-bezier(0.22, 1, 0.36, 1),
+      visibility 0ms 400ms; /* delay hide visibility */
+  }
+
+  .mobile-menu-fullscreen[data-state="open"] {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+    pointer-events: auto;
+    transition:
+      opacity 350ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 400ms cubic-bezier(0.22, 1, 0.36, 1),
+      visibility 0ms 0ms; /* show immediately */
+  }
+
+  /* ═══ Header del menú ═══ */
+  .mobile-menu-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgb(51 65 85); /* slate-700 */
+    flex-shrink: 0;
+  }
+
+
+
+
+  /* ═══ Body scrolleable ═══ */
+  .mobile-menu-body {
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: 1rem 1.5rem 2rem;
+  }
+
+  /* ═══ Grupos / accordions ═══ */
+  .mobile-menu-group {
+    border-bottom: 1px solid rgb(51 65 85);
+  }
+
+  .mobile-menu-summary {
+    display: flex;
+    cursor: pointer;
+    list-style: none;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 0.25rem;
+    font-size: 0.8125rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: rgb(203 213 225); /* slate-300 */
+    transition: color 200ms ease;
+  }
+  .mobile-menu-summary::-webkit-details-marker { display: none; }
+  .mobile-menu-summary:hover { color: white; }
+
+  /* ═══ Links dentro de accordions ═══ */
+  .mobile-menu-link {
+    display: block;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: rgb(148 163 184); /* slate-400 */
+    border-radius: 0.5rem;
+    transition: all 200ms ease;
+  }
+  .mobile-menu-link:hover {
+    color: white;
+    background: rgb(30 41 59); /* slate-800 */
+  }
+  .mobile-menu-link--active {
+    color: rgb(1 170 85); /* vj-green */
+    background: rgb(30 41 59);
+  }
+
+  /* ═══ Links simples (Noticias, Replays, Socios) ═══ */
+  .mobile-menu-simple-links {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mobile-menu-simple-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 0.25rem;
+    font-size: 0.8125rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: rgb(203 213 225);
+    border-bottom: 1px solid rgb(51 65 85);
+    transition: color 200ms ease;
+  }
+  .mobile-menu-simple-link:last-child { border-bottom: none; }
+  .mobile-menu-simple-link:hover { color: white; }
+  .mobile-menu-simple-link--active { color: rgb(1 170 85); }
+
+  /* ═══ Accordion body ═══ */
   .mobile-accordion-body {
     display: grid;
     grid-template-rows: 0fr;
@@ -427,7 +548,7 @@ const linkTitle = (label: string): string | undefined => {
     opacity: 1;
   }
 
-  details[open] > summary svg {
+  details[open] > .mobile-menu-summary svg {
     transform: rotate(180deg);
   }
 </style>
