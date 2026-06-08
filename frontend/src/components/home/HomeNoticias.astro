@@ -29,7 +29,7 @@ const hasNews = news.length > 0;
   aria-labelledby="home-noticias-title"
 >
   <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-    <header class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <header class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between" data-reveal>
       <div>
         <p class="text-xs font-bold uppercase tracking-[0.22em] text-vj-green">Novedades</p>
         <h2
@@ -67,7 +67,7 @@ const hasNews = news.length > 0;
             : "Aún no hay noticias publicadas."}
         </p>
       ) : (
-        <div class="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div class="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-2" data-reveal data-reveal-delay="150">
           {featured && (
             <a
               href={newsHref(featured)}

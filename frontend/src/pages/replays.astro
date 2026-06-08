@@ -21,7 +21,7 @@ const ytClips: { videoId: string; title: string }[] = [
 
   <main class="bg-white">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-      <header class="pt-10 lg:pt-12">
+      <header class="pt-10 lg:pt-12" data-reveal>
         <p class="text-xs font-bold uppercase tracking-[0.22em] text-vj-green">Club</p>
         <h1 class="mt-2 font-display text-4xl font-extrabold uppercase tracking-wide text-slate-900 sm:text-5xl">
           Replays
@@ -41,7 +41,7 @@ const ytClips: { videoId: string; title: string }[] = [
           Busca tu partido
         </h2>
 
-        <div class="mt-6 border border-slate-200 border-l-4 border-l-vj-green bg-white">
+        <div class="mt-6 border border-slate-200 border-l-4 border-l-vj-green bg-white" data-reveal data-reveal-delay="150">
           <div class="p-5 sm:p-6 lg:p-8">
             <ReplaysVerPartido client:load />
           </div>
@@ -62,7 +62,7 @@ const ytClips: { videoId: string; title: string }[] = [
         </h2>
         <hr class="mt-6 border-0 border-t border-dotted border-slate-300" />
 
-        <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3" data-reveal data-reveal-delay="100">
           {
             ytClips.map((clip, index) => {
               const hasVideo = Boolean(clip.videoId?.trim());

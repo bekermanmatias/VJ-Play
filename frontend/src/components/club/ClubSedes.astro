@@ -1,0 +1,158 @@
+---
+const sedes = [
+  {
+    name: "Sede Central",
+    location: "Av. San Martín",
+    description:
+      "Ubicada en la Av. San Martín, es el corazón de nuestra actividad diaria. Alberga el Salón Gimnasio, el natatorio climatizado, canchas de tenis y el tradicional Trinquete de Pelota Paleta.",
+    image: "/images/club/sede-central.png",
+    imageAlt: "Natatorio climatizado de la Sede Central del Club Social Varela Junior",
+    amenities: [
+      {
+        label: "Natatorio",
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/></svg>`,
+      },
+      {
+        label: "Tenis",
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><circle cx="12" cy="12" r="10"/><path d="M18.09 6.24c-2.67 3.26-2.67 8.26 0 11.52"/><path d="M5.91 6.24c2.67 3.26 2.67 8.26 0 11.52"/></svg>`,
+      },
+      {
+        label: "Trinquete",
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 12h18"/></svg>`,
+      },
+      {
+        label: "Gimnasio",
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M6.5 6.5h11"/><path d="M6.5 17.5h11"/><path d="M3 10h1.5v4H3z"/><path d="M5.5 8h1v8h-1z"/><path d="M17.5 8h1v8h-1z"/><path d="M19.5 10h1.5v4h-1.5z"/><path d="M12 6.5v11"/></svg>`,
+      },
+    ],
+  },
+  {
+    name: "Campo de Deportes",
+    location: "Ruta 53",
+    description:
+      "Un predio arbolado de 2,5 hectáreas sobre la Ruta 53, pensado para la familia y el esparcimiento, equipado con canchas de rugby, fútbol, quincho comedor y parrillas.",
+    image: "/images/club/campo-deportes.png",
+    imageAlt: "Vista aérea del Campo de Deportes del Club Social Varela Junior",
+    highlight: "2,5 ha",
+    amenities: [
+      {
+        label: "Rugby",
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><circle cx="12" cy="12" r="10"/><path d="M16 8l-8 8"/><path d="M16 12l-4 4"/><path d="M12 8l-4 4"/></svg>`,
+      },
+      {
+        label: "Fútbol",
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><circle cx="12" cy="12" r="10"/><path d="m12 2 3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z" fill="none"/></svg>`,
+      },
+      {
+        label: "Quincho",
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>`,
+      },
+      {
+        label: "Parrillas",
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M12 12c-2-2.67-4-4-4-6a4 4 0 0 1 8 0c0 2-2 3.33-4 6z"/><path d="M8 21h8"/><path d="M12 12v9"/></svg>`,
+      },
+    ],
+  },
+];
+---
+
+<section class="bg-slate-900 py-20 sm:py-28" aria-labelledby="club-sedes-title" id="club-sedes">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <!-- Section header -->
+    <header class="text-center" data-reveal>
+      <p class="text-xs font-bold uppercase tracking-[0.22em] text-vj-green">Infraestructura</p>
+      <h2
+        id="club-sedes-title"
+        class="mt-2 font-display text-4xl font-extrabold uppercase tracking-wide text-white sm:text-5xl"
+      >
+        Nuestras Sedes
+      </h2>
+      <p class="mx-auto mt-4 max-w-2xl text-base text-slate-400">
+        No solo historia, sino también infraestructura pujante al servicio de la comunidad.
+      </p>
+    </header>
+
+    <!-- Sedes -->
+    <div class="mt-16 space-y-16 lg:space-y-0">
+      {sedes.map((sede, idx) => (
+        <article
+          class:list={[
+            "grid grid-cols-1 gap-0 overflow-hidden bg-slate-800/50 shadow-2xl ring-1 ring-slate-700/50 lg:grid-cols-2",
+            idx === 0 ? "" : "mt-10 lg:mt-12",
+          ]}
+          data-reveal
+          data-reveal-delay={String(idx * 200)}
+        >
+          <!-- Image -->
+          <div
+            class:list={[
+              "relative aspect-[16/10] overflow-hidden lg:aspect-auto lg:min-h-[24rem]",
+              idx % 2 === 1 ? "lg:order-2" : "",
+            ]}
+          >
+            <img
+              src={sede.image}
+              alt={sede.imageAlt}
+              class="absolute inset-0 h-full w-full object-cover"
+              loading="lazy"
+              decoding="async"
+              data-zoom-in
+            />
+            <div
+              class="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent lg:bg-gradient-to-r lg:from-transparent lg:to-slate-900/20"
+              aria-hidden="true"
+            ></div>
+
+            {/* Hectares highlight badge */}
+            {sede.highlight && (
+              <div class="absolute bottom-4 right-4 flex items-center gap-2 bg-vj-green px-4 py-2 shadow-lg sm:bottom-6 sm:right-6">
+                <span class="font-display text-2xl font-extrabold text-white sm:text-3xl">{sede.highlight}</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-white/80">de predio</span>
+              </div>
+            )}
+          </div>
+
+          <!-- Info -->
+          <div
+            class:list={[
+              "flex flex-col justify-center p-8 sm:p-10 lg:p-14",
+              idx % 2 === 1 ? "lg:order-1" : "",
+            ]}
+          >
+            <!-- Location badge -->
+            <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-vj-green">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true">
+                <path d="M12 22s-7-7-7-12a7 7 0 1 1 14 0c0 5-7 12-7 12Z"></path>
+                <circle cx="12" cy="10" r="2.5"></circle>
+              </svg>
+              {sede.location}
+            </div>
+
+            <!-- Name -->
+            <h3 class="mt-3 font-display text-3xl font-extrabold uppercase tracking-wide text-white sm:text-4xl">
+              {sede.name}
+            </h3>
+
+            <!-- Divider -->
+            <div class="mt-5 h-0.5 w-12 bg-vj-green" aria-hidden="true"></div>
+
+            <!-- Description -->
+            <p class="mt-5 text-base leading-relaxed text-slate-300 sm:text-lg">
+              {sede.description}
+            </p>
+
+            <!-- Amenities -->
+            <div class="mt-8 flex flex-wrap gap-3">
+              {sede.amenities.map((amenity) => (
+                <span class="club-amenity-badge inline-flex items-center gap-2 border border-slate-600 bg-slate-800/60 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-slate-300 transition-all duration-200 hover:border-vj-green hover:text-vj-green">
+                  <span set:html={amenity.icon} />
+                  {amenity.label}
+                </span>
+              ))}
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>

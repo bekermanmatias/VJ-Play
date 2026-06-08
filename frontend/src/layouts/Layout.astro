@@ -44,5 +44,10 @@ const showPublicFooter = !isAdminPage && !isCinemaReplay;
   <body class="min-h-screen bg-white text-slate-900">
     <slot />
     {showPublicFooter && <Footer />}
+
+    <script>
+      import { initGlobalAnimations } from "@/utils/animations.client.ts";
+      initGlobalAnimations();
+    </script>
   </body>
 </html>

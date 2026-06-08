@@ -9,6 +9,12 @@ export function getStaticPaths() {
 }
 
 const slug = Astro.params.slug ?? "";
+
+// institucional has its own dedicated page
+if (slug === "institucional") {
+  return Astro.redirect("/club/institucional", 301);
+}
+
 const data = getClubSectionBySlug(slug);
 
 if (!data) {

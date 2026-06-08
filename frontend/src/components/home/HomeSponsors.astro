@@ -5,7 +5,7 @@ import { homeSponsors } from "@/data/sponsors";
 <section class="border-t border-slate-800" aria-labelledby="home-sponsors-title">
   <div class="bg-slate-900 py-12 sm:py-16">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-      <header class="text-center">
+      <header class="text-center" data-reveal>
         <p class="text-xs font-bold uppercase tracking-[0.22em] text-vj-green">Nos acompañan</p>
         <h2
           id="home-sponsors-title"
@@ -17,6 +17,7 @@ import { homeSponsors } from "@/data/sponsors";
 
       <ul
         class="mt-12 flex flex-wrap items-center justify-center gap-x-12 gap-y-10 sm:gap-x-16 lg:mt-14 lg:gap-x-20"
+        data-reveal data-reveal-delay="200"
         role="list"
       >
         {

@@ -31,7 +31,7 @@ const hasInstagram = data.instagramUrl.trim() !== "";
     <div
       class="flex min-h-[420px] flex-col justify-between bg-slate-900 px-6 py-12 text-slate-200 sm:px-10 lg:min-h-[min(50vw,720px)] lg:px-14 xl:px-16 lg:py-16"
     >
-      <div>
+      <div data-reveal>
         <p class="text-xs font-bold uppercase tracking-[0.22em] text-vj-green">Deportes</p>
         <h1
           id="deporte-title"
@@ -130,7 +130,7 @@ const hasInstagram = data.instagramUrl.trim() !== "";
         }
       </div>
 
-      <div class="mt-10 max-w-xl space-y-5 border-t border-slate-700 pt-8">
+      <div class="mt-10 max-w-xl space-y-5 border-t border-slate-700 pt-8" data-reveal data-reveal-delay="200">
         {
           hasContact && (
             <div class="text-sm sm:text-base">
@@ -217,6 +217,7 @@ const hasInstagram = data.instagramUrl.trim() !== "";
         class="absolute inset-0 size-full object-cover object-center"
         loading="eager"
         decoding="async"
+        data-zoom-in
       />
     </div>
 </section>
