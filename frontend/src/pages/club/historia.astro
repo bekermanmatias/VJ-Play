@@ -1,0 +1,352 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import TopBar from "@/components/TopBar.astro";
+import Navbar from "@/components/Navbar.astro";
+
+const milestones = [
+  {
+    year: "1906–1909",
+    title: "Los Orígenes",
+    text: "El origen del club está vinculado al antiguo Club Atlético Florencio Varela (acta del 18 de julio de 1906). En un pueblo de dos mil habitantes, un grupo de vecinos se unió con vocación de servir.",
+    /* Reemplazá con la foto real del equipo de fútbol histórico (~1918) */
+    image: "/images/historia/01-futbol-1918.jpg",
+    imageAlt: "Equipo de fútbol histórico del Club Varela Junior, circa 1918",
+  },
+  {
+    year: "1920–1948",
+    title: "Crecimiento y Consolidación",
+    text: "Tras la reorganización de 1920 el club ganó prestigio popular y consolidó su sede social, que cobijó recuerdos de varias generaciones de varelenses.",
+    /* Reemplazá con la foto de la fachada antigua */
+    image: "/images/historia/02-fachada.jpg",
+    imageAlt: "Fachada antigua del Club Social Varela Junior",
+  },
+  {
+    year: "1948",
+    title: "El Partido con River",
+    text: "Memorable amistoso con el primer equipo de River Plate, con figuras como Di Stéfano y Labruna, a beneficio del hospital local.",
+    /* Reemplazá con la foto del partido con River */
+    image: "/images/historia/03-river.jpg",
+    imageAlt: "Partido amistoso entre Varela Junior y River Plate en 1948",
+  },
+  {
+    year: "1955",
+    title: "Salón Gimnasio",
+    text: "Construcción del Salón Gimnasio, una obra de múltiples usos que sigue vigente.",
+    /* Reemplazá con la foto del interior del salón gimnasio */
+    image: "/images/historia/04-gimnasio.jpg",
+    imageAlt: "Interior del Salón Gimnasio del Club Varela Junior",
+  },
+  {
+    year: "1968",
+    title: "Natatorio",
+    text: "Inauguración del natatorio, luego climatizado, para uso durante todo el año.",
+    /* Reemplazá con la foto de la pileta / natatorio */
+    image: "/images/historia/05-natatorio.jpg",
+    imageAlt: "Natatorio del Club Social Varela Junior",
+  },
+  {
+    year: "1976",
+    title: "Pelota Paleta",
+    text: "Inauguración del tradicional trinquete de pelota paleta.",
+    /* Reemplazá con la foto de la cancha de pelota paleta */
+    image: "/images/historia/06-paleta.jpg",
+    imageAlt: "Cancha de pelota paleta del Club Varela Junior",
+  },
+  {
+    year: "1984",
+    title: "Nace el Rugby",
+    text: "Se implanta el rugby y se desarrolla el Campo de Deportes sobre la Ruta 53.",
+    /* Reemplazá con la foto del equipo de rugby */
+    image: "/images/historia/07-rugby.jpg",
+    imageAlt: "Equipo de rugby del Club Social Varela Junior",
+  },
+  {
+    year: "Actualidad",
+    title: "Un Legado Vivo",
+    text: "Más de un siglo de historia con recursos genuinos y espíritu solidario: el Club Varela Junior es una entidad de bien público.",
+    /* Reemplazá con la foto de torta del aniversario / acto institucional */
+    image: "/images/historia/08-aniversario.jpg",
+    imageAlt: "Celebración del aniversario del Club Social Varela Junior",
+  },
+];
+---
+
+<Layout
+  title="Nuestra Historia | Club Social Varela Junior"
+  description="Más de un siglo al servicio de la comunidad varelense. Conocé la historia del Club Social Varela Junior."
+>
+  <TopBar />
+  <Navbar />
+
+  <main class="min-h-[calc(100dvh-8.25rem)]">
+    <!-- Header -->
+    <header class="pb-6 pt-16 text-center sm:pb-10 sm:pt-20" data-reveal>
+      <p class="text-xs font-bold uppercase tracking-[0.2em] text-vj-green">Club</p>
+      <h1 class="mt-2 font-display text-4xl font-extrabold uppercase tracking-wide text-slate-900 sm:text-5xl">
+        Nuestra Historia
+      </h1>
+      <p class="mx-auto mt-4 max-w-2xl text-lg font-medium text-slate-600 sm:text-xl">
+        Más de un siglo al servicio de la comunidad varelense.
+      </p>
+    </header>
+
+    <!-- Timeline -->
+    <section
+      class="tl relative mx-auto max-w-6xl px-4 pb-24 pt-10 sm:px-6 lg:px-8"
+      aria-label="Línea de tiempo histórica"
+    >
+      <!-- Vertical line -->
+      <div class="tl__line" aria-hidden="true"></div>
+
+      {milestones.map((m, idx) => {
+        const isLeft = idx % 2 === 0;
+        return (
+          <article
+            class={`tl__node ${isLeft ? "tl__node--left" : "tl__node--right"}`}
+            data-reveal
+            data-reveal-delay={String(idx * 100)}
+          >
+            {/* Dot on the line */}
+            <div class="tl__dot" aria-hidden="true"></div>
+
+            {/* Year pill */}
+            <div class="tl__year">
+              <span class="tl__year-text">{m.year}</span>
+            </div>
+
+            {/* Card */}
+            <div class="tl__card">
+              {/* Image */}
+              <div class="tl__img-wrap">
+                <img
+                  src={m.image}
+                  alt={m.imageAlt}
+                  width="600"
+                  height="400"
+                  loading="lazy"
+                  decoding="async"
+                  class="tl__img"
+                />
+              </div>
+
+              {/* Text */}
+              <div class="tl__body">
+                <div class="h-0.5 w-10 bg-vj-green" aria-hidden="true"></div>
+                <h2 class="mt-4 font-display text-2xl font-extrabold uppercase tracking-wide text-slate-900 sm:text-3xl">
+                  {m.title}
+                </h2>
+                <p class="mt-3 text-sm leading-relaxed text-slate-600 sm:text-base">{m.text}</p>
+              </div>
+            </div>
+          </article>
+        );
+      })}
+
+      {/* Final cap */}
+      <div class="tl__cap" aria-hidden="true" data-reveal data-reveal-delay="800">
+        <div class="tl__dot tl__dot--static"></div>
+      </div>
+    </section>
+  </main>
+</Layout>
+
+<style>
+  /* ─── Variables ─── */
+  .tl {
+    --green: rgb(1 170 85);
+    --line-w: 3px;
+    --dot-size: 14px;
+  }
+
+  /* ─── Vertical line ─── */
+  .tl__line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: var(--line-w);
+    background: linear-gradient(to bottom, transparent 0%, var(--green) 4%, var(--green) 96%, transparent 100%);
+    opacity: 0.25;
+  }
+
+  /* ─── Dot on the line ─── */
+  .tl__dot {
+    position: absolute;
+    top: 1.75rem;
+    width: var(--dot-size);
+    height: var(--dot-size);
+    background: var(--green);
+    box-shadow: 0 0 0 4px rgb(1 170 85 / 0.15);
+    z-index: 10;
+    transition: box-shadow 0.3s ease;
+  }
+
+  .tl__node:hover .tl__dot {
+    box-shadow: 0 0 0 6px rgb(1 170 85 / 0.25), 0 0 14px rgb(1 170 85 / 0.12);
+  }
+
+  .tl__dot--static {
+    position: relative;
+    top: auto;
+  }
+
+  /* ─── Year label ─── */
+  .tl__year {
+    position: absolute;
+    top: 1.4rem;
+    z-index: 10;
+  }
+
+  .tl__year-text {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    font-family: "Anton", "Bebas Neue", system-ui, sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.06em;
+    color: white;
+    background: var(--green);
+    white-space: nowrap;
+  }
+
+  /* ─── Card ─── */
+  .tl__card {
+    overflow: hidden;
+    background: white;
+    border-top: 4px solid var(--green);
+    box-shadow: 0 1px 4px rgb(0 0 0 / 0.06), 0 4px 16px rgb(0 0 0 / 0.04);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+  }
+
+  .tl__card:hover {
+    box-shadow: 0 4px 20px rgb(0 0 0 / 0.1), 0 8px 28px rgb(0 0 0 / 0.05);
+    transform: translateY(-2px);
+  }
+
+  /* ─── Card image ─── */
+  .tl__img-wrap {
+    overflow: hidden;
+    aspect-ratio: 16 / 10;
+  }
+
+  .tl__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: grayscale(100%) sepia(20%);
+    transition: filter 0.5s ease, transform 0.5s ease;
+  }
+
+  .tl__card:hover .tl__img {
+    filter: grayscale(30%) sepia(0%);
+    transform: scale(1.04);
+  }
+
+  /* ─── Card body ─── */
+  .tl__body {
+    padding: 1.25rem 1.5rem 1.5rem;
+  }
+
+  /* ─── End cap ─── */
+  .tl__cap {
+    display: flex;
+    margin-top: 2rem;
+    position: relative;
+    z-index: 10;
+  }
+
+  /* ═══════════════════════════════════════════════════
+     MOBILE — single column, line on the left
+     ═══════════════════════════════════════════════════ */
+
+  .tl__line {
+    left: 1rem;
+  }
+
+  .tl__node {
+    position: relative;
+    padding-left: 3rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .tl__dot {
+    left: calc(1rem - var(--dot-size) / 2 + var(--line-w) / 2);
+  }
+
+  .tl__year {
+    left: 2.5rem;
+  }
+
+  .tl__card {
+    margin-top: 3rem;
+  }
+
+  .tl__cap {
+    padding-left: calc(1rem - var(--dot-size) / 2 + var(--line-w) / 2);
+  }
+
+  /* ═══════════════════════════════════════════════════
+     DESKTOP — zig-zag, line centered
+     ═══════════════════════════════════════════════════ */
+
+  @media (min-width: 768px) {
+    .tl__line {
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .tl__node {
+      width: 50%;
+      padding-left: 0;
+      margin-bottom: 3.5rem;
+    }
+
+    .tl__card {
+      margin-top: 0;
+    }
+
+    /* ── Left node (even) ── */
+    .tl__node--left {
+      margin-left: 0;
+      padding-right: 2.5rem;
+    }
+
+    .tl__node--left .tl__dot {
+      left: auto;
+      right: calc(-1 * var(--dot-size) / 2 + var(--line-w) / 2);
+    }
+
+    .tl__node--left .tl__year {
+      left: auto;
+      right: calc(var(--dot-size) / 2 + 0.75rem + var(--line-w) / 2);
+    }
+
+    /* ── Right node (odd) ── */
+    .tl__node--right {
+      margin-left: 50%;
+      padding-left: 2.5rem;
+    }
+
+    .tl__node--right .tl__dot {
+      left: calc(-1 * var(--dot-size) / 2 + var(--line-w) / 2);
+    }
+
+    .tl__node--right .tl__year {
+      left: calc(var(--dot-size) / 2 + 0.75rem + var(--line-w) / 2);
+    }
+
+    .tl__cap {
+      justify-content: center;
+      padding-left: 0;
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════
+     A11Y
+     ═══════════════════════════════════════════════════ */
+  @media (prefers-reduced-motion: reduce) {
+    .tl__img,
+    .tl__card,
+    .tl__dot {
+      transition: none;
+    }
+  }
+</style>

@@ -1,0 +1,343 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import TopBar from "@/components/TopBar.astro";
+import Navbar from "@/components/Navbar.astro";
+
+/**
+ * Presidentes con foto — Reemplazá las rutas de imagen y los nombres/períodos
+ * con los datos reales. Cada entrada genera una tarjeta con foto.
+ */
+const presidentesConFoto = [
+  {
+    name: "Edelmiro Palacios",
+    period: "Fundador",
+    /* Reemplazá con la foto real */
+    image: "/images/autoridades/01-palacios.jpg",
+  },
+  {
+    name: "Agustín Dubini",
+    period: "Período temprano",
+    image: "/images/autoridades/02-dubini.jpg",
+  },
+  {
+    name: "Arnaldo Massone",
+    period: "",
+    image: "/images/autoridades/03-massone.jpg",
+  },
+  {
+    name: "Juan Gregoni",
+    period: "",
+    image: "/images/autoridades/04-gregoni.jpg",
+  },
+  {
+    name: "Amadeo Dapena",
+    period: "",
+    image: "/images/autoridades/05-dapena.jpg",
+  },
+  {
+    name: "Stanley Baynes",
+    period: "",
+    image: "/images/autoridades/06-baynes.jpg",
+  },
+  {
+    name: "Rafael Aquilano",
+    period: "",
+    image: "/images/autoridades/07-aquilano.jpg",
+  },
+  {
+    name: "Salvador Robertazzi",
+    period: "",
+    image: "/images/autoridades/08-robertazzi.jpg",
+  },
+  {
+    name: "Eugenio Schiantarelli",
+    period: "",
+    image: "/images/autoridades/09-schiantarelli.jpg",
+  },
+  {
+    name: "Ovidio Morando",
+    period: "",
+    image: "/images/autoridades/10-morando.jpg",
+  },
+];
+
+/**
+ * Lista completa de todos los presidentes históricos (sin foto).
+ */
+const todosLosPresidentes = [
+  "Edelmiro Palacios",
+  "Agustín Dubini",
+  "Arnaldo Massone",
+  "Juan Gregoni",
+  "Amadeo Dapena",
+  "Stanley Baynes",
+  "Rafael Aquilano",
+  "Salvador Robertazzi",
+  "Eugenio Schiantarelli",
+  "Ovidio Morando",
+  "Enrique Albizzati",
+  "Pedro Monroy",
+  "José Dans Rey",
+  "Felix Sosa",
+  "Anastasio Villar",
+  "Enrique Otero",
+  "Tomás Palma",
+  "Celsio Cibeira",
+  "Antonio Barbalán",
+  "Miguel Chimento",
+  "Libio Mandirola",
+  "Abel López",
+  "Porfirio Lambardi",
+  "Felix Rodriguez",
+  "Antonio Palucito",
+  "Humberto Toscanini",
+  "José Casariego",
+  "Antonio Guarasci",
+  "José M. Mastronardi",
+  "Jorge Dreyer",
+  "Roberto Dogil",
+  "Juan Tellechea",
+  "Adolfo de la Fuente",
+];
+---
+
+<Layout
+  title="Autoridades | Club Social Varela Junior"
+  description="A través de su largo historial, la Institución fue presidida por prestigiosos vecinos varelenses."
+>
+  <TopBar />
+  <Navbar />
+
+  <main class="min-h-[calc(100dvh-8.25rem)]">
+    <!-- Header -->
+    <header class="pb-6 pt-16 text-center sm:pb-10 sm:pt-20" data-reveal>
+      <p class="text-xs font-bold uppercase tracking-[0.2em] text-vj-green">Club</p>
+      <h1 class="mt-2 font-display text-4xl font-extrabold uppercase tracking-wide text-slate-900 sm:text-5xl">
+        Autoridades
+      </h1>
+      <p class="mx-auto mt-4 max-w-2xl text-lg font-medium text-slate-600 sm:text-xl">
+        A través de su largo historial, la Institución fue presidida por prestigiosos vecinos
+        varelenses que, con su esfuerzo y dedicación, gestaron un crecimiento permanente.
+      </p>
+    </header>
+
+    <!-- Section 1: Presidents photo grid -->
+    <section
+      class="mx-auto max-w-6xl px-4 pb-16 pt-10 sm:px-6 lg:px-8"
+      aria-labelledby="presidentes-titulo"
+    >
+      <div data-reveal>
+        <h2
+          id="presidentes-titulo"
+          class="font-display text-2xl font-extrabold uppercase tracking-wide text-slate-900 sm:text-3xl"
+        >
+          Quienes Presidieron la Entidad
+        </h2>
+        <div class="mt-4 h-0.5 w-12 bg-vj-green" aria-hidden="true"></div>
+      </div>
+
+      <!-- Grid -->
+      <div class="aut-grid mt-10">
+        {presidentesConFoto.map((p, idx) => (
+          <div
+            class="aut-card group"
+            data-reveal
+            data-reveal-delay={String(idx * 80)}
+          >
+            <div class="aut-card__img-wrap">
+              <img
+                src={p.image}
+                alt={`Presidente ${p.name}`}
+                width="300"
+                height="400"
+                loading="lazy"
+                decoding="async"
+                class="aut-card__img"
+              />
+            </div>
+            <div class="aut-card__info">
+              <h3 class="aut-card__name">{p.name}</h3>
+              {p.period && (
+                <p class="aut-card__role">{p.period}</p>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- Section 2: Full historical list (text only) -->
+    <section
+      class="border-t border-slate-200 bg-slate-50"
+      aria-labelledby="lista-completa-titulo"
+    >
+      <div class="mx-auto max-w-6xl px-4 pb-24 pt-16 sm:px-6 lg:px-8">
+        <div data-reveal>
+          <h2
+            id="lista-completa-titulo"
+            class="font-display text-2xl font-extrabold uppercase tracking-wide text-slate-900 sm:text-3xl"
+          >
+            Todos los Presidentes
+          </h2>
+          <p class="mt-2 text-base text-slate-500">
+            Listado histórico completo de quienes lideraron la institución.
+          </p>
+          <div class="mt-4 h-0.5 w-12 bg-vj-green" aria-hidden="true"></div>
+        </div>
+
+        <div
+          class="pres-list mt-10"
+          data-reveal
+          data-reveal-delay="150"
+        >
+          {todosLosPresidentes.map((name, idx) => (
+            <div class="pres-list__item">
+              <span class="pres-list__num">{String(idx + 1).padStart(2, "0")}</span>
+              <span class="pres-list__name">{name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  </main>
+</Layout>
+
+<style>
+  /* ─────────────────────────────────────────────────
+     PRESIDENTS PHOTO GRID
+     ───────────────────────────────────────────────── */
+
+  .aut-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .aut-grid {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .aut-grid {
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.5rem;
+    }
+  }
+
+  /* ── Card ── */
+  .aut-card {
+    overflow: hidden;
+    background: white;
+    border-top: 4px solid rgb(1 170 85);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.05), 0 2px 8px rgb(0 0 0 / 0.03);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+  }
+
+  .aut-card:hover {
+    box-shadow: 0 6px 20px rgb(0 0 0 / 0.1);
+    transform: translateY(-2px);
+  }
+
+  /* ── Card image ── */
+  .aut-card__img-wrap {
+    overflow: hidden;
+    aspect-ratio: 3 / 4;
+    background: rgb(241 245 249); /* slate-100 placeholder bg */
+  }
+
+  .aut-card__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+  }
+
+  .aut-card:hover .aut-card__img {
+    transform: scale(1.04);
+  }
+
+  /* ── Card info ── */
+  .aut-card__info {
+    padding: 0.875rem 1rem 1rem;
+  }
+
+  .aut-card__name {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: rgb(15 23 42);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    line-height: 1.3;
+  }
+
+  .aut-card__role {
+    margin-top: 0.15rem;
+    font-size: 0.75rem;
+    color: rgb(1 170 85);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* ─────────────────────────────────────────────────
+     FULL PRESIDENTS LIST
+     ───────────────────────────────────────────────── */
+
+  .pres-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  @media (min-width: 640px) {
+    .pres-list {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .pres-list {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .pres-list__item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 0.5rem;
+    border-bottom: 1px solid rgb(226 232 240);
+    transition: background 0.2s ease;
+  }
+
+  .pres-list__item:hover {
+    background: white;
+  }
+
+  .pres-list__num {
+    font-family: "Anton", "Bebas Neue", system-ui, sans-serif;
+    font-size: 0.8rem;
+    color: rgb(1 170 85);
+    min-width: 1.5rem;
+    letter-spacing: 0.06em;
+  }
+
+  .pres-list__name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: rgb(51 65 85); /* slate-700 */
+  }
+
+  /* ─────────────────────────────────────────────────
+     A11Y
+     ───────────────────────────────────────────────── */
+  @media (prefers-reduced-motion: reduce) {
+    .aut-card,
+    .aut-card__img {
+      transition: none;
+    }
+  }
+</style>

@@ -7,6 +7,13 @@
  */
 
 export function initClubAnimations() {
+  /* ── Prefer reduced motion ── */
+  const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (prefersReduced) {
+    console.warn("Animaciones del club desactivadas: Tu sistema operativo tiene configurado 'Reducir movimiento'. Actívalo en Configuración > Accesibilidad > Efectos visuales > 'Efectos de animación'.");
+    return;
+  }
+
   /* ── Hero parallax ── */
   const heroImg = document.querySelector<HTMLElement>("[data-club-hero-img]");
   if (heroImg) {

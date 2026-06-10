@@ -10,15 +10,13 @@
  * (guards against double-init).
  */
 
-let initialised = false;
-
 export function initGlobalAnimations() {
-  if (initialised) return;
-  initialised = true;
-
   /* ── Prefer reduced motion ── */
   const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (prefersReduced) return; // Skip all animations for a11y
+  if (prefersReduced) {
+    console.warn("Animaciones desactivadas: Tu sistema operativo tiene configurado 'Reducir movimiento'. En Windows, ve a Configuración > Accesibilidad > Efectos visuales > 'Efectos de animación' y actívalo.");
+    return; // Skip all animations for a11y
+  }
 
   /* ── Hero parallax ── */
   const heroImg = document.querySelector<HTMLElement>("[data-club-hero-img]");

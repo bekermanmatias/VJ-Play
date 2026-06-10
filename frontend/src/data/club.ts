@@ -15,7 +15,7 @@ export const clubSections: ClubSectionData[] = [
     metaTitle: "Institucional | Club Social Varela Junior",
     metaDescription:
       "Información institucional del Club Social Varela Junior: misión, valores y datos del club.",
-    lead: "Conocé la identidad, los valores y la propuesta del Club Social Varela Junior.",
+    lead: "Conoce más sobre nuestra identidad.",
   },
   {
     slug: "historia",
