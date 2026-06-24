@@ -9,66 +9,103 @@ const milestones = [
     title: "Los Orígenes",
     text: "El origen del club está vinculado al antiguo Club Atlético Florencio Varela (acta del 18 de julio de 1906). En un pueblo de dos mil habitantes, un grupo de vecinos se unió con vocación de servir.",
     /* Reemplazá con la foto real del equipo de fútbol histórico (~1918) */
-    image: "/images/historia/01-futbol-1918.jpg",
+    image: "/images/historia/01-futbol-origenes.png",
     imageAlt: "Equipo de fútbol histórico del Club Varela Junior, circa 1918",
+    imageCaption: "Equipo de fútbol del club en sus primeros años.",
   },
   {
     year: "1920–1948",
     title: "Crecimiento y Consolidación",
     text: "Tras la reorganización de 1920 el club ganó prestigio popular y consolidó su sede social, que cobijó recuerdos de varias generaciones de varelenses.",
     /* Reemplazá con la foto de la fachada antigua */
-    image: "/images/historia/02-fachada.jpg",
+    image: "/images/historia/02-reorganizacion.png",
     imageAlt: "Fachada antigua del Club Social Varela Junior",
+    imageCaption: "Carnet de jugador de Juan M. Morando — Federación Platense de Fútbol, 1918.",
+  },
+  {
+    year: "Años '30",
+    title: "Reactivación del Club",
+    text: "Tras una etapa difícil, un grupo de vecinos —impulsado por don Atilio Cameriere— reactiva la entidad, recupera su patrimonio y le devuelve la vida institucional.",
+    /* Reemplazá con la foto de la reactivación */
+    image: "/images/historia/03-reactivacion.png",
+    imageAlt: "Reactivación del Club Varela Junior en los años 30",
+    imageCaption: "Don Atilio Cameriere, pionero de la entidad.",
+  },
+  {
+    year: "Años '40",
+    title: "Llega el Básquet",
+    text: "El básquetbol hace historia en el club y se convierte en uno de los pilares deportivos y sociales de la institución.",
+    /* Reemplazá con la foto del equipo de básquet */
+    image: "/images/historia/04-basquet.png",
+    imageAlt: "Equipo de básquetbol del Club Varela Junior en los años 40",
+    imageCaption: "Equipo de básquetbol, 1957.",
   },
   {
     year: "1948",
     title: "El Partido con River",
     text: "Memorable amistoso con el primer equipo de River Plate, con figuras como Di Stéfano y Labruna, a beneficio del hospital local.",
     /* Reemplazá con la foto del partido con River */
-    image: "/images/historia/03-river.jpg",
+    image: "/images/historia/05-river.png",
     imageAlt: "Partido amistoso entre Varela Junior y River Plate en 1948",
+    imageCaption: "Ángel Sánchez, Ángel Labruna y Carlos Devincenzi, del plantel de River.",
+  },
+  {
+    year: "Años '50",
+    title: "Época de Oro de los Bailes",
+    text: "La década del esplendor social: grandes orquestas, miles de concurrentes y los bailes que reunían a toda la comunidad.",
+    /* Reemplazá con la foto de los bailes */
+    image: "/images/historia/06-bailes.png",
+    imageAlt: "Gran baile social del Club Varela Junior en los años 50",
+    imageCaption: "Gran baile con la orquesta de Juan D'Arienzo, 1959.",
   },
   {
     year: "1955",
     title: "Salón Gimnasio",
     text: "Construcción del Salón Gimnasio, una obra de múltiples usos que sigue vigente.",
     /* Reemplazá con la foto del interior del salón gimnasio */
-    image: "/images/historia/04-gimnasio.jpg",
+    image: "/images/historia/07-gimnasio.png",
     imageAlt: "Interior del Salón Gimnasio del Club Varela Junior",
+    imageCaption: "Interior del Salón Gimnasio.",
   },
   {
     year: "1968",
     title: "Natatorio",
     text: "Inauguración del natatorio, luego climatizado, para uso durante todo el año.",
     /* Reemplazá con la foto de la pileta / natatorio */
-    image: "/images/historia/05-natatorio.jpg",
+    image: "/images/historia/08-natatorio.png",
     imageAlt: "Natatorio del Club Social Varela Junior",
+    imageCaption: "El natatorio del club.",
   },
   {
     year: "1976",
     title: "Pelota Paleta",
     text: "Inauguración del tradicional trinquete de pelota paleta.",
     /* Reemplazá con la foto de la cancha de pelota paleta */
-    image: "/images/historia/06-paleta.jpg",
+    image: "/images/historia/09-pelota-paleta.png",
     imageAlt: "Cancha de pelota paleta del Club Varela Junior",
+    imageCaption: "Cancha de pelota paleta.",
   },
   {
     year: "1984",
     title: "Nace el Rugby",
     text: "Se implanta el rugby y se desarrolla el Campo de Deportes sobre la Ruta 53.",
     /* Reemplazá con la foto del equipo de rugby */
-    image: "/images/historia/07-rugby.jpg",
+    image: "/images/historia/10-rugby.png",
     imageAlt: "Equipo de rugby del Club Social Varela Junior",
-  },
-  {
-    year: "Actualidad",
-    title: "Un Legado Vivo",
-    text: "Más de un siglo de historia con recursos genuinos y espíritu solidario: el Club Varela Junior es una entidad de bien público.",
-    /* Reemplazá con la foto de torta del aniversario / acto institucional */
-    image: "/images/historia/08-aniversario.jpg",
-    imageAlt: "Celebración del aniversario del Club Social Varela Junior",
+    imageCaption: "Equipo de rugby, 1999.",
   },
 ];
+
+/* Nodo de cierre — centrado, fuera del zig-zag */
+const closing = {
+  year: "Actualidad",
+  title: "Un Legado Vivo",
+  text: "Más de un siglo de historia con recursos genuinos y espíritu solidario: el Club Varela Junior es una entidad de bien público.",
+  /* Reemplazá con la foto de torta del aniversario / acto institucional */
+  image: "/images/ubicacion.png",
+  imageAlt: "Celebración del aniversario del Club Social Varela Junior",
+  imageCaption: "Sede actual del Club Social Varela Junior.",
+};
 ---
 
 <Layout
@@ -98,54 +135,109 @@ const milestones = [
       <!-- Vertical line -->
       <div class="tl__line" aria-hidden="true"></div>
 
-      {milestones.map((m, idx) => {
-        const isLeft = idx % 2 === 0;
-        return (
+      <!-- MOBILE: flat list; DESKTOP: sobreescrito por tl__cols -->
+      <div class="tl__flat">
+        {milestones.map((m, idx) => (
           <article
-            class={`tl__node ${isLeft ? "tl__node--left" : "tl__node--right"}`}
+            class={`tl__node tl__node--left`}
             data-reveal
             data-reveal-delay={String(idx * 100)}
           >
-            {/* Dot on the line */}
             <div class="tl__dot" aria-hidden="true"></div>
-
-            {/* Year pill */}
-            <div class="tl__year">
-              <span class="tl__year-text">{m.year}</span>
-            </div>
-
-            {/* Card */}
+            <div class="tl__year"><span class="tl__year-text">{m.year}</span></div>
             <div class="tl__card">
-              {/* Image */}
               <div class="tl__img-wrap">
-                <img
-                  src={m.image}
-                  alt={m.imageAlt}
-                  width="600"
-                  height="400"
-                  loading="lazy"
-                  decoding="async"
-                  class="tl__img"
-                />
+                <img src={m.image} alt={m.imageAlt} width="600" height="400" loading="lazy" decoding="async" class="tl__img" />
               </div>
-
-              {/* Text */}
+              {m.imageCaption && (
+                <p class="px-6 pt-3 text-xs text-slate-500 italic leading-snug">{m.imageCaption}</p>
+              )}
               <div class="tl__body">
                 <div class="h-0.5 w-10 bg-vj-green" aria-hidden="true"></div>
-                <h2 class="mt-4 font-display text-2xl font-extrabold uppercase tracking-wide text-slate-900 sm:text-3xl">
-                  {m.title}
-                </h2>
+                <h2 class="mt-4 font-display text-2xl font-extrabold uppercase tracking-wide text-slate-900 sm:text-3xl">{m.title}</h2>
                 <p class="mt-3 text-sm leading-relaxed text-slate-600 sm:text-base">{m.text}</p>
               </div>
             </div>
           </article>
-        );
-      })}
-
-      {/* Final cap */}
-      <div class="tl__cap" aria-hidden="true" data-reveal data-reveal-delay="800">
-        <div class="tl__dot tl__dot--static"></div>
+        ))}
       </div>
+
+      <!-- DESKTOP: dos columnas flex independientes con desfase -->
+      <div class="tl__cols" aria-hidden="true">
+        <!-- Columna izquierda: índices pares -->
+        <div class="tl__col tl__col--left">
+          {milestones
+            .filter((_, i) => i % 2 === 0)
+            .map((m, ci) => (
+              <article class="tl__node tl__node--left" data-reveal data-reveal-delay={String(ci * 200)}>
+                <div class="tl__dot" aria-hidden="true"></div>
+                <div class="tl__year"><span class="tl__year-text">{m.year}</span></div>
+                <div class="tl__card">
+                  <div class="tl__img-wrap">
+                    <img src={m.image} alt={m.imageAlt} width="600" height="400" loading="lazy" decoding="async" class="tl__img" />
+                  </div>
+                  {m.imageCaption && (
+                    <p class="px-6 pt-3 text-xs text-slate-500 italic leading-snug">{m.imageCaption}</p>
+                  )}
+                  <div class="tl__body">
+                    <div class="h-0.5 w-10 bg-vj-green" aria-hidden="true"></div>
+                    <h2 class="mt-4 font-display text-2xl font-extrabold uppercase tracking-wide text-slate-900 sm:text-3xl">{m.title}</h2>
+                    <p class="mt-3 text-sm leading-relaxed text-slate-600 sm:text-base">{m.text}</p>
+                  </div>
+                </div>
+              </article>
+            ))}
+        </div>
+
+        <!-- Columna derecha: índices impares — desplazada hacia abajo ~50% de card -->
+        <div class="tl__col tl__col--right">
+          {milestones
+            .filter((_, i) => i % 2 !== 0)
+            .map((m, ci) => (
+              <article class="tl__node tl__node--right" data-reveal data-reveal-delay={String(ci * 200 + 100)}>
+                <div class="tl__dot" aria-hidden="true"></div>
+                <div class="tl__year"><span class="tl__year-text">{m.year}</span></div>
+                <div class="tl__card">
+                  <div class="tl__img-wrap">
+                    <img src={m.image} alt={m.imageAlt} width="600" height="400" loading="lazy" decoding="async" class="tl__img" />
+                  </div>
+                  {m.imageCaption && (
+                    <p class="px-6 pt-3 text-xs text-slate-500 italic leading-snug">{m.imageCaption}</p>
+                  )}
+                  <div class="tl__body">
+                    <div class="h-0.5 w-10 bg-vj-green" aria-hidden="true"></div>
+                    <h2 class="mt-4 font-display text-2xl font-extrabold uppercase tracking-wide text-slate-900 sm:text-3xl">{m.title}</h2>
+                    <p class="mt-3 text-sm leading-relaxed text-slate-600 sm:text-base">{m.text}</p>
+                  </div>
+                </div>
+              </article>
+            ))}
+        </div>
+      </div>
+
+      {/* ── Closing node — centrado, fuera de las columnas ── */}
+      <article
+        class="tl__node tl__node--closing"
+        data-reveal
+        data-reveal-delay="100"
+      >
+        <div class="tl__dot tl__dot--closing" aria-hidden="true"></div>
+        <div class="tl__card tl__card--closing">
+          {/* Badge apoyado sobre el borde superior de la card */}
+          <div class="tl__year tl__year--closing"><span class="tl__year-text">{closing.year}</span></div>
+          <div class="tl__img-wrap">
+            <img src={closing.image} alt={closing.imageAlt} width="600" height="400" loading="lazy" decoding="async" class="tl__img" />
+          </div>
+          {closing.imageCaption && (
+            <p class="px-6 pt-3 text-xs text-slate-500 italic leading-snug">{closing.imageCaption}</p>
+          )}
+          <div class="tl__body">
+            <div class="h-0.5 w-10 bg-vj-green" aria-hidden="true"></div>
+            <h2 class="mt-4 font-display text-2xl font-extrabold uppercase tracking-wide text-slate-900 sm:text-3xl">{closing.title}</h2>
+            <p class="mt-3 text-sm leading-relaxed text-slate-600 sm:text-base">{closing.text}</p>
+          </div>
+        </div>
+      </article>
     </section>
   </main>
 </Layout>
@@ -162,7 +254,7 @@ const milestones = [
   .tl__line {
     position: absolute;
     top: 0;
-    bottom: 0;
+    bottom: 8rem;
     width: var(--line-w);
     background: linear-gradient(to bottom, transparent 0%, var(--green) 4%, var(--green) 96%, transparent 100%);
     opacity: 0.25;
@@ -209,6 +301,7 @@ const milestones = [
 
   /* ─── Card ─── */
   .tl__card {
+    position: relative; /* ancla el badge del closing node */
     overflow: hidden;
     background: white;
     border-top: 4px solid var(--green);
@@ -224,13 +317,22 @@ const milestones = [
   /* ─── Card image ─── */
   .tl__img-wrap {
     overflow: hidden;
-    aspect-ratio: 16 / 10;
+    aspect-ratio: 4 / 3;
+  }
+
+  /* Badge del closing node: apoyado sobre el borde superior de la card */
+  .tl__year--closing {
+    position: absolute;
+    top: 0;
+    left: 1rem;
+    z-index: 10;
   }
 
   .tl__img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: top;
     filter: grayscale(100%) sepia(20%);
     transition: filter 0.5s ease, transform 0.5s ease;
   }
@@ -284,29 +386,57 @@ const milestones = [
   }
 
   /* ═══════════════════════════════════════════════════
-     DESKTOP — zig-zag, line centered
+     DESKTOP — dos columnas flex independientes con desfase
      ═══════════════════════════════════════════════════ */
 
+  /* En mobile el layout de dos columnas está oculto */
+  .tl__cols { display: none; }
+  .tl__flat { display: block; }
+
   @media (min-width: 768px) {
+    /* Ocultamos la lista plana de mobile y mostramos las columnas */
+    .tl__flat { display: none; }
+    .tl__cols {
+      display: flex;
+      align-items: flex-start; /* cada columna crece de forma independiente */
+      gap: 0;
+    }
+
+    /* Cada columna es un flex-column que apila sus cards */
+    .tl__col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2.5rem;
+    }
+
+    /* La columna derecha se desplaza ~50% de la altura de una card
+       para lograr el efecto de ladrillos intercalados */
+    .tl__col--right {
+      padding-top: 11rem;
+    }
+
+    /* Línea centrada */
     .tl__line {
       left: 50%;
       transform: translateX(-50%);
     }
 
+    /* Cada nodo en desktop: sin padding-left de mobile */
     .tl__node {
-      width: 50%;
+      width: 100%;
       padding-left: 0;
-      margin-bottom: 3.5rem;
+      margin-bottom: 0; /* gap en tl__col maneja el espacio */
+      margin-left: 0;
     }
 
     .tl__card {
       margin-top: 0;
     }
 
-    /* ── Left node (even) ── */
+    /* ── Columna izquierda ── */
     .tl__node--left {
-      margin-left: 0;
-      padding-right: 2.5rem;
+      padding-right: 2.75rem;
     }
 
     .tl__node--left .tl__dot {
@@ -319,10 +449,9 @@ const milestones = [
       right: calc(var(--dot-size) / 2 + 0.75rem + var(--line-w) / 2);
     }
 
-    /* ── Right node (odd) ── */
+    /* ── Columna derecha ── */
     .tl__node--right {
-      margin-left: 50%;
-      padding-left: 2.5rem;
+      padding-left: 2.75rem;
     }
 
     .tl__node--right .tl__dot {
@@ -333,9 +462,34 @@ const milestones = [
       left: calc(var(--dot-size) / 2 + 0.75rem + var(--line-w) / 2);
     }
 
+    /* ── Cap final ── */
     .tl__cap {
       justify-content: center;
       padding-left: 0;
+      margin-top: 2rem;
+    }
+
+    /* ── Closing node — ancho completo, centrado ── */
+    .tl__node--closing {
+      width: 100%;
+      padding-left: 0;
+      padding-right: 0;
+      margin-bottom: 0;
+      margin-top: 2rem;
+      padding-top: 3.5rem;
+    }
+
+    .tl__node--closing .tl__dot {
+      left: 50%;
+      transform: translateX(-50%);
+      top: 1.5rem;
+    }
+
+    .tl__node--closing .tl__card {
+      max-width: 36rem;
+      margin-left: auto;
+      margin-right: auto;
+      margin-top: 0;
     }
   }
 

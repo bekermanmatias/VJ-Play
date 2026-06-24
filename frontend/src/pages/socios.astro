@@ -2,19 +2,765 @@
 import Layout from "@/layouts/Layout.astro";
 import TopBar from "@/components/TopBar.astro";
 import Navbar from "@/components/Navbar.astro";
+
+const ALTA_URL =
+  "https://micuenta.gest-gym.com/altas.aspx?acc=T1pGejlnMUtSS2lPNTVQeTlXb1lRQT09";
+
+const cuotas = [
+  { categoria: "Activos",         rango: "18 años o más", precio: "$12.000" },
+  { categoria: "Activas",         rango: "18 años o más", precio: "$12.000" },
+  { categoria: "Cadetes Mayores", rango: "14 a 17 años",  precio: "$10.000" },
+  { categoria: "Cadetes Menores", rango: "6 a 13 años",   precio: "$10.000" },
+  { categoria: "Cadetas",         rango: "6 a 17 años",   precio: "$10.000" },
+];
+
+const requisitos = [
+  "Nombre y apellido completo",
+  "DNI",
+  "Número de celular",
+  "Teléfono de contacto",
+  "Dirección de e-mail",
+  "Domicilio",
+  "Sexo",
+  "Fecha de nacimiento",
+  "Foto digital tipo carnet",
+];
 ---
 
-<Layout title="Socios | Bekerman Matias" description="Seccion de socios en desarrollo.">
+<Layout
+  title="Socios | Club Social Varela Junior"
+  description="Sumate al Club Social Varela Junior. Conocé las cuotas, categorías y cómo asociarte de forma online."
+>
   <TopBar />
   <Navbar />
 
-  <main class="mx-auto flex min-h-[calc(100dvh-8.25rem)] max-w-7xl items-center justify-center px-4 sm:px-6 lg:px-8">
-    <section class="text-center">
-      <p class="text-xs font-bold uppercase tracking-[0.2em] text-vj-green">Socios</p>
-      <h1 class="mt-2 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">En desarrollo</h1>
-      <p class="mx-auto mt-3 max-w-2xl text-base text-slate-600">
-        Esta pagina se encuentra en desarrollo. Aca publicaremos beneficios, requisitos y novedades.
-      </p>
+  <main>
+
+    <!-- ═══════════════════════════════════
+         HERO
+         ═══════════════════════════════════ -->
+    <section class="hero" aria-label="Sumate al Club">
+      <img
+        src="/images/ubicacion.png"
+        alt="Sede del Club Social Varela Junior"
+        class="hero__bg"
+        loading="eager"
+        decoding="async"
+      />
+      <div class="hero__overlay" aria-hidden="true"></div>
+      <div class="hero__tint"    aria-hidden="true"></div>
+
+      <div class="hero__inner">
+        <div class="hero__content" data-reveal>
+          <p class="hero__eyebrow">Club Social Varela Junior</p>
+          <h1 class="hero__title">
+            <span class="hero__title-line">Sumate</span>
+            <span class="hero__title-pill">al Club</span>
+          </h1>
+          <p class="hero__subtitle">
+            Formá parte de una comunidad con más de un siglo de historia.
+            Deportes, cultura y familia, todo en un solo lugar.
+          </p>
+          <a id="btn-hero-alta" href={ALTA_URL} target="_blank" rel="noopener noreferrer" class="btn btn--primary">
+            Asociate online
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </a>
+        </div>
+      </div>
     </section>
+
+    <!-- ═══════════════════════════════════
+         CUOTAS Y CATEGORÍAS
+         ═══════════════════════════════════ -->
+    <section id="cuotas" class="section section--light" aria-labelledby="cuotas-h2">
+      <div class="container">
+
+        <div class="section-header" data-reveal>
+          <p class="eyebrow">Socios</p>
+          <h2 id="cuotas-h2" class="section-title">Cuotas y Categorías</h2>
+          <div class="section-line" aria-hidden="true"></div>
+        </div>
+
+        <div class="cuotas-grid" data-reveal data-reveal-delay="100">
+          {cuotas.map((c) => (
+            <div class="cuota-card">
+              <div class="cuota-card__stripe" aria-hidden="true"></div>
+              <p class="cuota-card__cat">{c.categoria}</p>
+              <p class="cuota-card__rango">{c.rango}</p>
+              <p class="cuota-card__price">{c.precio}</p>
+              <p class="cuota-card__period">/ mes</p>
+            </div>
+          ))}
+        </div>
+
+        <div class="cuotas-nota" data-reveal data-reveal-delay="150" role="note">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="cuotas-nota__icon" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <p>
+            <strong>La inscripción tiene el mismo valor que la cuota social.</strong>
+            {" "}Valores mensuales sujetos a actualización.
+          </p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════
+         CÓMO ASOCIARTE — stepper
+         ═══════════════════════════════════ -->
+    <section id="hacete-socio" class="section section--dark" aria-labelledby="pasos-h2">
+      <div class="container">
+
+        <div class="section-header section-header--dark" data-reveal>
+          <p class="eyebrow">Proceso de alta</p>
+          <h2 id="pasos-h2" class="section-title section-title--white">Cómo Asociarte</h2>
+          <p class="section-desc">En solo tres pasos te convertís en socio/a del club.</p>
+          <div class="section-line" aria-hidden="true"></div>
+        </div>
+
+        <ol class="steps" aria-label="Pasos para asociarte">
+
+          <li class="step" data-reveal data-reveal-delay="0">
+            <div class="step__num" aria-hidden="true">01</div>
+            <div class="step__body">
+              <h3 class="step__title">Completá el formulario de alta online</h3>
+              <p class="step__desc">Ingresá a nuestra plataforma de autogestión y completá el alta desde cualquier dispositivo.</p>
+            </div>
+          </li>
+
+          <li class="step" data-reveal data-reveal-delay="120">
+            <div class="step__num" aria-hidden="true">02</div>
+            <div class="step__body">
+              <h3 class="step__title">Tené a mano tu documentación</h3>
+              <p class="step__desc">Necesitás tu DNI, un e-mail vigente y una foto digital tipo carnet para finalizar el registro.</p>
+            </div>
+          </li>
+
+          <li class="step" data-reveal data-reveal-delay="240">
+            <div class="step__num" aria-hidden="true">03</div>
+            <div class="step__body">
+              <h3 class="step__title">Cargá tus datos y abonás</h3>
+              <p class="step__desc">Completá el formulario con tu información personal y abonás la inscripción junto con la primera cuota.</p>
+            </div>
+          </li>
+
+        </ol>
+
+        <div class="steps-cta" data-reveal data-reveal-delay="300">
+          <a id="btn-paso1-alta" href={ALTA_URL} target="_blank" rel="noopener noreferrer" class="btn btn--primary">
+            Ir al formulario de alta
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </a>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════
+         REQUISITOS
+         ═══════════════════════════════════ -->
+    <section id="requisitos" class="section section--light" aria-labelledby="req-h2">
+      <div class="container">
+
+        <div class="req-callout" data-reveal>
+          <div class="req-callout__header">
+            <div class="req-callout__icon" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+            <h2 id="req-h2" class="req-callout__title">Requisitos para asociarte</h2>
+          </div>
+          <p class="req-callout__intro">Para completar el alta vas a necesitar tener a mano:</p>
+          <ul class="req-list" role="list">
+            {requisitos.map((item) => (
+              <li class="req-list__item">
+                <span class="req-list__dot" aria-hidden="true"></span>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════
+         CTA FINAL
+         ═══════════════════════════════════ -->
+    <section class="cta-section" aria-label="Acción final">
+      <div class="container">
+        <div class="cta-inner" data-reveal>
+          <div class="cta-inner__text">
+            <p class="eyebrow">Unite hoy</p>
+            <h2 class="cta-inner__title">¿Listo para ser parte?</h2>
+            <p class="cta-inner__desc">
+              El alta se completa en minutos desde cualquier dispositivo.
+              No necesitás venir al club para empezar.
+            </p>
+          </div>
+          <div class="cta-inner__buttons">
+            <a id="btn-cta-alta" href={ALTA_URL} target="_blank" rel="noopener noreferrer" class="btn btn--primary">
+              Asociate ahora
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </a>
+            <button id="btn-portal-socio" type="button" disabled class="btn btn--outline" title="Próximamente">
+              ¿Ya sos socio? Ingresá al portal
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </main>
 </Layout>
+
+<style>
+  /* ────────────────────────────────────────
+     TOKENS
+     ──────────────────────────────────────── */
+  :root {
+    --green:      rgb(1 170 85);
+    --green-dark: rgb(1 130 65);
+    --dark:       rgb(15 23 42);
+    --dark-2:     rgb(30 41 59);
+  }
+
+  /* ────────────────────────────────────────
+     LAYOUT HELPERS
+     ──────────────────────────────────────── */
+  .container {
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+
+  @media (min-width: 640px)  { .container { padding-inline: 1.5rem; } }
+  @media (min-width: 1024px) { .container { padding-inline: 2rem; } }
+
+  .section {
+    padding-block: 5rem;
+  }
+
+  .section--light { background: white; }
+
+  .section--dark {
+    background: var(--dark);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .section--dark::before {
+    content: "";
+    position: absolute;
+    top: -6rem;
+    right: -6rem;
+    width: 28rem;
+    height: 28rem;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgb(1 170 85 / 0.10), transparent 70%);
+    pointer-events: none;
+  }
+
+  /* ────────────────────────────────────────
+     SECTION HEADERS
+     ──────────────────────────────────────── */
+  .section-header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .eyebrow {
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    color: var(--green);
+  }
+
+  .section-title {
+    margin-top: 0.5rem;
+    font-family: "Anton", "Bebas Neue", system-ui, sans-serif;
+    font-size: clamp(2.25rem, 5vw, 3.25rem);
+    letter-spacing: 0.03em;
+    color: var(--dark);
+    line-height: 1.1;
+  }
+
+  .section-title--white { color: white; }
+
+  .section-desc {
+    margin-top: 0.75rem;
+    font-size: 1rem;
+    color: rgb(148 163 184);
+  }
+
+  .section-line {
+    width: 3rem;
+    height: 3px;
+    background: var(--green);
+    margin: 1.25rem auto 0;
+  }
+
+  /* ────────────────────────────────────────
+     BOTONES
+     ──────────────────────────────────────── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    padding: 0.8rem 1.6rem;
+    border: 2px solid transparent;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn svg { width: 1rem; height: 1rem; flex-shrink: 0; }
+  .btn:active { transform: translateY(1px); }
+
+  /* Verde sólido */
+  .btn--primary {
+    background: var(--green);
+    color: white;
+    border-color: var(--green);
+  }
+  .btn--primary:hover {
+    background: var(--green-dark);
+    border-color: var(--green-dark);
+    box-shadow: 0 4px 18px rgb(1 170 85 / 0.35);
+  }
+
+  /* Outline blanco (sobre oscuro) */
+  .btn--ghost {
+    background: transparent;
+    color: white;
+    border-color: rgb(255 255 255 / 0.25);
+    margin-top: 1.25rem;
+  }
+  .btn--ghost:hover {
+    border-color: var(--green);
+    color: var(--green);
+    background: rgb(1 170 85 / 0.08);
+  }
+
+  /* Outline neutro (sobre claro) — disabled */
+  .btn--outline {
+    background: transparent;
+    color: rgb(100 116 139);
+    border-color: rgb(203 213 225);
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  /* ────────────────────────────────────────
+     HERO
+     ──────────────────────────────────────── */
+  .hero {
+    position: relative;
+    min-height: 65vh;
+    background: var(--dark);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+  }
+
+  .hero__bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+    transition: transform 8s ease-out;
+  }
+
+  .hero:hover .hero__bg { transform: scale(1.04); }
+
+  .hero__overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to right, rgb(0 0 0 / 0.82) 30%, rgb(0 0 0 / 0.45) 70%, rgb(0 0 0 / 0.15));
+  }
+
+  .hero__tint {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top right, rgb(1 170 85 / 0.18), transparent 60%);
+    mix-blend-mode: multiply;
+  }
+
+  .hero__inner {
+    position: relative;
+    width: 100%;
+    max-width: 72rem;
+    margin-inline: auto;
+    padding: 6rem 1rem 4.5rem;
+  }
+
+  @media (min-width: 640px)  { .hero__inner { padding-inline: 1.5rem; } }
+  @media (min-width: 1024px) { .hero__inner { padding-inline: 2rem; } }
+
+  .hero__content { max-width: 36rem; }
+
+  .hero__eyebrow {
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--green);
+  }
+
+  .hero__title {
+    margin-top: 0.75rem;
+    font-family: "Anton", "Bebas Neue", system-ui, sans-serif;
+    text-transform: uppercase;
+    line-height: 1;
+    letter-spacing: 0.01em;
+  }
+
+  .hero__title-line {
+    display: block;
+    font-size: clamp(4rem, 10vw, 7.5rem);
+    color: white;
+    text-shadow: 0 2px 12px rgb(0 0 0 / 0.3);
+  }
+
+  .hero__title-pill {
+    display: inline-flex;
+    align-items: center;
+    background: white;
+    color: var(--dark);
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    padding: 0.15em 0.5em;
+    margin-top: 0.4rem;
+    box-shadow: 0 4px 20px rgb(0 0 0 / 0.25);
+  }
+
+  .hero__subtitle {
+    margin-top: 1.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.65;
+    color: rgb(255 255 255 / 0.88);
+    max-width: 30rem;
+  }
+
+  .hero__content .btn { margin-top: 2rem; }
+
+  /* ────────────────────────────────────────
+     CUOTAS
+     ──────────────────────────────────────── */
+  .cuotas-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 480px)  { .cuotas-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 1024px) { .cuotas-grid { grid-template-columns: repeat(5, 1fr); } }
+
+  .cuota-card {
+    background: white;
+    border: 1px solid rgb(226 232 240);
+    border-top: 4px solid var(--green);
+    padding: 1.5rem 1.25rem 1.25rem;
+    box-shadow: 0 1px 4px rgb(0 0 0 / 0.04), 0 4px 12px rgb(0 0 0 / 0.03);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  .cuota-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 24px rgb(0 0 0 / 0.09);
+  }
+
+  .cuota-card__stripe { display: none; } /* eliminado — ahora border-top */
+
+  .cuota-card__cat {
+    font-family: "Anton", "Bebas Neue", system-ui, sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 0.03em;
+    color: var(--dark);
+    line-height: 1.2;
+  }
+
+  .cuota-card__rango {
+    margin-top: 0.3rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: rgb(100 116 139);
+  }
+
+  .cuota-card__price {
+    margin-top: 1rem;
+    font-family: "Anton", "Bebas Neue", system-ui, sans-serif;
+    font-size: 2rem;
+    color: var(--green);
+    line-height: 1;
+  }
+
+  .cuota-card__period {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgb(148 163 184);
+    margin-top: 0.15rem;
+  }
+
+  .cuotas-nota {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    background: rgb(240 253 244);
+    border-left: 4px solid var(--green);
+    padding: 1rem 1.25rem;
+    margin-top: 1.75rem;
+    font-size: 0.875rem;
+    color: var(--dark);
+    line-height: 1.6;
+  }
+
+  .cuotas-nota__icon {
+    flex-shrink: 0;
+    width: 1.1rem;
+    height: 1.1rem;
+    color: var(--green);
+    margin-top: 0.1rem;
+  }
+
+  /* ────────────────────────────────────────
+     STEPS
+     ──────────────────────────────────────── */
+  .steps {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    position: relative;
+  }
+
+  @media (min-width: 768px) {
+    .steps {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+    }
+  }
+
+  .step {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  @media (min-width: 768px) {
+    .step {
+      padding-right: 3rem;
+    }
+    .step:last-child { padding-right: 0; }
+
+    /* Separador vertical entre pasos */
+    .step:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      right: 1.5rem;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: rgb(51 65 85);
+    }
+  }
+
+  .step__num {
+    font-family: "Anton", "Bebas Neue", system-ui, sans-serif;
+    font-size: 3.5rem;
+    line-height: 1;
+    color: var(--green);
+    opacity: 0.9;
+    letter-spacing: 0.02em;
+  }
+
+  .step__body { margin-top: 0.5rem; }
+
+  /* CTA centrado debajo de los pasos */
+  .steps-cta {
+    display: flex;
+    justify-content: center;
+    margin-top: 3rem;
+  }
+
+  .step__title {
+    font-size: 1rem;
+    font-weight: 800;
+    color: white;
+    line-height: 1.35;
+  }
+
+  .step__desc {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: rgb(148 163 184);
+    line-height: 1.65;
+  }
+
+  /* ────────────────────────────────────────
+     REQUISITOS
+     ──────────────────────────────────────── */
+  .req-callout {
+    border: 1px solid rgb(226 232 240);
+    border-top: 4px solid var(--green);
+    padding: 2rem;
+    background: white;
+    box-shadow: 0 1px 4px rgb(0 0 0 / 0.04), 0 4px 16px rgb(0 0 0 / 0.03);
+    transition: box-shadow 0.25s ease;
+  }
+
+  .req-callout:hover { box-shadow: 0 4px 20px rgb(0 0 0 / 0.08); }
+
+  .req-callout__header {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    margin-bottom: 1rem;
+  }
+
+  .req-callout__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    background: rgb(240 253 244);
+    color: var(--green);
+    flex-shrink: 0;
+  }
+
+  .req-callout__icon svg { width: 1.1rem; height: 1.1rem; }
+
+  .req-callout__title {
+    font-family: "Anton", "Bebas Neue", system-ui, sans-serif;
+    font-size: 1.5rem;
+    letter-spacing: 0.04em;
+    color: var(--dark);
+  }
+
+  .req-callout__intro {
+    font-size: 0.875rem;
+    color: rgb(71 85 105);
+    margin-bottom: 1.25rem;
+  }
+
+  .req-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  @media (min-width: 640px)  { .req-list { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 1024px) { .req-list { grid-template-columns: repeat(3, 1fr); } }
+
+  .req-list__item {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: rgb(51 65 85);
+    background: rgb(248 250 252);
+    border: 1px solid rgb(241 245 249);
+    transition: background 0.2s, border-color 0.2s;
+  }
+
+  .req-list__item:hover {
+    background: rgb(240 253 244);
+    border-color: rgb(187 247 208);
+  }
+
+  .req-list__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    flex-shrink: 0;
+  }
+
+  /* ────────────────────────────────────────
+     CTA FINAL
+     ──────────────────────────────────────── */
+  .cta-section {
+    background: rgb(15 23 42);
+    border-top: 1px solid rgb(30 41 59);
+  }
+
+  .cta-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    align-items: flex-start;
+    padding-block: 4rem;
+  }
+
+  @media (min-width: 768px) {
+    .cta-inner {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+  }
+
+  .cta-inner .eyebrow { color: var(--green); }
+
+  .cta-inner__title {
+    margin-top: 0.4rem;
+    font-family: "Anton", "Bebas Neue", system-ui, sans-serif;
+    font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+    letter-spacing: 0.03em;
+    color: white;
+    line-height: 1.1;
+  }
+
+  .cta-inner__desc {
+    margin-top: 0.75rem;
+    font-size: 0.875rem;
+    color: rgb(148 163 184);
+    line-height: 1.6;
+    max-width: 28rem;
+  }
+
+  .cta-inner__buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    flex-shrink: 0;
+  }
+
+  @media (min-width: 480px) {
+    .cta-inner__buttons {
+      flex-direction: row;
+      align-items: center;
+    }
+  }
+
+  /* botón outline sobre oscuro */
+  .cta-section .btn--outline {
+    color: rgb(148 163 184);
+    border-color: rgb(51 65 85);
+  }
+
+  /* ────────────────────────────────────────
+     A11Y
+     ──────────────────────────────────────── */
+  @media (prefers-reduced-motion: reduce) {
+    .hero__bg, .cuota-card, .req-callout, .req-list__item { transition: none; }
+  }
+</style>

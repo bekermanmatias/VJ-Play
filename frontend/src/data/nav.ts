@@ -12,8 +12,17 @@ export const clubNav: NavGroup = {
   ],
 };
 
+export const sociosNav: NavGroup = {
+  label: "Socios",
+  href: "/socios",
+  items: [
+    { label: "Hacete Socio", href: "/socios#hacete-socio" },
+    { label: "Portal del Socio", href: "#" },
+  ],
+};
+
 /** Todos los menús desplegables de la barra principal. */
-export const navDropdowns: NavGroup[] = [...deportesGrupos, clubNav];
+export const navDropdowns: NavGroup[] = [...deportesGrupos, clubNav, sociosNav];
 
 export type NavSimpleLink = {
   label: string;
@@ -25,5 +34,4 @@ export type NavSimpleLink = {
 export const navSimpleLinks: NavSimpleLink[] = [
   { label: "Noticias", href: "/noticias" },
   { label: "Replays", href: "/replays", icon: "replays" },
-  { label: "Socios", href: "/socios" },
 ];
