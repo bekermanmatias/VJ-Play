@@ -68,7 +68,6 @@ jobs:
           region: us-central1
           env_vars: |
             NODE_ENV=production
-            PORT=8080
             VJ_RUNTIME=vps
             SUPABASE_URL=${{ secrets[format('{0}_SUPABASE_URL', env.PREFIX)] }}
             SUPABASE_KEY=${{ secrets[format('{0}_SUPABASE_KEY', env.PREFIX)] }}
