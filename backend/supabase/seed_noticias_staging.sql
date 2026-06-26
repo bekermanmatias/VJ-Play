@@ -29,7 +29,7 @@ BEGIN
   -- NOTICIA: ¡Arranca el Torneo Relámpago de Fútbol 5!
   INSERT INTO public.news (id, slug, title, summary, body, published, published_at, created_at, updated_at)
   VALUES (
-    'cb64fec0-f605-4755-b96b-cdede58f88aa',
+    '65fa984a-38ee-4792-9213-d3c845825985',
     'torneo-relampago-futbol-5',
     '¡Arranca el Torneo Relámpago de Fútbol 5!',
     'Este fin de semana te esperamos para vivir el torneo de Fútbol 5 más emocionante de la zona sur.',
@@ -42,21 +42,21 @@ BEGIN
 
   INSERT INTO public.news_images (id, news_id, image_url, is_main, sort_order)
   VALUES (
-    'e2d6c4a9-de9a-4b03-b700-812958a5cfb6',
-    'cb64fec0-f605-4755-b96b-cdede58f88aa',
+    'ed03b05b-40fb-4475-9f6f-8e2a8576b7ab',
+    '65fa984a-38ee-4792-9213-d3c845825985',
     'https://images.unsplash.com/photo-1511886929837-354d827aae26?auto=format&fit=crop&w=1600&q=80',
     true,
     0
   );
 
   IF cat_futbol_5 IS NOT NULL THEN
-    INSERT INTO public.news_category_links (news_id, category_id) VALUES ('cb64fec0-f605-4755-b96b-cdede58f88aa', cat_futbol_5);
+    INSERT INTO public.news_category_links (news_id, category_id) VALUES ('65fa984a-38ee-4792-9213-d3c845825985', cat_futbol_5);
   END IF;
 
   -- NOTICIA: Inauguración de las nuevas canchas de Pádel
   INSERT INTO public.news (id, slug, title, summary, body, published, published_at, created_at, updated_at)
   VALUES (
-    '504301e3-ecea-4131-bd5f-ef8068f7118f',
+    '3afa58d9-4109-4c8b-8e2e-eec9b2210ab3',
     'inauguracion-canchas-padel',
     'Inauguración de las nuevas canchas de Pádel',
     'Seguimos invirtiendo en infraestructura: ya están listas las nuevas canchas profesionales de blindex.',
@@ -69,21 +69,21 @@ BEGIN
 
   INSERT INTO public.news_images (id, news_id, image_url, is_main, sort_order)
   VALUES (
-    '22adf38a-4d4f-4534-a827-c6db920d94fe',
-    '504301e3-ecea-4131-bd5f-ef8068f7118f',
+    'c00398ea-f5a0-4c3e-a9d0-5a2f6ddaae73',
+    '3afa58d9-4109-4c8b-8e2e-eec9b2210ab3',
     'https://images.unsplash.com/photo-1595435934249-5df7ed86e1f4?auto=format&fit=crop&w=1600&q=80',
     true,
     0
   );
 
   IF cat_padel IS NOT NULL THEN
-    INSERT INTO public.news_category_links (news_id, category_id) VALUES ('504301e3-ecea-4131-bd5f-ef8068f7118f', cat_padel);
+    INSERT INTO public.news_category_links (news_id, category_id) VALUES ('3afa58d9-4109-4c8b-8e2e-eec9b2210ab3', cat_padel);
   END IF;
 
   -- NOTICIA: Arrancan las clases de Aquagym y Natación
   INSERT INTO public.news (id, slug, title, summary, body, published, published_at, created_at, updated_at)
   VALUES (
-    '21345d70-99d5-4d90-b962-5178be896d11',
+    'd4deaebf-4832-4aac-89d7-1b86863dc050',
     'clases-aquagym-natacion',
     'Arrancan las clases de Aquagym y Natación',
     'La pileta cubierta ya está a temperatura ideal para arrancar la temporada de invierno.',
@@ -96,21 +96,21 @@ BEGIN
 
   INSERT INTO public.news_images (id, news_id, image_url, is_main, sort_order)
   VALUES (
-    'ca6e62a7-7261-4d5a-8ab6-7d1cf37c4efe',
-    '21345d70-99d5-4d90-b962-5178be896d11',
+    '646eece3-a2bc-44c8-8853-2b3b1379315f',
+    'd4deaebf-4832-4aac-89d7-1b86863dc050',
     'https://images.unsplash.com/photo-1530549387789-4c1017266635?auto=format&fit=crop&w=1600&q=80',
     true,
     0
   );
 
   IF cat_natacion IS NOT NULL THEN
-    INSERT INTO public.news_category_links (news_id, category_id) VALUES ('21345d70-99d5-4d90-b962-5178be896d11', cat_natacion);
+    INSERT INTO public.news_category_links (news_id, category_id) VALUES ('d4deaebf-4832-4aac-89d7-1b86863dc050', cat_natacion);
   END IF;
 
   -- NOTICIA: Clínica intensiva de Básquet para juveniles
   INSERT INTO public.news (id, slug, title, summary, body, published, published_at, created_at, updated_at)
   VALUES (
-    'fd549bd7-d903-4bff-b827-67a0f5cb2e72',
+    '3965fd7e-f0cd-4557-a2f3-0d6ffddcd722',
     'clinica-basquet-juveniles',
     'Clínica intensiva de Básquet para juveniles',
     'Invitamos a todos los chicos y chicas de entre 12 y 17 años a participar de nuestra clínica de básquet.',
@@ -123,21 +123,21 @@ BEGIN
 
   INSERT INTO public.news_images (id, news_id, image_url, is_main, sort_order)
   VALUES (
-    '981e15e0-8dcd-4f34-a0be-cf2d4581e54d',
-    'fd549bd7-d903-4bff-b827-67a0f5cb2e72',
+    'b6fc1845-b561-46a6-b2ee-ec20075684ba',
+    '3965fd7e-f0cd-4557-a2f3-0d6ffddcd722',
     'https://images.unsplash.com/photo-1519861531473-9200262188bf?auto=format&fit=crop&w=1600&q=80',
     true,
     0
   );
 
   IF cat_basquet IS NOT NULL THEN
-    INSERT INTO public.news_category_links (news_id, category_id) VALUES ('fd549bd7-d903-4bff-b827-67a0f5cb2e72', cat_basquet);
+    INSERT INTO public.news_category_links (news_id, category_id) VALUES ('3965fd7e-f0cd-4557-a2f3-0d6ffddcd722', cat_basquet);
   END IF;
 
   -- NOTICIA: El equipo de Hockey Femenino clasifica a la final
   INSERT INTO public.news (id, slug, title, summary, body, published, published_at, created_at, updated_at)
   VALUES (
-    'fc9ea62a-bf4d-4044-a46c-8eba486cda28',
+    '5ae0d982-1c3e-4b4a-a3c6-68eefcaaf917',
     'hockey-femenino-final',
     'El equipo de Hockey Femenino clasifica a la final',
     'Nuestras chicas de la primera división lograron un triunfo histórico el pasado fin de semana.',
@@ -150,21 +150,21 @@ BEGIN
 
   INSERT INTO public.news_images (id, news_id, image_url, is_main, sort_order)
   VALUES (
-    '386eed11-80cc-46f4-9007-e60ae670687d',
-    'fc9ea62a-bf4d-4044-a46c-8eba486cda28',
+    'e626bed0-17c1-40a9-9d89-42573d52fd3e',
+    '5ae0d982-1c3e-4b4a-a3c6-68eefcaaf917',
     'https://images.unsplash.com/photo-1515787366009-7cbdd2dc5874?auto=format&fit=crop&w=1600&q=80',
     true,
     0
   );
 
   IF cat_hockey IS NOT NULL THEN
-    INSERT INTO public.news_category_links (news_id, category_id) VALUES ('fc9ea62a-bf4d-4044-a46c-8eba486cda28', cat_hockey);
+    INSERT INTO public.news_category_links (news_id, category_id) VALUES ('5ae0d982-1c3e-4b4a-a3c6-68eefcaaf917', cat_hockey);
   END IF;
 
   -- NOTICIA: Nueva sala de Musculación y Fitness
   INSERT INTO public.news (id, slug, title, summary, body, published, published_at, created_at, updated_at)
   VALUES (
-    '658f45cc-2c04-4496-95f0-e4de8063597e',
+    '15302701-a0c0-42dc-ad75-47a90f9fd851',
     'nueva-sala-musculacion',
     'Nueva sala de Musculación y Fitness',
     'Renovamos completamente las máquinas y pesas del gimnasio para brindarte un mejor servicio.',
@@ -177,8 +177,8 @@ BEGIN
 
   INSERT INTO public.news_images (id, news_id, image_url, is_main, sort_order)
   VALUES (
-    'f706d51f-6ace-4b61-a465-bfd687f153d3',
-    '658f45cc-2c04-4496-95f0-e4de8063597e',
+    '89439df6-00f1-4f81-94fa-bfbe0c48e5d7',
+    '15302701-a0c0-42dc-ad75-47a90f9fd851',
     'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1600&q=80',
     true,
     0
@@ -187,7 +187,7 @@ BEGIN
   -- NOTICIA: Clases de Yoga al aire libre
   INSERT INTO public.news (id, slug, title, summary, body, published, published_at, created_at, updated_at)
   VALUES (
-    'e88a36b7-e197-4b8f-9740-8ae484083c21',
+    '59135d51-b331-43bb-b597-ba8f2def15f8',
     'yoga-aire-libre',
     'Clases de Yoga al aire libre',
     'Aprovechamos los días lindos de primavera para relajar cuerpo y mente en los jardines del club.',
@@ -200,8 +200,8 @@ BEGIN
 
   INSERT INTO public.news_images (id, news_id, image_url, is_main, sort_order)
   VALUES (
-    'ba89a817-7a48-4f47-bb3b-9730b5463fe9',
-    'e88a36b7-e197-4b8f-9740-8ae484083c21',
+    'a62c960e-1de5-4f28-ad6a-040d134d2e03',
+    '59135d51-b331-43bb-b597-ba8f2def15f8',
     'https://images.unsplash.com/photo-1599901860904-17e6ed7083a0?auto=format&fit=crop&w=1600&q=80',
     true,
     0
@@ -210,7 +210,7 @@ BEGIN
   -- NOTICIA: Resultados del Torneo de Atletismo
   INSERT INTO public.news (id, slug, title, summary, body, published, published_at, created_at, updated_at)
   VALUES (
-    'd6a7c147-b3d6-4ae9-838d-9e414844739c',
+    '13b27ee0-6f0c-43d6-a4de-9d062094cb23',
     'resultados-atletismo',
     'Resultados del Torneo de Atletismo',
     'Nuestros representantes brillaron en el encuentro interclubes de atletismo este mes.',
@@ -223,21 +223,21 @@ BEGIN
 
   INSERT INTO public.news_images (id, news_id, image_url, is_main, sort_order)
   VALUES (
-    '5ae09229-02df-4272-9f98-43710422d521',
-    'd6a7c147-b3d6-4ae9-838d-9e414844739c',
+    '69102e69-6ad8-4113-97ef-115488a4e496',
+    '13b27ee0-6f0c-43d6-a4de-9d062094cb23',
     'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=1600&q=80',
     true,
     0
   );
 
   IF cat_atletismo IS NOT NULL THEN
-    INSERT INTO public.news_category_links (news_id, category_id) VALUES ('d6a7c147-b3d6-4ae9-838d-9e414844739c', cat_atletismo);
+    INSERT INTO public.news_category_links (news_id, category_id) VALUES ('13b27ee0-6f0c-43d6-a4de-9d062094cb23', cat_atletismo);
   END IF;
 
   -- NOTICIA: Inscripciones abiertas para la Liga de Vóley
   INSERT INTO public.news (id, slug, title, summary, body, published, published_at, created_at, updated_at)
   VALUES (
-    '84b4e530-8d1f-453b-abae-149cd62ab7f6',
+    '65d33d15-9093-400e-ab70-a2d7fc602c9c',
     'inscripciones-voley',
     'Inscripciones abiertas para la Liga de Vóley',
     'Armá tu equipo y participá del torneo mixto de Vóley que organiza el club.',
@@ -250,21 +250,21 @@ BEGIN
 
   INSERT INTO public.news_images (id, news_id, image_url, is_main, sort_order)
   VALUES (
-    'e406523a-a50b-4718-a5cf-905cf808bde1',
-    '84b4e530-8d1f-453b-abae-149cd62ab7f6',
+    '9082ff62-5c42-4836-bea9-5f8681b0dc66',
+    '65d33d15-9093-400e-ab70-a2d7fc602c9c',
     'https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?auto=format&fit=crop&w=1600&q=80',
     true,
     0
   );
 
   IF cat_voley IS NOT NULL THEN
-    INSERT INTO public.news_category_links (news_id, category_id) VALUES ('84b4e530-8d1f-453b-abae-149cd62ab7f6', cat_voley);
+    INSERT INTO public.news_category_links (news_id, category_id) VALUES ('65d33d15-9093-400e-ab70-a2d7fc602c9c', cat_voley);
   END IF;
 
   -- NOTICIA: Remodelación de la Cafetería
   INSERT INTO public.news (id, slug, title, summary, body, published, published_at, created_at, updated_at)
   VALUES (
-    '4d8d26b0-27af-41dc-94af-2d917166cb24',
+    '85a185f7-e649-4d3a-92be-bf2e2f2c1df6',
     'remodelacion-cafeteria',
     'Remodelación de la Cafetería',
     'Terminamos las obras en el sector gastronómico para ofrecer un espacio moderno y acogedor.',
@@ -277,8 +277,8 @@ BEGIN
 
   INSERT INTO public.news_images (id, news_id, image_url, is_main, sort_order)
   VALUES (
-    'c22a409d-22ed-441d-b762-2949c42ddac7',
-    '4d8d26b0-27af-41dc-94af-2d917166cb24',
+    '3eb1fea9-c53c-4c88-bf98-484b8a8e8d32',
+    '85a185f7-e649-4d3a-92be-bf2e2f2c1df6',
     'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=1600&q=80',
     true,
     0
@@ -287,7 +287,7 @@ BEGIN
   -- NOTICIA: Colonia de Verano: ¡Ya podés reservar tu lugar!
   INSERT INTO public.news (id, slug, title, summary, body, published, published_at, created_at, updated_at)
   VALUES (
-    '6496d20b-e273-47b0-a9cd-198ad0f8435d',
+    '54e6093d-00ee-4f94-ae89-9de9fdfbc89f',
     'colonia-verano',
     'Colonia de Verano: ¡Ya podés reservar tu lugar!',
     'Asegurá la vacante para la mejor temporada de verano de la ciudad.',
@@ -300,8 +300,8 @@ BEGIN
 
   INSERT INTO public.news_images (id, news_id, image_url, is_main, sort_order)
   VALUES (
-    '5652ce15-16bf-4dc2-ba67-00cb8cb8616a',
-    '6496d20b-e273-47b0-a9cd-198ad0f8435d',
+    '7f8311dd-0ea3-432b-96c1-d09a236fab5c',
+    '54e6093d-00ee-4f94-ae89-9de9fdfbc89f',
     'https://images.unsplash.com/photo-1526676037777-05a232554f77?auto=format&fit=crop&w=1600&q=80',
     true,
     0
@@ -310,7 +310,7 @@ BEGIN
   -- NOTICIA: Torneo Interno de Tenis Dobles
   INSERT INTO public.news (id, slug, title, summary, body, published, published_at, created_at, updated_at)
   VALUES (
-    '37568840-d891-4f63-91a4-b27fb17f8142',
+    '78f6faa5-af24-446e-b703-b3f89f0626d8',
     'torneo-interno-tenis-dobles',
     'Torneo Interno de Tenis Dobles',
     'Llega el torneo más divertido del año. Formá pareja y competí en nuestro clásico torneo interno.',
@@ -323,15 +323,15 @@ BEGIN
 
   INSERT INTO public.news_images (id, news_id, image_url, is_main, sort_order)
   VALUES (
-    '1517e0a0-3dc9-4a02-ae7f-615d37800932',
-    '37568840-d891-4f63-91a4-b27fb17f8142',
+    '337bdb86-d471-4d91-b1ed-4b85fa5ad6bc',
+    '78f6faa5-af24-446e-b703-b3f89f0626d8',
     'https://images.unsplash.com/photo-1595435934249-5df7ed86e1f4?auto=format&fit=crop&w=1600&q=80',
     true,
     0
   );
 
   IF cat_tenis IS NOT NULL THEN
-    INSERT INTO public.news_category_links (news_id, category_id) VALUES ('37568840-d891-4f63-91a4-b27fb17f8142', cat_tenis);
+    INSERT INTO public.news_category_links (news_id, category_id) VALUES ('78f6faa5-af24-446e-b703-b3f89f0626d8', cat_tenis);
   END IF;
 
 END $$;
