@@ -66,6 +66,7 @@ jobs:
           service: ${{ env.SERVICE_NAME }}
           image: us-central1-docker.pkg.dev/${{ secrets[format('{0}_GCP_PROJECT_ID', env.PREFIX)] }}/vjplay-repo/backend:${{ github.sha }}
           region: us-central1
+          flags: '--allow-unauthenticated'
           env_vars: |
             NODE_ENV=production
             VJ_RUNTIME=vps
