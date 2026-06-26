@@ -70,6 +70,7 @@ jobs:
           env_vars: |
             NODE_ENV=production
             VJ_RUNTIME=vps
+            CORS_ORIGINS=https://staging.vjplay-frontend.pages.dev,https://vjplay-frontend.pages.dev,http://localhost:4321,http://localhost:5173
             SUPABASE_URL=${{ secrets[format('{0}_SUPABASE_URL', env.PREFIX)] }}
             SUPABASE_KEY=${{ secrets[format('{0}_SUPABASE_KEY', env.PREFIX)] }}
             ADMIN_SECRET=${{ secrets[format('{0}_ADMIN_SECRET', env.PREFIX)] }}
