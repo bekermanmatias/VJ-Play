@@ -1,6 +1,6 @@
 // @ts-check
 import { defineConfig } from "astro/config";
-import node from "@astrojs/node";
+import cloudflare from "@astrojs/cloudflare";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@astrojs/react";
 
@@ -8,7 +8,7 @@ import react from "@astrojs/react";
 export default defineConfig({
   site: "https://varelajunior.com.ar",
   output: "server",
-  adapter: node({ mode: "standalone" }),
+  adapter: cloudflare(),
   integrations: [react()],
   vite: {
     plugins: [
