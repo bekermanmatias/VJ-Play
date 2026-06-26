@@ -46,7 +46,7 @@ jobs:
         with:
           apiToken: ${{ secrets[format('{0}_CLOUDFLARE_API_TOKEN', env.PREFIX)] }}
           accountId: ${{ secrets[format('{0}_CLOUDFLARE_ACCOUNT_ID', env.PREFIX)] }}
-          projectName: vjplay-frontend
+          projectName: ${{ github.ref == 'refs/heads/main' && 'vjplay-frontend-prod' || 'vjplay-frontend-staging' }}
           directory: frontend/dist
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ github.ref_name }}
