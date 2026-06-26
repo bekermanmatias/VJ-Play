@@ -1,5 +1,5 @@
 // @ts-check
-import { defineConfig } from "astro/config";
+import { defineConfig, passthroughImageService } from "astro/config";
 import cloudflare from "@astrojs/cloudflare";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@astrojs/react";
@@ -9,6 +9,9 @@ export default defineConfig({
   site: "https://varelajunior.com.ar",
   output: "server",
   adapter: cloudflare(),
+  image: {
+    service: passthroughImageService(),
+  },
   integrations: [react()],
   vite: {
     plugins: [
