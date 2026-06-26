@@ -27,7 +27,7 @@ const hasInstagram = data.instagramUrl.trim() !== "";
 ---
 
 <section
-  class="grid w-full grid-cols-1 lg:grid-cols-2 lg:items-stretch lg:min-h-[min(50vw,720px)]"
+  class="grid w-full grid-cols-1 lg:grid-cols-2 lg:min-h-[min(50vw,720px)]"
   aria-labelledby="espacio-title"
 >
   <div
@@ -159,7 +159,8 @@ const hasInstagram = data.instagramUrl.trim() !== "";
     </div>
   </div>
 
-  <div class="relative min-h-[min(100vw,480px)] h-full w-full bg-slate-900 lg:min-h-[min(50vw,720px)]">
+  <!-- Panel imagen: ocupa toda la altura de la fila del grid -->
+  <div class="relative min-h-[min(100vw,480px)] lg:min-h-0 self-stretch">
     <img
       src={data.imageSrc}
       alt={data.imageAlt}
@@ -170,7 +171,6 @@ const hasInstagram = data.instagramUrl.trim() !== "";
       loading="eager"
       decoding="async"
       onerror={`this.onerror=null;this.src='${PLACEHOLDER_IMG}'`}
-      data-zoom-in
     />
   </div>
 </section>

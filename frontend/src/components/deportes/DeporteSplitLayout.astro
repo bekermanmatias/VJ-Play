@@ -25,7 +25,7 @@ const hasInstagram = data.instagramUrl.trim() !== "";
 ---
 
 <section
-  class="grid w-full grid-cols-1 lg:grid-cols-2 lg:items-stretch lg:min-h-[min(50vw,720px)]"
+  class="grid w-full grid-cols-1 lg:grid-cols-2 lg:min-h-[min(50vw,720px)]"
   aria-labelledby="deporte-title"
 >
     <div
@@ -204,9 +204,9 @@ const hasInstagram = data.instagramUrl.trim() !== "";
       </div>
     </div>
 
-    <!-- Misma altura que el texto: crece junto en básquet y demás; mínimo = mitad de pantalla -->
+    <!-- Panel imagen: ocupa toda la altura de la fila del grid -->
     <div
-      class="relative min-h-[min(100vw,480px)] h-full w-full bg-slate-900 lg:min-h-[min(50vw,720px)]"
+      class="relative min-h-[min(100vw,480px)] lg:min-h-0 self-stretch"
     >
       <img
         src={data.imageSrc}
@@ -217,7 +217,6 @@ const hasInstagram = data.instagramUrl.trim() !== "";
         class="absolute inset-0 size-full object-cover object-center"
         loading="eager"
         decoding="async"
-        data-zoom-in
       />
     </div>
 </section>
