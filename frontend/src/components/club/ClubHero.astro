@@ -2,11 +2,17 @@
 interface Props {
   imageUrl?: string;
   imageAlt?: string;
+  imagePosition?: string;
+  title?: string;
+  subtitle?: string;
 }
 
 const {
   imageUrl = "/images/ubicacion.png",
   imageAlt = "Fachada de la Sede Central del Club Social Varela Junior",
+  imagePosition = "object-center",
+  title = "Institución",
+  subtitle = "Conocé la identidad, los valores y la propuesta del Club Social Varela Junior.",
 } = Astro.props;
 ---
 
@@ -20,7 +26,7 @@ const {
     <img
       src={imageUrl}
       alt={imageAlt}
-      class="absolute inset-0 h-[130%] w-full object-cover will-change-transform"
+      class={`absolute inset-0 h-[130%] w-full object-cover will-change-transform ${imagePosition}`}
       loading="eager"
       decoding="async"
       data-club-hero-img
@@ -40,21 +46,17 @@ const {
   <!-- Content -->
   <div class="relative mx-auto flex min-h-[calc(100vh-290px)] max-w-7xl items-center px-4 sm:px-6 lg:px-8">
     <div class="max-w-3xl py-16 text-white">
-      <!-- Eyebrow -->
-      <p class="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-[0.2em] text-vj-green sm:text-base">
-        Club Social Varela Junior
-      </p>
 
       <!-- Title -->
       <h1 class="mt-5 font-display uppercase leading-none tracking-tight">
         <span class="block text-6xl font-extrabold text-white drop-shadow-md sm:text-7xl md:text-8xl lg:text-9xl">
-          Institución
+          {title}
         </span>
       </h1>
 
       <!-- Subtitle -->
       <p class="mt-6 max-w-xl text-lg font-medium leading-relaxed text-white/85 sm:text-xl">
-        Conocé la identidad, los valores y la propuesta del Club Social Varela Junior.
+        {subtitle}
       </p>
 
       <!-- Animated decorative line -->
@@ -64,13 +66,7 @@ const {
         aria-hidden="true"
       ></div>
 
-      <!-- Scroll hint -->
-      <div class="mt-10 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.15em] text-white/50 sm:mt-14">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 animate-bounce" aria-hidden="true">
-          <path d="m6 9 6 6 6-6"></path>
-        </svg>
-        Descubrí más
-      </div>
+
     </div>
   </div>
 </section>

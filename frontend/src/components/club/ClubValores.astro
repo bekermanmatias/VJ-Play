@@ -1,135 +1,85 @@
 ---
-const cards = [
+const items = [
   {
-    number: "01",
-    title: "Nuestro Compromiso",
-    icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-7 w-7 text-vj-green" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M12 5 9.04 9.2a2.2 2.2 0 0 0-1.16 2.14l.2 1 2.53-2.54C11.62 8.78 12.55 8.35 13.5 8.5A2.5 2.5 0 0 1 15 10.5"/></svg>`,
-    body: [
-      "Promover el bienestar general y el progreso de toda la comunidad.",
-      "Dedicarnos al desarrollo sostenido de la cultura y el deporte como pilares fundamentales de la Institución.",
-    ],
+    id: "mision",
+    label: "Misión",
+    icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-vj-green" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>`,
+    text: "Sostener con compromiso el rol social que desempeñamos para los habitantes de nuestra comunidad y otras instituciones del distrito; mientras que, al mismo tiempo, crecemos y nos afianzamos como marca fuera de los límites de nuestro país. Provocar orgullo a cada simpatizante, aficionado, socio y/o usuario de nuestra institución, no sólo por los logros del fútbol sino también por el desarrollo constante de los deportes amateurs y actividades culturales que promueve.",
   },
   {
-    number: "02",
-    title: "El Rol del Socio",
-    icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-7 w-7 text-vj-green" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
-    quote: "La Institución vale lo que valen sus socios.",
-    body: [
-      "Asumir nuestra responsabilidad y dedicarnos al mejoramiento de la Institución.",
-      "El progreso y el desarrollo solo pueden conseguirse mediante el común esfuerzo y la colaboración de cada miembro del club.",
-    ],
-  },
-  {
-    number: "03",
-    title: "Nuestros Valores",
-    icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-7 w-7 text-vj-green" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2-1 4-3 5.99-5.11a2 2 0 0 1 2.02 0C15 2 17 4 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>`,
-    values: [
-      "Honradez y Gratitud",
-      "Armonía y Cooperación",
-      "Lucha por mejorar",
-      "Cortesía y Humildad",
-      "Adaptación y Asimilación",
-    ],
+    id: "vision",
+    label: "Visión",
+    icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6 text-vj-green" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`,
+    text: "Continuar construyendo con solidez la marca Varela Junior fuera de los límites de nuestro país, consolidándonos como un Club modelo de gestión, estable y en constante crecimiento.",
   },
 ];
 ---
 
 <section class="bg-white py-20 sm:py-28" aria-labelledby="club-valores-title" id="club-valores">
   <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-    <!-- Section header -->
-    <header data-reveal>
-      <p class="text-xs font-bold uppercase tracking-[0.22em] text-vj-green">Identidad</p>
-      <h2
-        id="club-valores-title"
-        class="mt-2 text-4xl font-black uppercase tracking-tight text-slate-900 sm:text-5xl"
-      >
-        Nuestra Esencia y Valores
-      </h2>
-    </header>
 
-    <!-- Featured quote -->
-    <blockquote
-      class="club-quote mt-14 border-l-4 border-vj-green py-4 pl-6 sm:pl-8"
-      data-reveal
-      data-reveal-delay="100"
-      data-border-grow
-    >
-      <p class="font-display text-3xl font-extrabold uppercase leading-tight tracking-wide text-slate-900 sm:text-4xl lg:text-5xl">
-        "El Club al servicio<br class="hidden sm:block" /> de la sociedad."
-      </p>
-    </blockquote>
+    <!-- Two-column layout -->
+    <div class="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-16 lg:items-center">
 
-    <!-- Cards grid -->
-    <div class="mt-16 grid grid-cols-1 gap-8 md:grid-cols-3">
-      {cards.map((card, idx) => (
-        <article
-          class="club-valor-card group relative overflow-hidden border-t-4 border-vj-green bg-white p-8 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-          data-reveal
-          data-reveal-delay={String(idx * 150)}
-        >
-          <!-- Big background number -->
-          <span
-            class="pointer-events-none absolute -right-4 -top-2 font-display text-[8rem] font-black leading-none text-slate-200 opacity-30 transition-opacity duration-300 group-hover:opacity-10"
-            aria-hidden="true"
+      <!-- LEFT: Text Content -->
+      <div class="flex flex-col gap-8" data-reveal data-reveal-delay="100">
+        <!-- Section header -->
+        <header>
+          <p class="text-xs font-bold uppercase tracking-[0.22em] text-vj-green">Identidad</p>
+          <h2
+            id="club-valores-title"
+            class="mt-2 mb-10 text-4xl font-black uppercase tracking-tight text-slate-900 sm:text-5xl"
           >
-            {card.number}
-          </span>
+            Nuestra Esencia y Valores
+          </h2>
+        </header>
+        {items.map((item) => (
+          <div class="group flex gap-5">
+            <!-- Accent bar -->
+            <div class="mt-1 flex shrink-0 flex-col items-center">
+              <div class="flex h-10 w-10 items-center justify-center rounded-full bg-vj-green/10 ring-1 ring-vj-green/20 transition-colors duration-300 group-hover:bg-vj-green group-hover:ring-vj-green [&>svg]:transition-colors [&>svg]:duration-300 group-hover:[&>svg]:text-white" set:html={item.icon} />
+              {item.id !== "vision" && (
+                <div class="mt-3 w-px flex-1 bg-slate-200" aria-hidden="true" />
+              )}
+            </div>
 
-          <!-- Icon -->
-          <div class="relative" set:html={card.icon} />
-
-          <!-- Title -->
-          <h3 class="relative mt-5 text-lg font-black uppercase tracking-tight text-slate-900">
-            {card.title}
-          </h3>
-
-          <!-- Content -->
-          <div class="relative mt-4 space-y-3 text-sm leading-relaxed text-slate-600">
-            {card.quote && (
-              <p class="border-l-2 border-vj-green/40 pl-3 text-base font-bold italic text-slate-800">
-                {card.quote}
-              </p>
-            )}
-
-            {card.body?.map((paragraph) => (
-              <p>{paragraph}</p>
-            ))}
-
-            {card.values && (
-              <ul class="space-y-2.5 pt-1">
-                {card.values.map((value) => (
-                  <li class="flex items-center gap-3">
-                    <span class="flex h-5 w-5 shrink-0 items-center justify-center bg-vj-green/10">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="h-3 w-3 text-vj-green" aria-hidden="true">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                      </svg>
-                    </span>
-                    <span class="font-semibold text-slate-700">{value}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <!-- Content -->
+            <div class="pb-2">
+              <h3 class="text-xs font-black uppercase tracking-[0.2em] text-vj-green">{item.label}</h3>
+              {item.text && (
+                <p class="mt-2 text-[0.9375rem] leading-relaxed text-slate-600">{item.text}</p>
+              )}
+              {item.values && (
+                <ul class="mt-3 space-y-2">
+                  {item.values.map((v) => (
+                    <li class="flex items-center gap-3">
+                      <span class="inline-block h-2 w-2 shrink-0 bg-vj-green" aria-hidden="true" />
+                      <span class="text-sm font-semibold text-slate-700">{v}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
-        </article>
-      ))}
+        ))}
+      </div>
+
+      <!-- RIGHT: Plaque photo -->
+      <div
+        class="flex items-center justify-center lg:justify-center"
+        data-reveal
+        data-reveal-delay="250"
+      >
+        <img
+          src="/images/club/valores.png"
+          alt="Valores institucionales del Club Varela Junior"
+          class="w-full max-w-[26rem] h-auto object-contain"
+          data-zoom-in
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+
     </div>
   </div>
 </section>
-
-<style>
-  .club-quote {
-    position: relative;
-  }
-  .club-quote::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background-color: rgb(1 170 85);
-    transform: scaleY(var(--border-scale, 0));
-    transform-origin: top;
-    transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.2s;
-  }
-</style>
