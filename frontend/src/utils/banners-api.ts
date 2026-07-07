@@ -4,8 +4,10 @@ export type HomeBanner = {
   id: string;
   title: string;
   subtitle: string;
+  description: string;
   buttonLabel: string;
   buttonUrl: string;
+  openInNewTab: boolean;
   imageUrl: string;
   imageKey: string | null;
   active: boolean;
@@ -17,8 +19,10 @@ export type HomeBanner = {
 export type BannerUpsertInput = {
   title: string;
   subtitle?: string;
+  description?: string;
   buttonLabel?: string;
   buttonUrl?: string;
+  openInNewTab?: boolean;
   active?: boolean;
   sortOrder?: number;
 };

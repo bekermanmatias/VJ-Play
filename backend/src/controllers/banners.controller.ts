@@ -30,15 +30,17 @@ export const adminListBanners = asyncHandler(async (_req: Request, res: Response
 });
 
 export const adminCreateBanner = asyncHandler(async (req: Request, res: Response) => {
-  const { title, subtitle, buttonLabel, buttonUrl, active, sortOrder } = req.body as Record<string, unknown>;
+  const { title, subtitle, description, buttonLabel, buttonUrl, openInNewTab, active, sortOrder } = req.body as Record<string, unknown>;
   if (typeof title !== 'string' || !title.trim()) {
     throw new HttpError(400, 'El campo title es requerido');
   }
   const banner = await createBanner({
     title,
     subtitle: typeof subtitle === 'string' ? subtitle : '',
+    description: typeof description === 'string' ? description : '',
     buttonLabel: typeof buttonLabel === 'string' ? buttonLabel : '',
     buttonUrl: typeof buttonUrl === 'string' ? buttonUrl : '',
+    openInNewTab: openInNewTab === undefined ? false : Boolean(openInNewTab),
     active: active === undefined ? true : Boolean(active),
     sortOrder: typeof sortOrder === 'number' ? sortOrder : 0,
   });
@@ -48,12 +50,14 @@ export const adminCreateBanner = asyncHandler(async (req: Request, res: Response
 export const adminUpdateBanner = asyncHandler(async (req: Request, res: Response) => {
   const id = firstRouteParam(req.params.id) ?? '';
   if (!id) throw new HttpError(400, 'id requerido');
-  const { title, subtitle, buttonLabel, buttonUrl, active, sortOrder } = req.body as Record<string, unknown>;
+  const { title, subtitle, description, buttonLabel, buttonUrl, openInNewTab, active, sortOrder } = req.body as Record<string, unknown>;
   const banner = await updateBanner(id, {
     ...(typeof title === 'string' ? { title } : {}),
     ...(typeof subtitle === 'string' ? { subtitle } : {}),
+    ...(typeof description === 'string' ? { description } : {}),
     ...(typeof buttonLabel === 'string' ? { buttonLabel } : {}),
     ...(typeof buttonUrl === 'string' ? { buttonUrl } : {}),
+    ...(openInNewTab !== undefined ? { openInNewTab: Boolean(openInNewTab) } : {}),
     ...(active !== undefined ? { active: Boolean(active) } : {}),
     ...(typeof sortOrder === 'number' ? { sortOrder } : {}),
   });

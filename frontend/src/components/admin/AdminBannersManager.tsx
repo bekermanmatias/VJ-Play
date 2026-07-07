@@ -31,8 +31,10 @@ const adminSecret = getReplayAdminSecret();
 type FormState = {
   title: string;
   subtitle: string;
+  description: string;
   buttonLabel: string;
   buttonUrl: string;
+  openInNewTab: boolean;
   active: boolean;
   sortOrder: number;
 };
@@ -40,8 +42,10 @@ type FormState = {
 const emptyForm: FormState = {
   title: "",
   subtitle: "",
+  description: "",
   buttonLabel: "",
   buttonUrl: "",
+  openInNewTab: false,
   active: true,
   sortOrder: 0,
 };
@@ -50,8 +54,10 @@ function toForm(b: HomeBanner): FormState {
   return {
     title: b.title,
     subtitle: b.subtitle,
+    description: b.description,
     buttonLabel: b.buttonLabel,
     buttonUrl: b.buttonUrl,
+    openInNewTab: b.openInNewTab,
     active: b.active,
     sortOrder: b.sortOrder,
   };
@@ -164,8 +170,10 @@ export default function AdminBannersManager() {
       const input: BannerUpsertInput = {
         title: form.title.trim(),
         subtitle: form.subtitle.trim(),
+        description: form.description.trim(),
         buttonLabel: form.buttonLabel.trim(),
         buttonUrl: form.buttonUrl.trim(),
+        openInNewTab: form.openInNewTab,
         active: form.active,
         sortOrder: form.sortOrder,
       };
@@ -256,6 +264,7 @@ export default function AdminBannersManager() {
                   <p className="truncate text-sm font-bold text-slate-900">{b.title}</p>
                 </div>
                 <p className="mt-0.5 truncate text-xs text-slate-500">{b.subtitle || "—"}</p>
+                {b.description && <p className="mt-0.5 truncate text-xs text-slate-500">{b.description}</p>}
                 {b.buttonUrl && (
                   <p className="mt-0.5 truncate text-xs text-slate-400">→ {b.buttonUrl}</p>
                 )}
@@ -322,6 +331,17 @@ export default function AdminBannersManager() {
                 />
               </div>
 
+              {/* Description */}
+              <div>
+                <label className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-600">Descripción (Tercer renglón)</label>
+                <input
+                  value={form.description}
+                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                  className="w-full border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
+                  placeholder="El lugar perfecto..."
+                />
+              </div>
+
               {/* Button label + URL */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -355,8 +375,17 @@ export default function AdminBannersManager() {
                     className="w-full border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
-                <div className="flex flex-col justify-end">
-                  <label className="flex cursor-pointer items-center gap-2 pb-2">
+                <div className="flex flex-col gap-2">
+                  <label className="flex cursor-pointer items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={form.openInNewTab}
+                      onChange={(e) => setForm((f) => ({ ...f, openInNewTab: e.target.checked }))}
+                      className="h-4 w-4 accent-emerald-600"
+                    />
+                    <span className="text-xs font-bold uppercase tracking-wide text-slate-600">Nueva pestaña</span>
+                  </label>
+                  <label className="flex cursor-pointer items-center gap-2">
                     <input
                       type="checkbox"
                       checked={form.active}

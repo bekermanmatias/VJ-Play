@@ -36,6 +36,12 @@ export type News = {
 const PLACEHOLDER = "/images/deportes/placeholder.svg";
 
 export function getNewsApiBase(): string {
+  if (import.meta.env.SSR) {
+    if (typeof process !== "undefined" && process.env && process.env.INTERNAL_API_BASE) {
+      return process.env.INTERNAL_API_BASE;
+    }
+    return normalizeReplayApiBase(import.meta.env.PUBLIC_REPLAY_API_BASE || "http://localhost:4000");
+  }
   return normalizeReplayApiBase(import.meta.env.PUBLIC_REPLAY_API_BASE ?? "");
 }
 

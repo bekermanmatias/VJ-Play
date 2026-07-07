@@ -1,6 +1,63 @@
 ---
-// Hero dinámico: carga los banners del home en el cliente para reflejar
-// cambios del admin sin necesidad de rebuild.
+// Hero dinámico: carga los banners del home en SSR (Server-Side Rendering)
+// para evitar que aparezca un estado de "cargando" (spinner) en la web.
+import { getNewsApiBase } from "@/utils/news-api";
+
+type Banner = {
+  id: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  buttonLabel: string;
+  buttonUrl: string;
+  openInNewTab: boolean;
+  imageUrl: string;
+  active: boolean;
+  sortOrder: number;
+};
+
+// Fallback en caso de que la API no esté disponible
+const FALLBACK: Banner[] = [
+  {
+    id: "f1",
+    title: "Disfrutá",
+    subtitle: "El Club — Todo el año",
+    description: "",
+    buttonLabel: "",
+    buttonUrl: "",
+    openInNewTab: false,
+    imageUrl: "https://images.unsplash.com/photo-1526232761682-d26e03ac148e?auto=format&fit=crop&w=1920&q=80",
+    active: true,
+    sortOrder: 0,
+  },
+  {
+    id: "f2",
+    title: "Revivi tus",
+    subtitle: "Partidos",
+    description: "",
+    buttonLabel: "Ver Replays",
+    buttonUrl: "/replays",
+    openInNewTab: false,
+    imageUrl: "/images/padel.png",
+    active: true,
+    sortOrder: 10,
+  },
+];
+
+let banners: Banner[] = FALLBACK;
+
+try {
+  const apiBase = getNewsApiBase();
+  const res = await fetch(`${apiBase}/api/banners`);
+  if (res.ok) {
+    const data = await res.json();
+    if (Array.isArray(data.banners) && data.banners.length > 0) {
+      banners = data.banners;
+    }
+  }
+} catch (err) {
+  console.warn("[hero] fetch banners error", err);
+}
 ---
 
 <section
@@ -9,173 +66,125 @@
   id="home-hero"
   data-hero
 >
-  <!-- Loading state / fallback -->
-  <div id="hero-loading" class="absolute inset-0 flex items-center justify-center">
-    <div class="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white/80"></div>
-  </div>
-
-  <!-- Slides container (populated by JS) -->
-  <div id="hero-slides" class="absolute inset-0" aria-live="polite"></div>
-
-  <!-- Navigation arrows -->
-  <button
-    type="button"
-    aria-label="Slide anterior"
-    id="hero-prev"
-    class="absolute left-2 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 place-items-center text-white/90 transition-colors hover:bg-white/10 hover:text-white sm:left-4 sm:grid sm:h-12 sm:w-12"
-  >
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7" aria-hidden="true">
-      <path d="m15 18-6-6 6-6"></path>
-    </svg>
-  </button>
-  <button
-    type="button"
-    aria-label="Slide siguiente"
-    id="hero-next"
-    class="absolute right-2 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 place-items-center text-white/90 transition-colors hover:bg-white/10 hover:text-white sm:right-4 sm:grid sm:h-12 sm:w-12"
-  >
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7" aria-hidden="true">
-      <path d="m9 6 6 6-6 6"></path>
-    </svg>
-  </button>
-
-  <!-- Dots -->
-  <div id="hero-dots" class="absolute bottom-5 left-1/2 z-10 flex -translate-x-1/2 gap-2"></div>
-
-  <!-- Spacer for min-height -->
-  <div class="relative mx-auto flex min-h-[60vh] max-w-7xl items-center px-4 sm:px-6 lg:px-8 md:min-h-[70vh]">
-    <div class="py-16"><p class="sr-only">Hero con rotación automática de banners.</p></div>
-  </div>
-</section>
-
-<script>
-  (async () => {
-    const apiBase = (import.meta.env.PUBLIC_REPLAY_API_BASE ?? "").replace(/\/$/, "");
-    const slidesContainer = document.getElementById("hero-slides")!;
-    const loadingEl = document.getElementById("hero-loading")!;
-    const dotsContainer = document.getElementById("hero-dots")!;
-    const prevBtn = document.getElementById("hero-prev")!;
-    const nextBtn = document.getElementById("hero-next")!;
-
-    type Banner = {
-      id: string;
-      title: string;
-      subtitle: string;
-      buttonLabel: string;
-      buttonUrl: string;
-      imageUrl: string;
-      active: boolean;
-      sortOrder: number;
-    };
-
-    // Fallback en caso de que la API no esté disponible
-    const FALLBACK: Banner[] = [
-      {
-        id: "f1",
-        title: "Disfrutá",
-        subtitle: "El Club — Todo el año",
-        buttonLabel: "",
-        buttonUrl: "",
-        imageUrl: "https://images.unsplash.com/photo-1526232761682-d26e03ac148e?auto=format&fit=crop&w=1920&q=80",
-        active: true,
-        sortOrder: 0,
-      },
-      {
-        id: "f2",
-        title: "Revivi tus",
-        subtitle: "Partidos",
-        buttonLabel: "Ver Replays",
-        buttonUrl: "/replays",
-        imageUrl: "/images/padel.png",
-        active: true,
-        sortOrder: 10,
-      },
-    ];
-
-    // Fetch
-    let banners: Banner[] = FALLBACK;
-    try {
-      const res = await fetch(`${apiBase}/api/banners`);
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data.banners) && data.banners.length > 0) {
-          banners = data.banners;
-        }
-      }
-    } catch {
-      // usar fallback
-    }
-    loadingEl.remove();
-
-    if (banners.length === 0) return;
-
-    // Build slides
-    const slideEls: HTMLElement[] = [];
-
-    banners.forEach((b, i) => {
-      const slide = document.createElement("div");
-      slide.className = `absolute inset-0 transition-opacity duration-700 ${i === 0 ? "opacity-100" : "pointer-events-none opacity-0"}`;
-      slide.setAttribute("aria-hidden", i === 0 ? "false" : "true");
-
-      const bgColor = "#0f172a";
-      slide.style.background = bgColor;
-
-      slide.innerHTML = `
-        ${b.imageUrl ? `<img src="${b.imageUrl}" alt="${b.title}" class="absolute inset-0 h-full w-full object-cover" loading="${i === 0 ? "eager" : "lazy"}" decoding="async" />` : ""}
+  <!-- Slides container -->
+  <div id="hero-slides" class="absolute inset-0" aria-live="polite">
+    {banners.map((b, i) => (
+      <div
+        class={`absolute inset-0 transition-opacity duration-700 ${i === 0 ? "opacity-100" : "pointer-events-none opacity-0"}`}
+        aria-hidden={i === 0 ? "false" : "true"}
+        style="background: #0f172a;"
+      >
+        {b.buttonUrl && !b.buttonLabel && (
+          <a href={b.buttonUrl} target={b.openInNewTab ? "_blank" : undefined} rel={b.openInNewTab ? "noopener noreferrer" : undefined} class="absolute inset-0 z-20">
+            <span class="sr-only">Ver más sobre {b.title}</span>
+          </a>
+        )}
+        {b.imageUrl && (
+          <img
+            src={b.imageUrl}
+            alt={b.title}
+            class="absolute inset-0 h-full w-full object-cover"
+            loading={i === 0 ? "eager" : "lazy"}
+            decoding="async"
+          />
+        )}
         <div class="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/10" aria-hidden="true"></div>
         <div class="absolute inset-0 bg-gradient-to-tr from-vj-green/25 via-transparent to-transparent mix-blend-multiply" aria-hidden="true"></div>
         <div class="relative mx-auto flex min-h-[60vh] max-w-7xl items-center px-4 sm:px-6 lg:px-8 md:min-h-[70vh]">
           <div class="max-w-2xl text-white">
             <h1 class="mt-4 font-display uppercase leading-none tracking-tight">
-              <span class="block text-6xl font-extrabold drop-shadow-md sm:text-7xl md:text-8xl lg:text-9xl">${b.title}</span>
-              ${b.subtitle ? `<span class="mt-4 inline-flex items-center bg-white px-6 py-2 text-4xl text-slate-900 shadow-lg sm:text-5xl md:text-6xl">${b.subtitle}</span>` : ""}
+              <span class="block text-6xl font-extrabold drop-shadow-md sm:text-7xl md:text-8xl lg:text-9xl">{b.title}</span>
+              {b.subtitle && (
+                <span class="mt-4 inline-flex items-center bg-white px-6 py-2 text-4xl text-slate-900 shadow-lg sm:text-5xl md:text-6xl">{b.subtitle}</span>
+              )}
+              {b.description && (
+                <span class="mt-4 inline-flex items-center bg-vj-green px-6 py-2 text-2xl text-white shadow-lg sm:text-3xl md:text-4xl">{b.description}</span>
+              )}
             </h1>
-            ${b.buttonLabel && b.buttonUrl ? `
-              <a href="${b.buttonUrl}" class="mt-8 inline-flex items-center gap-2 bg-vj-green px-6 py-3 text-sm font-bold uppercase tracking-widest text-white shadow-lg transition hover:bg-vj-green-600">
-                ${b.buttonLabel}
+            {b.buttonLabel && b.buttonUrl && (
+              <a href={b.buttonUrl} target={b.openInNewTab ? "_blank" : undefined} rel={b.openInNewTab ? "noopener noreferrer" : undefined} class="relative z-30 mt-8 inline-flex items-center gap-2 bg-vj-green px-6 py-3 text-sm font-bold uppercase tracking-widest text-white shadow-lg transition hover:bg-vj-green-600">
+                {b.buttonLabel}
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true"><path d="M5 12h14"/><path d="m13 5 7 7-7 7"/></svg>
-              </a>` : ""}
+              </a>
+            )}
           </div>
         </div>
-      `;
+      </div>
+    ))}
+  </div>
 
-      slidesContainer.appendChild(slide);
-      slideEls.push(slide);
+  {banners.length > 1 && (
+    <>
+      <!-- Navigation arrows -->
+      <button
+        type="button"
+        aria-label="Slide anterior"
+        id="hero-prev"
+        class="absolute left-2 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 place-items-center text-white/90 transition-colors hover:bg-white/10 hover:text-white sm:left-4 sm:grid sm:h-12 sm:w-12"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>
+      </button>
+      <button
+        type="button"
+        aria-label="Slide siguiente"
+        id="hero-next"
+        class="absolute right-2 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 place-items-center text-white/90 transition-colors hover:bg-white/10 hover:text-white sm:right-4 sm:grid sm:h-12 sm:w-12"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg>
+      </button>
 
-      // Dot
-      const dot = document.createElement("button");
-      dot.className = `h-2 w-2 rounded-full transition-all ${i === 0 ? "bg-white w-5" : "bg-white/40"}`;
-      dot.setAttribute("aria-label", `Ir al slide ${i + 1}`);
-      dot.addEventListener("click", () => goTo(i));
-      dotsContainer.appendChild(dot);
-    });
+      <!-- Dots -->
+      <div id="hero-dots" class="absolute bottom-5 left-1/2 z-10 flex -translate-x-1/2 gap-2">
+        {banners.map((_, i) => (
+          <button
+            class={`h-2 w-2 rounded-full transition-all ${i === 0 ? "bg-white w-5" : "bg-white/40"}`}
+            aria-label={`Ir al slide ${i + 1}`}
+            data-index={i}
+          ></button>
+        ))}
+      </div>
+    </>
+  )}
+</section>
 
-    if (banners.length <= 1) { prevBtn.remove(); nextBtn.remove(); dotsContainer.remove(); return; }
+{banners.length > 1 && (
+  <script>
+    const slidesContainer = document.getElementById("hero-slides");
+    const dotsContainer = document.getElementById("hero-dots");
+    const prevBtn = document.getElementById("hero-prev");
+    const nextBtn = document.getElementById("hero-next");
 
-    let current = 0;
-    let timer: ReturnType<typeof setTimeout>;
+    if (slidesContainer && dotsContainer && prevBtn && nextBtn) {
+      const slideEls = Array.from(slidesContainer.children) as HTMLElement[];
+      const dots = Array.from(dotsContainer.querySelectorAll("button"));
+      
+      let current = 0;
+      let timer: ReturnType<typeof setTimeout>;
 
-    const dots = Array.from(dotsContainer.querySelectorAll("button"));
+      function goTo(idx: number) {
+        slideEls[current].classList.add("pointer-events-none", "opacity-0");
+        slideEls[current].classList.remove("opacity-100");
+        slideEls[current].setAttribute("aria-hidden", "true");
+        dots[current].className = "h-2 w-2 rounded-full transition-all bg-white/40";
 
-    function goTo(idx: number) {
-      slideEls[current].classList.add("pointer-events-none", "opacity-0");
-      slideEls[current].classList.remove("opacity-100");
-      slideEls[current].setAttribute("aria-hidden", "true");
-      dots[current].className = "h-2 w-2 rounded-full transition-all bg-white/40";
+        current = (idx + slideEls.length) % slideEls.length;
 
-      current = (idx + banners.length) % banners.length;
+        slideEls[current].classList.remove("pointer-events-none", "opacity-0");
+        slideEls[current].classList.add("opacity-100");
+        slideEls[current].setAttribute("aria-hidden", "false");
+        dots[current].className = "h-2 w-5 rounded-full transition-all bg-white";
 
-      slideEls[current].classList.remove("pointer-events-none", "opacity-0");
-      slideEls[current].classList.add("opacity-100");
-      slideEls[current].setAttribute("aria-hidden", "false");
-      dots[current].className = "h-2 w-5 rounded-full transition-all bg-white";
+        clearTimeout(timer);
+        timer = setTimeout(() => goTo(current + 1), 5000);
+      }
 
-      clearTimeout(timer);
-      timer = setTimeout(() => goTo(current + 1), 5000);
+      dots.forEach((dot, i) => {
+        dot.addEventListener("click", () => goTo(i));
+      });
+
+      prevBtn.addEventListener("click", () => goTo(current - 1));
+      nextBtn.addEventListener("click", () => goTo(current + 1));
+      timer = setTimeout(() => goTo(1), 5000);
     }
-
-    prevBtn.addEventListener("click", () => goTo(current - 1));
-    nextBtn.addEventListener("click", () => goTo(current + 1));
-    timer = setTimeout(() => goTo(1), 5000);
-  })();
-</script>
+  </script>
+)}

@@ -14,8 +14,10 @@ export type HomeBanner = {
   id: string;
   title: string;
   subtitle: string;
+  description: string;
   buttonLabel: string;
   buttonUrl: string;
+  openInNewTab: boolean;
   imageUrl: string;
   imageKey: string | null;
   active: boolean;
@@ -27,8 +29,10 @@ export type HomeBanner = {
 export type HomeBannerUpsertInput = {
   title: string;
   subtitle?: string;
+  description?: string;
   buttonLabel?: string;
   buttonUrl?: string;
+  openInNewTab?: boolean;
   active?: boolean;
   sortOrder?: number;
 };
@@ -41,8 +45,10 @@ type HomeBannerRowDb = {
   id: string;
   title: string;
   subtitle: string;
+  description: string;
   button_label: string;
   button_url: string;
+  open_in_new_tab: boolean;
   image_url: string;
   image_key: string | null;
   active: boolean;
@@ -66,8 +72,10 @@ function rowToBanner(row: HomeBannerRowDb): HomeBanner {
     id: row.id,
     title: row.title,
     subtitle: row.subtitle ?? '',
+    description: row.description ?? '',
     buttonLabel: row.button_label ?? '',
     buttonUrl: row.button_url ?? '',
+    openInNewTab: Boolean(row.open_in_new_tab),
     imageUrl: row.image_url,
     imageKey: row.image_key ?? null,
     active: Boolean(row.active),
@@ -119,8 +127,10 @@ export async function createBanner(input: HomeBannerUpsertInput): Promise<HomeBa
     .insert({
       title: input.title.trim(),
       subtitle: (input.subtitle ?? '').trim(),
+      description: (input.description ?? '').trim(),
       button_label: (input.buttonLabel ?? '').trim(),
       button_url: (input.buttonUrl ?? '').trim(),
+      open_in_new_tab: input.openInNewTab ?? false,
       image_url: '',
       active: input.active ?? true,
       sort_order: input.sortOrder ?? 0,
@@ -143,8 +153,10 @@ export async function updateBanner(id: string, input: Partial<HomeBannerUpsertIn
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (input.title !== undefined) patch.title = input.title.trim();
   if (input.subtitle !== undefined) patch.subtitle = input.subtitle.trim();
+  if (input.description !== undefined) patch.description = input.description.trim();
   if (input.buttonLabel !== undefined) patch.button_label = input.buttonLabel.trim();
   if (input.buttonUrl !== undefined) patch.button_url = input.buttonUrl.trim();
+  if (input.openInNewTab !== undefined) patch.open_in_new_tab = input.openInNewTab;
   if (input.active !== undefined) patch.active = input.active;
   if (input.sortOrder !== undefined) patch.sort_order = input.sortOrder;
 
