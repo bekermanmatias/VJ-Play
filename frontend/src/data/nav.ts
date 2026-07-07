@@ -16,7 +16,7 @@ export const sociosNav: NavGroup = {
   label: "Socios",
   href: "/socios",
   items: [
-    { label: "Hacete Socio", href: "/socios#hacete-socio" },
+    { label: "Asociarme", href: "/socios" },
     { label: "Portal del Socio", href: "#" },
   ],
 };

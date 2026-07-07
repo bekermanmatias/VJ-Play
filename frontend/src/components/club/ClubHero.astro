@@ -3,6 +3,7 @@ interface Props {
   imageUrl?: string;
   imageAlt?: string;
   imagePosition?: string;
+  imageClass?: string;
   title?: string;
   subtitle?: string;
 }
@@ -11,6 +12,7 @@ const {
   imageUrl = "/images/ubicacion.png",
   imageAlt = "Fachada de la Sede Central del Club Social Varela Junior",
   imagePosition = "object-center",
+  imageClass = "h-[130%] object-cover",
   title = "Institución",
   subtitle = "Conocé la identidad, los valores y la propuesta del Club Social Varela Junior.",
 } = Astro.props;
@@ -26,7 +28,7 @@ const {
     <img
       src={imageUrl}
       alt={imageAlt}
-      class={`absolute inset-0 h-[130%] w-full object-cover will-change-transform ${imagePosition}`}
+      class={`absolute inset-0 w-full will-change-transform ${imageClass} ${imagePosition}`}
       loading="eager"
       decoding="async"
       data-club-hero-img
