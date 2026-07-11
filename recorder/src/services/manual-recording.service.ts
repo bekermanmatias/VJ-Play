@@ -25,11 +25,11 @@ function generateRandomCode(): string {
   // Ej: VJP-3X4B
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
-  const bytes = randomBytes(4);
-  for (let i = 0; i < 4; i++) {
+  const bytes = randomBytes(6);
+  for (let i = 0; i < 6; i++) {
     code += chars[bytes[i]! % chars.length];
   }
-  return `VJP-${code}`;
+  return code;
 }
 
 async function recordToFile(rtspUrl: string, outPath: string, seconds: number): Promise<void> {
