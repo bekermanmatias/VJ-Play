@@ -1,166 +1,190 @@
 ---
-interface Props {
-  eyebrow?: string;
-  titleStart?: string;
-  titlePill?: string;
-  subtitle?: string;
-  imageUrl?: string;
-  imageAlt?: string;
-}
+// Hero dinámico: carga los banners del home en SSR (Server-Side Rendering)
+// para evitar que aparezca un estado de "cargando" (spinner) en la web.
+import { getNewsApiBase } from "@/utils/news-api";
 
-const {
-  eyebrow = "Actividades para socios/as",
-  titleStart = "Disfrutá",
-  titlePill = "El Club",
-  subtitle = "Todo el año",
-  imageUrl = "https://images.unsplash.com/photo-1526232761682-d26e03ac148e?auto=format&fit=crop&w=1920&q=80",
-  imageAlt = "Chicos y chicas entrenando en el Club Social Varela Junior",
-} = Astro.props;
+type Banner = {
+  id: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  buttonLabel: string;
+  buttonUrl: string;
+  openInNewTab: boolean;
+  imageUrl: string;
+  active: boolean;
+  sortOrder: number;
+};
 
-const slides = [
+// Fallback en caso de que la API no esté disponible
+const FALLBACK: Banner[] = [
   {
-    eyebrow,
-    titleStart,
-    titlePill,
-    subtitle,
-    imageUrl,
-    imageAlt,
+    id: "f1",
+    title: "Disfrutá",
+    subtitle: "El Club — Todo el año",
+    description: "",
+    buttonLabel: "",
+    buttonUrl: "",
+    openInNewTab: false,
+    imageUrl: "https://images.unsplash.com/photo-1526232761682-d26e03ac148e?auto=format&fit=crop&w=1920&q=80",
+    active: true,
+    sortOrder: 0,
   },
   {
-    eyebrow: "Replays",
-    showPlayIcon: true,
-    titleStart: "Revivi tus",
-    titlePill: "Partidos",
-    subtitle: "",
+    id: "f2",
+    title: "Revivi tus",
+    subtitle: "Partidos",
+    description: "",
+    buttonLabel: "Ver Replays",
+    buttonUrl: "/replays",
+    openInNewTab: false,
     imageUrl: "/images/padel.png",
-    imageAlt: "Cancha de padel del Club Social Varela Junior",
+    active: true,
+    sortOrder: 10,
   },
 ];
+
+let banners: Banner[] = FALLBACK;
+
+try {
+  const apiBase = getNewsApiBase();
+  const res = await fetch(`${apiBase}/api/banners`);
+  if (res.ok) {
+    const data = await res.json();
+    if (Array.isArray(data.banners) && data.banners.length > 0) {
+      banners = data.banners;
+    }
+  }
+} catch (err) {
+  console.warn("[hero] fetch banners error", err);
+}
 ---
 
 <section
   class="relative w-full min-h-[60vh] overflow-hidden bg-slate-900 md:min-h-[70vh]"
   aria-label="Banner principal"
+  id="home-hero"
   data-hero
 >
-  {
-    slides.map((slide, index) => (
+  <!-- Slides container -->
+  <div id="hero-slides" class="absolute inset-0" aria-live="polite">
+    {banners.map((b, i) => (
       <div
-        class:list={[
-          "absolute inset-0 transition-opacity duration-700",
-          index === 0 ? "opacity-100" : "pointer-events-none opacity-0",
-        ]}
-        data-hero-slide
-        aria-hidden={index === 0 ? "false" : "true"}
+        class={`absolute inset-0 transition-opacity duration-700 ${i === 0 ? "opacity-100" : "pointer-events-none opacity-0"}`}
+        aria-hidden={i === 0 ? "false" : "true"}
+        style="background: #0f172a;"
       >
-        <img
-          src={slide.imageUrl}
-          alt={slide.imageAlt}
-          class="absolute inset-0 h-full w-full object-cover"
-          loading={index === 0 ? "eager" : "lazy"}
-          decoding="async"
-        />
-
-        <div
-          class="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/10"
-          aria-hidden="true"
-        ></div>
-        <div
-          class="absolute inset-0 bg-gradient-to-tr from-vj-green/25 via-transparent to-transparent mix-blend-multiply"
-          aria-hidden="true"
-        ></div>
-
+        {b.buttonUrl && !b.buttonLabel && (
+          <a href={b.buttonUrl} target={b.openInNewTab ? "_blank" : undefined} rel={b.openInNewTab ? "noopener noreferrer" : undefined} class="absolute inset-0 z-20">
+            <span class="sr-only">Ver más sobre {b.title}</span>
+          </a>
+        )}
+        {b.imageUrl && (
+          <img
+            src={b.imageUrl}
+            alt={b.title}
+            class="absolute inset-0 h-full w-full object-cover"
+            loading={i === 0 ? "eager" : "lazy"}
+            decoding="async"
+          />
+        )}
+        <div class="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/10" aria-hidden="true"></div>
+        <div class="absolute inset-0 bg-gradient-to-tr from-vj-green/25 via-transparent to-transparent mix-blend-multiply" aria-hidden="true"></div>
         <div class="relative mx-auto flex min-h-[60vh] max-w-7xl items-center px-4 sm:px-6 lg:px-8 md:min-h-[70vh]">
           <div class="max-w-2xl text-white">
-            <p class="inline-flex items-center gap-2 text-xl font-medium uppercase tracking-[0.12em] text-white/95 sm:gap-3 sm:text-2xl md:text-3xl">
-              {
-                slide.showPlayIcon && (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    class="h-4 w-4 text-vj-green sm:h-5 sm:w-5"
-                    aria-hidden="true"
-                  >
-                    <path d="M8 6.82v10.36c0 .79.87 1.27 1.54.84l8.14-5.18a1 1 0 0 0 0-1.68L9.54 5.98A1 1 0 0 0 8 6.82Z"></path>
-                  </svg>
-                )
-              }
-              {slide.eyebrow}
-            </p>
-
             <h1 class="mt-4 font-display uppercase leading-none tracking-tight">
-              <span class="block text-6xl font-extrabold drop-shadow-md sm:text-7xl md:text-8xl lg:text-9xl">
-                {slide.titleStart}
-              </span>
-              <span class="mt-4 inline-flex items-center bg-white px-6 py-2 text-4xl text-slate-900 shadow-lg sm:text-5xl md:text-6xl">
-                {slide.titlePill}
-              </span>
+              <span class="block text-6xl font-extrabold drop-shadow-md sm:text-7xl md:text-8xl lg:text-9xl">{b.title}</span>
+              {b.subtitle && (
+                <span class="mt-4 inline-flex items-center bg-white px-6 py-2 text-4xl text-slate-900 shadow-lg sm:text-5xl md:text-6xl">{b.subtitle}</span>
+              )}
+              {b.description && (
+                <span class="mt-4 inline-flex items-center bg-vj-green px-6 py-2 text-2xl text-white shadow-lg sm:text-3xl md:text-4xl">{b.description}</span>
+              )}
             </h1>
-
-            {
-              slide.subtitle && (
-                <p class="mt-6 text-4xl font-medium uppercase tracking-wide text-white/95 sm:text-5xl md:text-6xl">
-                  {slide.subtitle}
-                </p>
-              )
-            }
+            {b.buttonLabel && b.buttonUrl && (
+              <a href={b.buttonUrl} target={b.openInNewTab ? "_blank" : undefined} rel={b.openInNewTab ? "noopener noreferrer" : undefined} class="relative z-30 mt-8 inline-flex items-center gap-2 bg-vj-green px-6 py-3 text-sm font-bold uppercase tracking-widest text-white shadow-lg transition hover:bg-vj-green-600">
+                {b.buttonLabel}
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true"><path d="M5 12h14"/><path d="m13 5 7 7-7 7"/></svg>
+              </a>
+            )}
           </div>
         </div>
       </div>
-    ))
-  }
-
-  <div class="relative mx-auto flex min-h-[60vh] max-w-7xl items-center px-4 sm:px-6 lg:px-8 md:min-h-[70vh]">
-    <div class="py-16">
-      <p class="sr-only">Hero con rotacion automatica de imagenes.</p>
-    </div>
+    ))}
   </div>
 
-  <!-- Flechas del carrusel -->
-  <button
-    type="button"
-    aria-label="Slide anterior"
-    class="absolute left-2 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 place-items-center text-white/90 transition-colors hover:bg-white/10 hover:text-white sm:left-4 sm:grid sm:h-12 sm:w-12"
-    data-hero-prev
-  >
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2.5"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      class="w-7 h-7"
-      aria-hidden="true"
-    >
-      <path d="m15 18-6-6 6-6"></path>
-    </svg>
-  </button>
-  <button
-    type="button"
-    aria-label="Slide siguiente"
-    class="absolute right-2 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 place-items-center text-white/90 transition-colors hover:bg-white/10 hover:text-white sm:right-4 sm:grid sm:h-12 sm:w-12"
-    data-hero-next
-  >
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2.5"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      class="w-7 h-7"
-      aria-hidden="true"
-    >
-      <path d="m9 6 6 6-6 6"></path>
-    </svg>
-  </button>
+  {banners.length > 1 && (
+    <>
+      <!-- Navigation arrows -->
+      <button
+        type="button"
+        aria-label="Slide anterior"
+        id="hero-prev"
+        class="absolute left-2 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 place-items-center text-white/90 transition-colors hover:bg-white/10 hover:text-white sm:left-4 sm:grid sm:h-12 sm:w-12"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>
+      </button>
+      <button
+        type="button"
+        aria-label="Slide siguiente"
+        id="hero-next"
+        class="absolute right-2 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 place-items-center text-white/90 transition-colors hover:bg-white/10 hover:text-white sm:right-4 sm:grid sm:h-12 sm:w-12"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg>
+      </button>
+
+      <!-- Dots -->
+      <div id="hero-dots" class="absolute bottom-5 left-1/2 z-10 flex -translate-x-1/2 gap-2">
+        {banners.map((_, i) => (
+          <button
+            class={`h-2 w-2 rounded-full transition-all ${i === 0 ? "bg-white w-5" : "bg-white/40"}`}
+            aria-label={`Ir al slide ${i + 1}`}
+            data-index={i}
+          ></button>
+        ))}
+      </div>
+    </>
+  )}
 </section>
 
-<script>
-  import { initHeroCarousel } from "./hero-carousel.client.ts";
-  initHeroCarousel();
-</script>
+{banners.length > 1 && (
+  <script>
+    const slidesContainer = document.getElementById("hero-slides");
+    const dotsContainer = document.getElementById("hero-dots");
+    const prevBtn = document.getElementById("hero-prev");
+    const nextBtn = document.getElementById("hero-next");
+
+    if (slidesContainer && dotsContainer && prevBtn && nextBtn) {
+      const slideEls = Array.from(slidesContainer.children) as HTMLElement[];
+      const dots = Array.from(dotsContainer.querySelectorAll("button"));
+      
+      let current = 0;
+      let timer: ReturnType<typeof setTimeout>;
+
+      function goTo(idx: number) {
+        slideEls[current].classList.add("pointer-events-none", "opacity-0");
+        slideEls[current].classList.remove("opacity-100");
+        slideEls[current].setAttribute("aria-hidden", "true");
+        dots[current].className = "h-2 w-2 rounded-full transition-all bg-white/40";
+
+        current = (idx + slideEls.length) % slideEls.length;
+
+        slideEls[current].classList.remove("pointer-events-none", "opacity-0");
+        slideEls[current].classList.add("opacity-100");
+        slideEls[current].setAttribute("aria-hidden", "false");
+        dots[current].className = "h-2 w-5 rounded-full transition-all bg-white";
+
+        clearTimeout(timer);
+        timer = setTimeout(() => goTo(current + 1), 5000);
+      }
+
+      dots.forEach((dot, i) => {
+        dot.addEventListener("click", () => goTo(i));
+      });
+
+      prevBtn.addEventListener("click", () => goTo(current - 1));
+      nextBtn.addEventListener("click", () => goTo(current + 1));
+      timer = setTimeout(() => goTo(1), 5000);
+    }
+  </script>
+)}

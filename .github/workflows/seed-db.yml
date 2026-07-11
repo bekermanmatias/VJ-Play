@@ -1,0 +1,21 @@
+name: Seed Staging Database
+
+on:
+  push:
+    branches:
+      - staging
+    paths:
+      - 'backend/supabase/seed_noticias_staging.sql'
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Seed Script
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+        run: |
+          psql "$DATABASE_URL" -f backend/supabase/seed_noticias_staging.sql

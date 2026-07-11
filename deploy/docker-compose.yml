@@ -59,6 +59,7 @@ services:
     environment:
       HOST: 0.0.0.0
       PORT: "4321"
+      INTERNAL_API_BASE: "http://backend:4000"
     expose:
       - "4321"
     healthcheck:

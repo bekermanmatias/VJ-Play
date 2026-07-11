@@ -1,0 +1,82 @@
+name: Deploy Backend to Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    env:
+      # Dependiendo de la rama, definimos el prefijo de los secretos (PROD o STAGING)
+      PREFIX: ${{ github.ref == 'refs/heads/main' && 'PROD' || 'STAGING' }}
+      # El nombre del servicio en Cloud Run tendrá sufijo si es staging
+      SERVICE_NAME: ${{ github.ref == 'refs/heads/main' && 'vjplay-backend' || 'vjplay-backend-staging' }}
+      # El tag de Docker será 'latest' para main y 'staging' para staging
+      DOCKER_TAG: ${{ github.ref == 'refs/heads/main' && 'latest' || 'staging' }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Google Auth
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets[format('{0}_GCP_SA_KEY', env.PREFIX)] }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+
+      - name: Run Database Migrations
+        env:
+          DATABASE_URL: ${{ secrets[format('{0}_DATABASE_URL', env.PREFIX)] }}
+        run: |
+          cd backend
+          supabase db push --db-url "$DATABASE_URL"
+
+      - name: Build and Push Docker Image
+        env:
+          GCP_PROJECT_ID: ${{ secrets[format('{0}_GCP_PROJECT_ID', env.PREFIX)] }}
+          IMAGE_NAME: us-central1-docker.pkg.dev/${{ secrets[format('{0}_GCP_PROJECT_ID', env.PREFIX)] }}/vjplay-repo/backend
+        run: |
+          cd backend
+          docker build -t $IMAGE_NAME:${{ github.sha }} -t $IMAGE_NAME:${{ env.DOCKER_TAG }} .
+          docker push $IMAGE_NAME:${{ github.sha }}
+          docker push $IMAGE_NAME:${{ env.DOCKER_TAG }}
+
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ env.SERVICE_NAME }}
+          image: us-central1-docker.pkg.dev/${{ secrets[format('{0}_GCP_PROJECT_ID', env.PREFIX)] }}/vjplay-repo/backend:${{ github.sha }}
+          region: us-central1
+          flags: '--allow-unauthenticated'
+          env_vars: |
+            NODE_ENV=production
+            VJ_RUNTIME=vps
+            CORS_ORIGINS=https://staging.vjplay-frontend.pages.dev,https://vjplay-frontend.pages.dev,http://localhost:4321,http://localhost:5173
+            SUPABASE_URL=${{ secrets[format('{0}_SUPABASE_URL', env.PREFIX)] }}
+            SUPABASE_KEY=${{ secrets[format('{0}_SUPABASE_KEY', env.PREFIX)] }}
+            ADMIN_SECRET=${{ secrets[format('{0}_ADMIN_SECRET', env.PREFIX)] }}
+            JWT_SESSION_SECRET=${{ secrets[format('{0}_JWT_SESSION_SECRET', env.PREFIX)] }}
+            R2_ACCOUNT_ID=${{ secrets[format('{0}_R2_ACCOUNT_ID', env.PREFIX)] }}
+            R2_ACCESS_KEY_ID=${{ secrets[format('{0}_R2_ACCESS_KEY_ID', env.PREFIX)] }}
+            R2_SECRET_ACCESS_KEY=${{ secrets[format('{0}_R2_SECRET_ACCESS_KEY', env.PREFIX)] }}
+            R2_BUCKET_NAME=${{ secrets[format('{0}_R2_BUCKET_NAME', env.PREFIX)] }}
+            R2_ENDPOINT=${{ secrets[format('{0}_R2_ENDPOINT', env.PREFIX)] }}

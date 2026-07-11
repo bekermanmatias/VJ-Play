@@ -1,22 +1,41 @@
 ---
-const banners = [
+interface Props {
+  exclude?: "institucional" | "historia" | "autoridades";
+}
+
+const { exclude = "institucional" } = Astro.props;
+
+const allBanners = [
   {
+    id: "institucional",
+    title: "Institución",
+    text: "Conocé la identidad, los valores y la propuesta del Club Social Varela Junior.",
+    buttonLabel: "Ver Institución",
+    href: "/club/institucional",
+    image: "/images/ubicacion.png",
+    imageAlt: "Sede del Club Social Varela Junior",
+  },
+  {
+    id: "historia",
     title: "Nuestra Historia",
     text: "Más de un siglo fomentando el deporte y la amistad. Recorré los hitos que marcaron nuestra vida institucional.",
     buttonLabel: "Leer Historia",
     href: "/club/historia",
-    image: "/images/fachada vieja.png",
+    image: "/images/club/historiatrofeos.png",
     imageAlt: "Foto histórica del Club Social Varela Junior",
   },
   {
+    id: "autoridades",
     title: "Autoridades",
     text: "Conocé a los miembros de la Comisión Directiva que guían el rumbo del club con el compromiso de siempre.",
     buttonLabel: "Ver Autoridades",
     href: "/club/autoridades",
-    image: "/images/autoridad.png",
+    image: "/images/club/autoriadadsala.png",
     imageAlt: "Comisión Directiva del Club Social Varela Junior",
   },
 ];
+
+const banners = allBanners.filter(b => b.id !== exclude).slice(0, 2);
 ---
 
 <section class="bg-white py-20 sm:py-28" aria-labelledby="club-cta-title" id="club-cta">

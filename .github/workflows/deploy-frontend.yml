@@ -1,0 +1,49 @@
+name: Deploy Frontend to Cloudflare Pages
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-frontend.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      deployments: 'write'
+
+    env:
+      PREFIX: ${{ github.ref == 'refs/heads/main' && 'PROD' || 'STAGING' }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Build Astro Project
+        env:
+          PUBLIC_REPLAY_API_BASE: ${{ secrets[format('{0}_PUBLIC_REPLAY_API_BASE', env.PREFIX)] }}
+          PUBLIC_REPLAY_ADMIN_SECRET: ${{ secrets[format('{0}_ADMIN_SECRET', env.PREFIX)] }}
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Publish to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets[format('{0}_CLOUDFLARE_API_TOKEN', env.PREFIX)] }}
+          accountId: ${{ secrets[format('{0}_CLOUDFLARE_ACCOUNT_ID', env.PREFIX)] }}
+          command: pages deploy frontend/dist --project-name=vjplay-frontend --branch=${{ github.ref_name }}
