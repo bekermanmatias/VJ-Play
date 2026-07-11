@@ -1,4 +1,5 @@
 import { runRecorder } from "./services/recorder.service.js";
+import { startManualRecordingWorker } from "./services/manual-recording.service.js";
 import { createLogger } from "./util/log.js";
 import { env } from "./config/env.js";
 
@@ -31,7 +32,10 @@ process.on("uncaughtException", (err) => {
   log.error("uncaughtException", { error: String(err) });
 });
 
-runRecorder(controller.signal)
+Promise.all([
+  runRecorder(controller.signal),
+  startManualRecordingWorker(controller.signal),
+])
   .then(() => {
     log.info("recorder detenido limpiamente");
     process.exit(0);

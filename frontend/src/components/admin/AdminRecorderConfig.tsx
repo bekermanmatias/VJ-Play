@@ -14,10 +14,13 @@ import {
   fetchRecorderStatus,
   patchCourtDvr,
   probeCourtDvr,
-  type CourtDvrRow,
   type CourtRtspProbeResult,
   type RecorderHeartbeatRow,
+  type ManualRecordingRequest,
+  triggerManualRecord,
+  getManualRecordStatus,
 } from "@/utils/recorder-admin-api";
+import { Play } from "lucide-react";
 
 interface RowDraft {
   slug: string;
@@ -469,6 +472,117 @@ export default function AdminRecorderConfig() {
           ))}
         </div>
       </section>
+
+      {rows.length > 0 && (
+        <section className="mt-8">
+          <div className="flex items-center gap-2 px-1 pb-3">
+            <Video size={16} className="text-slate-500" />
+            <h3 className="text-sm font-black uppercase tracking-wider text-slate-700">
+              Turnos de Prueba Manuales
+            </h3>
+          </div>
+          <div className="border border-slate-300 bg-white p-4 shadow-sm">
+            <p className="mb-4 text-sm text-slate-600">
+              Generá una grabación de 1 minuto bajo demanda para cualquier cancha. El recorder
+              recibirá la orden, grabará el clip, lo subirá a la nube y te devolverá el código.
+            </p>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {rows.filter(r => r.recordingEnabled).map(row => (
+                <ManualRecordingCard key={row.slug} row={row} adminSecret={adminSecret} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function ManualRecordingCard({ row, adminSecret }: { row: RowDraft, adminSecret: string }) {
+  const [request, setRequest] = useState<ManualRecordingRequest | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const startRecord = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const req = await triggerManualRecord(adminSecret, row.slug, 60);
+      setRequest(req);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!request) return;
+    if (request.status === 'completed' || request.status === 'error') return;
+
+    const interval = setInterval(async () => {
+      try {
+        const updated = await getManualRecordStatus(adminSecret, request.id);
+        setRequest(updated);
+      } catch (err) {
+        console.error("Error polling manual record status", err);
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [request, adminSecret]);
+
+  return (
+    <div className="border border-slate-200 bg-slate-50 p-3 flex flex-col gap-3 rounded">
+      <div>
+        <p className="font-bold text-sm text-slate-800">{row.label}</p>
+        <p className="text-xs text-slate-500">{row.slug}</p>
+      </div>
+      
+      {!request ? (
+        <button
+          onClick={startRecord}
+          disabled={loading}
+          className="inline-flex justify-center items-center gap-1.5 bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-indigo-700 disabled:opacity-50"
+        >
+          {loading ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />}
+          Grabar Prueba (1 min)
+        </button>
+      ) : (
+        <div className="flex flex-col gap-2">
+          <div className="text-xs font-semibold text-slate-600 flex items-center gap-1">
+            Estado: 
+            <span className="uppercase tracking-wider text-[10px] bg-slate-200 px-1.5 py-0.5 rounded text-slate-700">
+              {request.status}
+            </span>
+          </div>
+          
+          {request.status === 'completed' && request.plain_code && (
+            <div className="mt-1 border border-emerald-200 bg-emerald-50 p-2 rounded">
+              <p className="text-xs text-emerald-800 mb-1">¡Grabación exitosa!</p>
+              <div className="flex items-center gap-2">
+                <span className="font-mono font-bold text-lg text-emerald-900">{request.plain_code}</span>
+              </div>
+            </div>
+          )}
+          
+          {request.status === 'error' && (
+            <div className="mt-1 border border-rose-200 bg-rose-50 p-2 rounded text-xs text-rose-700">
+              {request.error_message || 'Error desconocido'}
+            </div>
+          )}
+
+          {(request.status === 'completed' || request.status === 'error') && (
+            <button
+              onClick={() => setRequest(null)}
+              className="text-[11px] font-semibold text-slate-500 hover:text-slate-700 text-left underline mt-1"
+            >
+              Nueva prueba
+            </button>
+          )}
+        </div>
+      )}
+
+      {error && <p className="text-xs text-rose-600 mt-1">{error}</p>}
     </div>
   );
 }

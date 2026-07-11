@@ -138,3 +138,53 @@ export async function fetchRecorderStatus(
   const json = (await res.json()) as { courts?: RecorderHeartbeatRow[] };
   return Array.isArray(json.courts) ? json.courts : [];
 }
+
+export interface ManualRecordingRequest {
+  id: string;
+  court_slug: string;
+  duration_seconds: number;
+  status: 'pending' | 'recording' | 'uploading' | 'completed' | 'error';
+  match_key: string | null;
+  plain_code: string | null;
+  numeric_id: number | null;
+  error_message: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function triggerManualRecord(
+  adminSecret: string,
+  courtSlug: string,
+  durationSeconds: number,
+): Promise<ManualRecordingRequest> {
+  const base = getBase();
+  const res = await fetch(`${base}/api/replays/admin/manual-record`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-admin-secret": adminSecret,
+    },
+    body: JSON.stringify({ courtSlug, durationSeconds }),
+  });
+  if (!res.ok) {
+    throw new Error(await readError(res));
+  }
+  const json = (await res.json()) as { request: ManualRecordingRequest };
+  return json.request;
+}
+
+export async function getManualRecordStatus(
+  adminSecret: string,
+  id: string,
+): Promise<ManualRecordingRequest> {
+  const base = getBase();
+  const res = await fetch(`${base}/api/replays/admin/manual-record/${encodeURIComponent(id)}`, {
+    headers: { "x-admin-secret": adminSecret },
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error(await readError(res));
+  }
+  const json = (await res.json()) as { request: ManualRecordingRequest };
+  return json.request;
+}
