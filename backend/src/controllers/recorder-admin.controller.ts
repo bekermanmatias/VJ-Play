@@ -10,6 +10,7 @@ import {
 import { listRecorderHeartbeats } from '../services/recorder-heartbeat.service.js';
 import { maskRtspUrl, resolveCourtRtspUrl } from '../services/dvr-rtsp.service.js';
 import { probeRtspStream } from '../services/rtsp-probe.service.js';
+import { createManualRecording, getManualRecording } from '../services/manual-recording.service.js';
 
 export const getCourtsDvr = asyncHandler(async (_req: Request, res: Response) => {
   const courts = await listCourtsWithDvr();
@@ -80,4 +81,33 @@ export const postCourtDvrProbe = asyncHandler(async (req: Request, res: Response
     rtspUrlMasked: maskRtspUrl(rtspUrl),
     ...probe,
   });
+});
+
+export const postManualRecord = asyncHandler(async (req: Request, res: Response) => {
+  const { courtSlug, durationSeconds } = req.body as { courtSlug?: string; durationSeconds?: number };
+  if (!courtSlug) {
+    throw new HttpError(400, 'Falta courtSlug en el body');
+  }
+  const duration = durationSeconds || 60;
+  if (duration < 10 || duration > 3600) {
+    throw new HttpError(400, 'La duración debe ser entre 10 y 3600 segundos');
+  }
+  
+  const request = await createManualRecording(courtSlug, duration);
+  res.json({ request });
+});
+
+export const getManualRecordStatus = asyncHandler(async (req: Request, res: Response) => {
+  const id = String(req.params.id || '');
+  if (!id) {
+    throw new HttpError(400, 'Falta el id en la URL');
+  }
+  
+  const request = await getManualRecording(id);
+  if (!request) {
+    throw new HttpError(404, 'Solicitud no encontrada');
+  }
+  
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({ request });
 });

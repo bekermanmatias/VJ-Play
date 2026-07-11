@@ -20,9 +20,11 @@ import {
 } from '../controllers/replay-courts.controller.js';
 import {
   getCourtsDvr,
+  getManualRecordStatus,
   getRecorderStatus,
   patchCourtDvr,
   postCourtDvrProbe,
+  postManualRecord,
 } from '../controllers/recorder-admin.controller.js';
 import {
   getShiftConfig,
@@ -56,3 +58,5 @@ replaysRouter.get('/admin/courts-dvr', requireAdminSecret, getCourtsDvr);
 replaysRouter.patch('/admin/courts-dvr/:slug', requireAdminSecret, patchCourtDvr);
 replaysRouter.post('/admin/courts-dvr/:slug/probe', requireAdminSecret, postCourtDvrProbe);
 replaysRouter.get('/admin/recorder-status', requireAdminSecret, getRecorderStatus);
+replaysRouter.post('/admin/manual-record', requireAdminSecret, postManualRecord);
+replaysRouter.get('/admin/manual-record/:id', requireAdminSecret, getManualRecordStatus);
