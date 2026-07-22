@@ -128,8 +128,8 @@ export default function AdminReplaysModeration({
   const onSearchMatches = (e: React.FormEvent) => {
     e.preventDefault();
     const hasFreeSearch = search.trim().length > 0;
-    if (!hasFreeSearch && !filterShift.trim()) {
-      setMatchesMsg("Seleccioná un turno para buscar.");
+    if (!hasFreeSearch && !filterShift.trim() && !filterDate.trim()) {
+      setMatchesMsg("Seleccioná un turno, una fecha o ingresá una búsqueda.");
       setRows([]);
       return;
     }
@@ -150,6 +150,26 @@ export default function AdminReplaysModeration({
       setMatchesMsg("No se pudo copiar al portapapeles.");
     }
   };
+
+  const onViewProfessional = async (row: ReplayAdminMatchRow) => {
+    if (!row.code) return;
+    try {
+      const res = await fetch(`${apiBase}/api/replays/access/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ matchKey: row.matchKey, code: row.code }),
+      });
+      if (!res.ok) {
+        setMatchesMsg("No se pudo iniciar sesión para ver el partido.");
+        return;
+      }
+      const data = await res.json() as { sessionToken: string };
+      window.open(`/replays/${encodeURIComponent(String(row.numericId))}?cinema=1&t=${encodeURIComponent(data.sessionToken)}`, "_blank");
+    } catch {
+      setMatchesMsg("Error de conexión al ver partido.");
+    }
+  };
+
 
   const onSaveCourts = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -396,8 +416,8 @@ export default function AdminReplaysModeration({
                   .filter((v) => v.length > 0)
                   .join(" ");
                 const hasFreeSearch = search.trim().length > 0;
-                if (!hasFreeSearch && !filterShift.trim()) {
-                  setMatchesMsg("Seleccioná un turno para buscar.");
+                if (!hasFreeSearch && !filterShift.trim() && !filterDate.trim()) {
+                  setMatchesMsg("Seleccioná un turno, una fecha o ingresá una búsqueda.");
                   setRows([]);
                   return;
                 }
@@ -523,14 +543,14 @@ export default function AdminReplaysModeration({
                       >
                         {copiedMatchKey === row.matchKey ? "Copiado" : "Copiar código"}
                       </button>
-                      <a
-                        href={`/replays/${encodeURIComponent(String(row.numericId))}?cinema=1`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex h-8 w-24 items-center justify-center border border-slate-300 bg-white px-2.5 py-1.5 text-center text-xs font-bold leading-none text-slate-700 hover:bg-slate-50"
+                      <button
+                        type="button"
+                        onClick={() => void onViewProfessional(row)}
+                        disabled={!row.code}
+                        className="inline-flex h-8 w-24 items-center justify-center border border-slate-300 bg-white px-2.5 py-1.5 text-center text-xs font-bold leading-none text-slate-700 hover:bg-slate-50 disabled:opacity-40"
                       >
                         Ver partido
-                      </a>
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -538,9 +558,9 @@ export default function AdminReplaysModeration({
               {rows.length === 0 && !matchesLoading && (
                 <tr>
                   <td colSpan={6} className="px-3 py-4 text-center text-sm font-semibold text-slate-500">
-                    {filterShift.trim()
+                    {(filterShift.trim() || filterDate.trim() || search.trim())
                       ? "No hay partidos que coincidan con la búsqueda."
-                      : "Seleccioná filtros y buscá un turno para ver resultados."}
+                      : "Seleccioná filtros o ingresá una búsqueda para ver resultados."}
                   </td>
                 </tr>
               )}

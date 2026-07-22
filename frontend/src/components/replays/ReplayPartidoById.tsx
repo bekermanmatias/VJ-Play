@@ -30,8 +30,19 @@ function CinemaPlayer({
 }) {
   const [check, setCheck] = useState<"checking" | "ok" | "missing">("checking");
 
+  const [initialToken, setInitialToken] = useState<string | null>(null);
+
   useEffect(() => {
     try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlToken = urlParams.get('t');
+      if (urlToken) {
+        sessionStorage.setItem(`vj_replay_sess:${matchKey}`, JSON.stringify({ matchKey, token: urlToken }));
+        setInitialToken(urlToken);
+        setCheck("ok");
+        return;
+      }
+
       const raw = sessionStorage.getItem(`vj_replay_sess:${matchKey}`);
       if (!raw) {
         setCheck("missing");
@@ -73,6 +84,7 @@ function CinemaPlayer({
       cinema
       clockLabel={clockLabel}
       posterFallback={POSTER_FALLBACK}
+      initialSessionToken={initialToken}
     />
   );
 }

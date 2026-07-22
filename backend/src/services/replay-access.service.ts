@@ -992,6 +992,7 @@ export async function listReplayMatchesForAdmin(params: {
       parsed.date,
       parsed.shift,
       String(numericId),
+      typeof row.updated_at === 'string' ? row.updated_at.split('T')[0] : '',
     ]
       .join(' ')
       .toLowerCase();
