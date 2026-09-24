@@ -19,10 +19,22 @@ import {
   type ReplayAdminMatchRow,
 } from "@/utils/replay-admin-matches-api";
 import { buildLastSevenDaysOptions } from "@/utils/replay-date-options";
+import {
+  deriveReplayAssetStatus,
+  describeReplayAssetStatus,
+  formatReplayDateTime,
+  type ReplayStatusTone,
+} from "@/utils/replay-moderation-status";
 
 import { getReplayApiBaseFromEnv } from "@/utils/replay-api-base";
 
 const apiBase = getReplayApiBaseFromEnv();
+
+const STATUS_TONE_CLASS: Record<ReplayStatusTone, string> = {
+  ok: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  warn: "bg-amber-50 text-amber-700 ring-amber-200",
+  error: "bg-rose-50 text-rose-700 ring-rose-200",
+};
 
 type Props = {
   showSettings?: boolean;
@@ -64,7 +76,7 @@ export default function AdminReplaysModeration({
     return () => {
       cancelled = true;
     };
-  }, [apiBase, showMatches, showSettings]);
+  }, [showMatches, showSettings]);
 
   useEffect(() => {
     if (!showSettings && !showMatches) return;
@@ -79,7 +91,7 @@ export default function AdminReplaysModeration({
     return () => {
       cancelled = true;
     };
-  }, [apiBase, showMatches, showSettings]);
+  }, [showMatches, showSettings]);
 
   const [search, setSearch] = useState("");
   const [filterCourt, setFilterCourt] = useState("");
@@ -433,6 +445,10 @@ export default function AdminReplaysModeration({
         <p className="mt-1 text-sm text-slate-600">
           Buscá tu partido por cancha, fecha y turno. También podés usar el ID del partido.
         </p>
+        <p className="mt-1 text-xs text-slate-500">
+          Estado derivado del video y del código de acceso. El modelo actual no tiene estados de
+          ocultado ni expiración.
+        </p>
 
         <form onSubmit={onSearchMatches} className="mt-4 flex flex-col gap-2 sm:flex-row">
           <input
@@ -504,13 +520,16 @@ export default function AdminReplaysModeration({
         )}
 
         <div className="mt-4 overflow-x-auto">
-          <table className="min-w-full table-fixed border border-slate-200 text-sm">
+          <table className="min-w-[1100px] table-fixed border border-slate-200 text-sm">
             <colgroup>
-              <col className="w-[110px]" />
-              <col className="w-[150px]" />
+              <col className="w-[90px]" />
               <col className="w-[130px]" />
               <col className="w-[110px]" />
-              <col className="w-[120px]" />
+              <col className="w-[100px]" />
+              <col className="w-[110px]" />
+              <col className="w-[110px]" />
+              <col className="w-[130px]" />
+              <col className="w-[150px]" />
               <col className="w-[220px]" />
             </colgroup>
             <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-600">
@@ -520,44 +539,82 @@ export default function AdminReplaysModeration({
                 <th className="border-b border-slate-200 px-3 py-2 text-left">Fecha</th>
                 <th className="border-b border-slate-200 px-3 py-2 text-left">Turno</th>
                 <th className="border-b border-slate-200 px-3 py-2 text-left">Código</th>
+                <th className="border-b border-slate-200 px-3 py-2 text-left">Video</th>
+                <th className="border-b border-slate-200 px-3 py-2 text-left">Estado</th>
+                <th className="border-b border-slate-200 px-3 py-2 text-left">Actualizado</th>
                 <th className="border-b border-slate-200 px-3 py-2 text-left">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
-                <tr key={row.matchKey} className="h-12 odd:bg-white even:bg-slate-50/40">
-                  <td className="border-b border-slate-100 px-3 py-2 align-middle font-mono text-xs">{row.numericId}</td>
-                  <td className="border-b border-slate-100 px-3 py-2 align-middle whitespace-nowrap">{row.court || "-"}</td>
-                  <td className="border-b border-slate-100 px-3 py-2 align-middle whitespace-nowrap">{row.date || "-"}</td>
-                  <td className="border-b border-slate-100 px-3 py-2 align-middle whitespace-nowrap">{row.shift || "-"}</td>
-                  <td className="border-b border-slate-100 px-3 py-2 align-middle">
-                    <span className="font-mono text-xs font-bold text-slate-800">{row.code ?? "Generando..."}</span>
-                  </td>
-                  <td className="border-b border-slate-100 px-3 py-2 align-middle">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => void onCopyCode(row)}
-                        disabled={!row.code}
-                        className="h-8 w-24 border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 text-center text-xs font-bold leading-none text-emerald-800 hover:bg-emerald-100 disabled:opacity-40"
+              {rows.map((row) => {
+                const statusInfo = describeReplayAssetStatus(deriveReplayAssetStatus(row));
+                return (
+                  <tr key={row.matchKey} className="h-12 odd:bg-white even:bg-slate-50/40">
+                    <td className="border-b border-slate-100 px-3 py-2 align-middle font-mono text-xs">{row.numericId}</td>
+                    <td className="border-b border-slate-100 px-3 py-2 align-middle whitespace-nowrap">{row.court || "-"}</td>
+                    <td className="border-b border-slate-100 px-3 py-2 align-middle whitespace-nowrap">{row.date || "-"}</td>
+                    <td className="border-b border-slate-100 px-3 py-2 align-middle whitespace-nowrap">{row.shift || "-"}</td>
+                    <td className="border-b border-slate-100 px-3 py-2 align-middle">
+                      <span className="font-mono text-xs font-bold text-slate-800">{row.code ?? "Generando..."}</span>
+                    </td>
+                    <td className="border-b border-slate-100 px-3 py-2 align-middle">
+                      {row.videoUrl ? (
+                        <a
+                          href={row.videoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-bold text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-vj-green"
+                        >
+                          Abrir video
+                        </a>
+                      ) : (
+                        <span className="text-xs text-slate-400">—</span>
+                      )}
+                    </td>
+                    <td className="border-b border-slate-100 px-3 py-2 align-middle">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider ring-1 ${STATUS_TONE_CLASS[statusInfo.tone]}`}
+                        title={statusInfo.hint}
                       >
-                        {copiedMatchKey === row.matchKey ? "Copiado" : "Copiar código"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void onViewProfessional(row)}
-                        disabled={!row.code}
-                        className="inline-flex h-8 w-24 items-center justify-center border border-slate-300 bg-white px-2.5 py-1.5 text-center text-xs font-bold leading-none text-slate-700 hover:bg-slate-50 disabled:opacity-40"
-                      >
-                        Ver partido
-                      </button>
-                    </div>
+                        {statusInfo.label}
+                      </span>
+                    </td>
+                    <td className="border-b border-slate-100 px-3 py-2 align-middle whitespace-nowrap text-xs text-slate-600">
+                      {formatReplayDateTime(row.videoUpdatedAt)}
+                    </td>
+                    <td className="border-b border-slate-100 px-3 py-2 align-middle">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void onCopyCode(row)}
+                          disabled={!row.code}
+                          className="h-8 w-24 border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 text-center text-xs font-bold leading-none text-emerald-800 hover:bg-emerald-100 disabled:opacity-40"
+                        >
+                          {copiedMatchKey === row.matchKey ? "Copiado" : "Copiar código"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void onViewProfessional(row)}
+                          disabled={!row.code}
+                          className="inline-flex h-8 w-24 items-center justify-center border border-slate-300 bg-white px-2.5 py-1.5 text-center text-xs font-bold leading-none text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+                        >
+                          Ver partido
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+              {matchesLoading && rows.length === 0 && (
+                <tr>
+                  <td colSpan={9} className="px-3 py-4 text-center text-sm font-semibold text-slate-500">
+                    Cargando…
                   </td>
                 </tr>
-              ))}
+              )}
               {rows.length === 0 && !matchesLoading && (
                 <tr>
-                  <td colSpan={6} className="px-3 py-4 text-center text-sm font-semibold text-slate-500">
+                  <td colSpan={9} className="px-3 py-4 text-center text-sm font-semibold text-slate-500">
                     {(filterShift.trim() || filterDate.trim() || search.trim())
                       ? "No hay partidos que coincidan con la búsqueda."
                       : "Seleccioná filtros o ingresá una búsqueda para ver resultados."}
