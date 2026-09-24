@@ -1,8 +1,15 @@
 /**
- * Descarga los primeros N segundos de un video de YouTube, sube a R2 y registra replay_assets + código demo.
+ * Descarga N segundos de un video de YouTube (opcionalmente desde un offset), sube a R2
+ * y registra replay_assets + código demo.
  *
  * Uso:
  *   node scripts/upload-youtube-replay.mjs --url "https://www.youtube.com/watch?v=..." --date 2026-05-15 --time 13:00
+ *
+ * Opciones:
+ *   --seconds    Duración a descargar en segundos (1..86400, por defecto 3600).
+ *   --start-sec  Segundo inicial desde el que descargar (0..604800, por defecto 0).
+ *                Si se omite, se conserva el comportamiento anterior (desde el segundo 0).
+ *   --code       Código demo de exactamente 6 caracteres (por defecto DEMO01).
  */
 import { createHash } from "node:crypto";
 import { mkdir, rm, stat } from "node:fs/promises";
@@ -35,13 +42,45 @@ function argValue(flag) {
   return process.argv[i + 1];
 }
 
+function parseIntegerArg(flag, { fallback, min, max, label }) {
+  const raw = argValue(flag);
+  if (raw === null) return fallback;
+  const trimmed = raw.trim();
+  if (!/^-?\d+$/.test(trimmed)) {
+    throw new Error(`${label} (${flag}) debe ser un número entero. Recibido: "${raw}"`);
+  }
+  const value = Number.parseInt(trimmed, 10);
+  if (!Number.isSafeInteger(value)) {
+    throw new Error(`${label} (${flag}) está fuera de rango. Recibido: "${raw}"`);
+  }
+  if (value < min || value > max) {
+    throw new Error(`${label} (${flag}) debe estar entre ${min} y ${max}. Recibido: ${value}`);
+  }
+  return value;
+}
+
 const youtubeUrl =
   argValue("--url") ?? "https://www.youtube.com/watch?v=Gy57xLpBOgA";
 const matchDate = argValue("--date") ?? "2026-05-15";
 const matchTime = argValue("--time") ?? "13:00";
 const court = argValue("--court") ?? "cancha-padel";
-const durationSec = Number.parseInt(argValue("--seconds") ?? "3600", 10);
+const durationSec = parseIntegerArg("--seconds", {
+  fallback: 3600,
+  min: 1,
+  max: 86400,
+  label: "Duración en segundos",
+});
+const startSec = parseIntegerArg("--start-sec", {
+  fallback: 0,
+  min: 0,
+  max: 604800,
+  label: "Segundo inicial",
+});
 const demoCode = (argValue("--code") ?? "DEMO01").toUpperCase().replace(/\s+/g, "");
+
+if (demoCode.length !== 6) {
+  throw new Error("El código demo (--code) debe tener exactamente 6 caracteres (ej. DEMO01)");
+}
 
 const matchKey = `${court}|${matchDate}|${matchTime}`;
 
@@ -106,7 +145,7 @@ function run(cmd, args, opts = {}) {
 
 async function downloadFirstHour() {
   await mkdir(workDir, { recursive: true });
-  console.log(`Descargando primeros ${durationSec}s desde YouTube...`);
+  console.log(`Descargando ${durationSec}s (desde el seg ${startSec}) desde YouTube...`);
   const ytdlpArgs = [
     "-m",
     "yt_dlp",
@@ -114,7 +153,7 @@ async function downloadFirstHour() {
     "--ffmpeg-location",
     ffmpegPath,
     "--download-section",
-    `*0-${durationSec}`,
+    `*${startSec}-${startSec + durationSec}`,
     "-f",
     "bv*+ba/b",
     "--merge-output-format",
@@ -269,10 +308,6 @@ async function registerSupabase(videoUrl) {
 }
 
 async function main() {
-  if (demoCode.length !== 6) {
-    throw new Error("El código demo debe tener 6 caracteres (ej. DEMO01)");
-  }
-
   console.log(`Partido: ${matchKey}`);
   console.log(`YouTube: ${youtubeUrl}`);
 
