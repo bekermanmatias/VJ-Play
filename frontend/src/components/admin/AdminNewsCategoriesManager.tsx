@@ -5,11 +5,6 @@ import {
   adminReplaceCategories,
   type NewsCategory,
 } from "@/utils/news-api";
-import { getReplayAdminSecret } from "@/utils/replay-admin-secret";
-import { getReplayApiBaseFromEnv } from "@/utils/replay-api-base";
-
-const apiBase = getReplayApiBaseFromEnv();
-const adminSecret = getReplayAdminSecret();
 
 type Row = {
   slug: string;
@@ -35,15 +30,11 @@ export default function AdminNewsCategoriesManager() {
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
-  const hasApiBase = Boolean(apiBase);
-  const hasSecret = Boolean(adminSecret);
-
   const refresh = useCallback(async () => {
-    if (!hasApiBase || !hasSecret) return;
     setLoading(true);
     setError(null);
     try {
-      const list = await adminListCategories(apiBase, adminSecret);
+      const list = await adminListCategories();
       list.sort((a, b) => a.sortOrder - b.sortOrder || a.label.localeCompare(b.label));
       setRows(list.map(toRow));
     } catch (err) {
@@ -51,7 +42,7 @@ export default function AdminNewsCategoriesManager() {
     } finally {
       setLoading(false);
     }
-  }, [hasApiBase, hasSecret]);
+  }, []);
 
   useEffect(() => {
     void refresh();
@@ -97,8 +88,6 @@ export default function AdminNewsCategoriesManager() {
       }
 
       const saved = await adminReplaceCategories(
-        apiBase,
-        adminSecret,
         cleaned.map((r) => ({
           slug: r.slug,
           label: r.label.trim(),
@@ -115,21 +104,6 @@ export default function AdminNewsCategoriesManager() {
       setSaving(false);
     }
   };
-
-  if (!hasApiBase) {
-    return (
-      <div className="border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-        Falta configurar <code>PUBLIC_REPLAY_API_BASE</code>.
-      </div>
-    );
-  }
-  if (!hasSecret) {
-    return (
-      <div className="border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-        Falta configurar <code>PUBLIC_REPLAY_ADMIN_SECRET</code>.
-      </div>
-    );
-  }
 
   return (
     <section className="space-y-5">

@@ -2,8 +2,6 @@
 
 interface ImportMetaEnv {
   readonly PUBLIC_REPLAY_API_BASE?: string;
-  /** Igual que ADMIN_SECRET del backend. Solo uso panel replays admin (va incluido en el bundle del cliente). */
-  readonly PUBLIC_REPLAY_ADMIN_SECRET?: string;
   /** Duración de cada turno en segundos (3600 = 1 h, 5400 = 1 h 30). Alinear con RECORDING_SHIFT_DURATION_SECONDS en el API. */
   readonly PUBLIC_REPLAY_SHIFT_DURATION_SECONDS?: string;
   /** Hora de inicio del primer turno (0–23). Default 8. */

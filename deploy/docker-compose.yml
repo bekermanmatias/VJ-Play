@@ -53,13 +53,13 @@ services:
       dockerfile: Dockerfile
       args:
         PUBLIC_REPLAY_API_BASE: ${PUBLIC_REPLAY_API_BASE:-http://localhost:4000}
-        # Mismo valor que ADMIN_SECRET del backend (evita "No autorizado" en /admin).
-        PUBLIC_REPLAY_ADMIN_SECRET: ${ADMIN_SECRET}
     restart: unless-stopped
     environment:
       HOST: 0.0.0.0
       PORT: "4321"
       INTERNAL_API_BASE: "http://backend:4000"
+      # Server-only: Astro SSR firma la sesión admin y llama al backend. Nunca llega al navegador.
+      ADMIN_SECRET: ${ADMIN_SECRET}
     expose:
       - "4321"
     healthcheck:

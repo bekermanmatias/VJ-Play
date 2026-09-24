@@ -8,7 +8,6 @@ import {
   loadReplayShiftConfig,
   saveReplayShiftConfig,
 } from "@/utils/replay-shift-config-api";
-import { getReplayAdminSecret } from "@/utils/replay-admin-secret";
 import {
   buildReplayShiftTurnosFromConfig,
   getDefaultReplayShiftConfigFromEnv,
@@ -102,29 +101,14 @@ export default function AdminReplaysModeration({
   const [matchesMsg, setMatchesMsg] = useState<string | null>(null);
   const [copiedMatchKey, setCopiedMatchKey] = useState<string | null>(null);
 
-  const secret = useMemo(() => getReplayAdminSecret(), []);
   const shiftOptions = useMemo(() => buildReplayShiftTurnosFromConfig(shiftConfig), [shiftConfig]);
   const dateOptions = useMemo(buildLastSevenDaysOptions, []);
 
   const loadMatches = async (query: string) => {
-    if (!apiBase.trim()) {
-      setMatchesMsg("Configurá PUBLIC_REPLAY_API_BASE.");
-      setRows([]);
-      return;
-    }
-    if (!secret) {
-      setMatchesMsg("Definí PUBLIC_REPLAY_ADMIN_SECRET en frontend/.env.");
-      setRows([]);
-      return;
-    }
     setMatchesLoading(true);
     setMatchesMsg(null);
     try {
-      const payload = await loadReplayAdminMatches({
-        apiBase,
-        adminSecret: secret,
-        query,
-      });
+      const payload = await loadReplayAdminMatches({ query });
       setRows(payload);
       if (payload.length === 0) {
         setMatchesMsg(null);
@@ -186,17 +170,6 @@ export default function AdminReplaysModeration({
   const onSaveCourts = async (e: React.FormEvent) => {
     e.preventDefault();
     setCourtsSaveMsg(null);
-    if (!apiBase.trim()) {
-      setCourtsSaveMsg("Configurá PUBLIC_REPLAY_API_BASE.");
-      return;
-    }
-    const secret = getReplayAdminSecret();
-    if (!secret) {
-      setCourtsSaveMsg(
-        "Definí PUBLIC_REPLAY_ADMIN_SECRET en el .env del frontend (mismo valor que ADMIN_SECRET del API).",
-      );
-      return;
-    }
     const cleaned = courtRows
       .map((r) => ({ slug: r.slug.trim(), label: r.label.trim() }))
       .filter((r) => r.slug !== "" && r.label !== "");
@@ -206,11 +179,7 @@ export default function AdminReplaysModeration({
     }
     setCourtsSaving(true);
     try {
-      const payload = await saveReplayCourts(
-        apiBase,
-        secret,
-        cleaned.map((r, i) => ({ ...r, sortOrder: i })),
-      );
+      const payload = await saveReplayCourts(cleaned.map((r, i) => ({ ...r, sortOrder: i })));
       setCourtRows(payload.courts.map((c) => ({ slug: c.slug, label: c.label })));
       setCourtsSaveMsg(
         payload.source === "database"
@@ -227,17 +196,6 @@ export default function AdminReplaysModeration({
   const onSaveShiftConfig = async (e: React.FormEvent) => {
     e.preventDefault();
     setShiftSaveMsg(null);
-    if (!apiBase.trim()) {
-      setShiftSaveMsg("Configurá PUBLIC_REPLAY_API_BASE para guardar en la base.");
-      return;
-    }
-    const secret = getReplayAdminSecret();
-    if (!secret) {
-      setShiftSaveMsg(
-        "Definí PUBLIC_REPLAY_ADMIN_SECRET en el .env del frontend (mismo valor que ADMIN_SECRET del API).",
-      );
-      return;
-    }
     const sec = formDurMin * 60;
     if (sec < 300 || sec > 28_800) {
       setShiftSaveMsg("Duración: entre 5 y 480 minutos.");
@@ -245,7 +203,7 @@ export default function AdminReplaysModeration({
     }
     setShiftSaving(true);
     try {
-      const saved = await saveReplayShiftConfig(apiBase, secret, {
+      const saved = await saveReplayShiftConfig({
         shiftDurationSeconds: sec,
         windowStartHour: formStart,
         windowEndHour: formEnd,

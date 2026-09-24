@@ -1,4 +1,5 @@
 import { normalizeReplayApiBase } from "./replay-api-base";
+import { adminFetchJson } from "./admin-api";
 
 export type HomeBanner = {
   id: string;
@@ -31,10 +32,6 @@ export function getBannersApiBase(): string {
   return normalizeReplayApiBase(import.meta.env.PUBLIC_REPLAY_API_BASE ?? "");
 }
 
-function adminHeaders(secret: string): HeadersInit {
-  return { "Content-Type": "application/json", "x-admin-secret": secret };
-}
-
 async function getJson<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init);
   if (!res.ok) {
@@ -50,74 +47,43 @@ export async function fetchPublicBanners(base: string): Promise<HomeBanner[]> {
   return data.banners;
 }
 
-// Admin
-export async function adminListBanners(base: string, secret: string): Promise<HomeBanner[]> {
-  const data = await getJson<{ banners: HomeBanner[] }>(
-    `${base}/api/banners/admin/list`,
-    { headers: { "x-admin-secret": secret } },
-  );
+// Admin (browser → proxy same-origin /admin/api)
+export async function adminListBanners(): Promise<HomeBanner[]> {
+  const data = await adminFetchJson<{ banners: HomeBanner[] }>(`/banners/admin/list`);
   return data.banners;
 }
 
-export async function adminCreateBanner(
-  base: string,
-  secret: string,
-  input: BannerUpsertInput,
-): Promise<HomeBanner> {
-  const data = await getJson<{ banner: HomeBanner }>(`${base}/api/banners/admin`, {
+export async function adminCreateBanner(input: BannerUpsertInput): Promise<HomeBanner> {
+  const data = await adminFetchJson<{ banner: HomeBanner }>(`/banners/admin`, {
     method: "POST",
-    headers: adminHeaders(secret),
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
   return data.banner;
 }
 
 export async function adminUpdateBanner(
-  base: string,
-  secret: string,
   id: string,
   input: Partial<BannerUpsertInput>,
 ): Promise<HomeBanner> {
-  const data = await getJson<{ banner: HomeBanner }>(`${base}/api/banners/admin/${id}`, {
+  const data = await adminFetchJson<{ banner: HomeBanner }>(`/banners/admin/${id}`, {
     method: "PATCH",
-    headers: adminHeaders(secret),
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
   return data.banner;
 }
 
-export async function adminDeleteBanner(
-  base: string,
-  secret: string,
-  id: string,
-): Promise<void> {
-  const res = await fetch(`${base}/api/banners/admin/${id}`, {
-    method: "DELETE",
-    headers: { "x-admin-secret": secret },
-  });
-  if (!res.ok && res.status !== 204) {
-    const text = await res.text().catch(() => "");
-    throw new Error(text || `HTTP ${res.status}`);
-  }
+export async function adminDeleteBanner(id: string): Promise<void> {
+  await adminFetchJson<void>(`/banners/admin/${id}`, { method: "DELETE" });
 }
 
-export async function adminUploadBannerImage(
-  base: string,
-  secret: string,
-  id: string,
-  file: File,
-): Promise<HomeBanner> {
+export async function adminUploadBannerImage(id: string, file: File): Promise<HomeBanner> {
   const form = new FormData();
   form.append("image", file);
-  const res = await fetch(`${base}/api/banners/admin/${id}/image`, {
+  const data = await adminFetchJson<{ banner: HomeBanner }>(`/banners/admin/${id}/image`, {
     method: "POST",
-    headers: { "x-admin-secret": secret },
     body: form,
   });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(text || `HTTP ${res.status}`);
-  }
-  const data = (await res.json()) as { banner: HomeBanner };
   return data.banner;
 }

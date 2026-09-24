@@ -36,7 +36,6 @@ jobs:
       - name: Build Astro Project
         env:
           PUBLIC_REPLAY_API_BASE: ${{ secrets[format('{0}_PUBLIC_REPLAY_API_BASE', env.PREFIX)] }}
-          PUBLIC_REPLAY_ADMIN_SECRET: ${{ secrets[format('{0}_ADMIN_SECRET', env.PREFIX)] }}
         run: |
           cd frontend
           npm run build

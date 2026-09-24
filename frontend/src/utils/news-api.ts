@@ -1,4 +1,5 @@
 import { normalizeReplayApiBase } from "./replay-api-base";
+import { adminFetchJson } from "./admin-api";
 
 export type NewsCategory = {
   id: string;
@@ -166,7 +167,7 @@ export function noticiasListHref(opts: {
 }
 
 // ---------------------------------------------------------------------------
-// Admin (browser)
+// Admin (browser → proxy same-origin /admin/api)
 // ---------------------------------------------------------------------------
 
 export type AdminNewsUpsertInput = {
@@ -180,39 +181,7 @@ export type AdminNewsUpsertInput = {
   categorySlugs?: string[];
 };
 
-async function adminFetch<T>(
-  apiBase: string,
-  adminSecret: string,
-  path: string,
-  init?: RequestInit,
-): Promise<T> {
-  if (!apiBase) throw new Error("Falta PUBLIC_REPLAY_API_BASE");
-  if (!adminSecret) throw new Error("Falta PUBLIC_REPLAY_ADMIN_SECRET");
-  const res = await fetch(`${apiBase}${path}`, {
-    ...init,
-    headers: {
-      "x-admin-secret": adminSecret,
-      ...(init?.headers ?? {}),
-    },
-  });
-  if (res.status === 204) return undefined as T;
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    let msg = text;
-    try {
-      const j = JSON.parse(text) as { error?: string };
-      msg = j.error ?? text;
-    } catch {
-      // raw text
-    }
-    throw new Error(msg || `HTTP ${res.status}`);
-  }
-  return (await res.json()) as T;
-}
-
 export async function adminListNews(
-  apiBase: string,
-  adminSecret: string,
   opts: ListNewsOptions = {},
 ): Promise<{ news: News[]; total: number }> {
   const params = new URLSearchParams();
@@ -221,19 +190,13 @@ export async function adminListNews(
   if (opts.page) params.set("page", String(opts.page));
   if (opts.search) params.set("q", opts.search);
   const qs = params.toString();
-  return adminFetch<{ news: News[]; total: number }>(
-    apiBase,
-    adminSecret,
-    `/api/news/admin/list${qs ? `?${qs}` : ""}`,
+  return adminFetchJson<{ news: News[]; total: number }>(
+    `/news/admin/list${qs ? `?${qs}` : ""}`,
   );
 }
 
-export async function adminCreateNews(
-  apiBase: string,
-  adminSecret: string,
-  input: AdminNewsUpsertInput,
-): Promise<News> {
-  const res = await adminFetch<{ news: News }>(apiBase, adminSecret, `/api/news/admin`, {
+export async function adminCreateNews(input: AdminNewsUpsertInput): Promise<News> {
+  const res = await adminFetchJson<{ news: News }>(`/news/admin`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -242,12 +205,10 @@ export async function adminCreateNews(
 }
 
 export async function adminUpdateNews(
-  apiBase: string,
-  adminSecret: string,
   id: string,
   input: Partial<AdminNewsUpsertInput>,
 ): Promise<News> {
-  const res = await adminFetch<{ news: News }>(apiBase, adminSecret, `/api/news/admin/${id}`, {
+  const res = await adminFetchJson<{ news: News }>(`/news/admin/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -255,17 +216,11 @@ export async function adminUpdateNews(
   return res.news;
 }
 
-export async function adminDeleteNews(
-  apiBase: string,
-  adminSecret: string,
-  id: string,
-): Promise<void> {
-  await adminFetch<void>(apiBase, adminSecret, `/api/news/admin/${id}`, { method: "DELETE" });
+export async function adminDeleteNews(id: string): Promise<void> {
+  await adminFetchJson<void>(`/news/admin/${id}`, { method: "DELETE" });
 }
 
 export async function adminUploadNewsImage(
-  apiBase: string,
-  adminSecret: string,
   newsId: string,
   file: File,
   opts: { setAsMain?: boolean; altText?: string } = {},
@@ -274,77 +229,47 @@ export async function adminUploadNewsImage(
   form.append("image", file);
   if (opts.setAsMain) form.append("setAsMain", "true");
   if (opts.altText) form.append("altText", opts.altText);
-  const res = await fetch(`${apiBase}/api/news/admin/${newsId}/images`, {
-    method: "POST",
-    headers: { "x-admin-secret": adminSecret },
-    body: form,
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    let msg = text;
-    try {
-      const j = JSON.parse(text) as { error?: string };
-      msg = j.error ?? text;
-    } catch {
-      // raw
-    }
-    throw new Error(msg || `HTTP ${res.status}`);
-  }
-  const json = (await res.json()) as { image: NewsImage };
+  const json = await adminFetchJson<{ image: NewsImage }>(
+    `/news/admin/${newsId}/images`,
+    { method: "POST", body: form },
+  );
   return json.image;
 }
 
 export async function adminSetNewsImageMain(
-  apiBase: string,
-  adminSecret: string,
   newsId: string,
   imageId: string,
 ): Promise<News> {
-  const res = await adminFetch<{ news: News }>(
-    apiBase,
-    adminSecret,
-    `/api/news/admin/${newsId}/images/${imageId}/main`,
+  const res = await adminFetchJson<{ news: News }>(
+    `/news/admin/${newsId}/images/${imageId}/main`,
     { method: "PATCH" },
   );
   return res.news;
 }
 
 export async function adminDeleteNewsImage(
-  apiBase: string,
-  adminSecret: string,
   newsId: string,
   imageId: string,
 ): Promise<News> {
-  const res = await adminFetch<{ news: News }>(
-    apiBase,
-    adminSecret,
-    `/api/news/admin/${newsId}/images/${imageId}`,
+  const res = await adminFetchJson<{ news: News }>(
+    `/news/admin/${newsId}/images/${imageId}`,
     { method: "DELETE" },
   );
   return res.news;
 }
 
-export async function adminListCategories(
-  apiBase: string,
-  adminSecret: string,
-): Promise<NewsCategory[]> {
-  const res = await adminFetch<{ categories: NewsCategory[] }>(
-    apiBase,
-    adminSecret,
-    `/api/news/admin/categories`,
+export async function adminListCategories(): Promise<NewsCategory[]> {
+  const res = await adminFetchJson<{ categories: NewsCategory[] }>(
+    `/news/admin/categories`,
   );
   return res.categories ?? [];
 }
 
 export async function adminReplaceCategories(
-  apiBase: string,
-  adminSecret: string,
   categories: { slug: string; label: string; sortOrder?: number; active?: boolean }[],
 ): Promise<NewsCategory[]> {
-  const res = await adminFetch<{ categories: NewsCategory[] }>(
-    apiBase,
-    adminSecret,
-    `/api/news/admin/categories`,
+  const res = await adminFetchJson<{ categories: NewsCategory[] }>(
+    `/news/admin/categories`,
     {
       method: "PUT",
       headers: { "Content-Type": "application/json" },

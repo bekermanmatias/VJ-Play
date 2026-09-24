@@ -1,6 +1,7 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { buildReplayMatchKey } from "@/utils/replay-match-key";
 import { getReplayApiBaseFromEnv } from "@/utils/replay-api-base";
+import { adminFetchJson } from "@/utils/admin-api";
 
 type VerifyResponse = {
   sessionToken: string;
@@ -24,7 +25,6 @@ export default function DevReplayLab() {
   const [fecha, setFecha] = useState(DEFAULT_FECHA);
   const [hora, setHora] = useState(DEFAULT_HORA);
   const [code, setCode] = useState(DEFAULT_CODE);
-  const [adminSecret, setAdminSecret] = useState("");
   const [sessionToken, setSessionToken] = useState("");
   const [verifyResult, setVerifyResult] = useState<string>("");
   const [streamResult, setStreamResult] = useState<string>("");
@@ -47,26 +47,15 @@ export default function DevReplayLab() {
       setCreateCodeResult("Configura PUBLIC_REPLAY_API_BASE en frontend/.env");
       return;
     }
-    if (!adminSecret.trim()) {
-      setCreateCodeResult("Falta ADMIN_SECRET");
-      return;
-    }
 
     setLoadingCreateCode(true);
     setCreateCodeResult("");
     try {
-      const res = await fetch(`${apiBase}/api/replays/access/codes`, {
+      const body = await adminFetchJson<{ tokenHash?: string }>("/replays/access/codes", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-secret": adminSecret,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ matchKey, plainCode: code }),
       });
-      const body = (await res.json().catch(() => null)) as { tokenHash?: string; error?: string } | null;
-      if (!res.ok) {
-        throw new Error(body?.error ?? `Error ${res.status}`);
-      }
       setCreateCodeResult(`Codigo creado. tokenHash: ${body?.tokenHash ?? "-"}`);
     } catch (error) {
       setCreateCodeResult(error instanceof Error ? error.message : "No se pudo crear el codigo");
@@ -188,21 +177,12 @@ export default function DevReplayLab() {
       <section className="border border-slate-200 bg-white p-5">
         <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Crear codigo (admin)</p>
         <form className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3" onSubmit={handleCreateCode}>
-          <label className="text-sm font-semibold text-slate-700 md:col-span-1">
+          <label className="text-sm font-semibold text-slate-700 md:col-span-2">
             Codigo
             <input
               className="mt-1 h-10 w-full border border-slate-300 px-3 font-mono text-sm"
               value={code}
               onChange={(e) => setCode(e.target.value)}
-            />
-          </label>
-          <label className="text-sm font-semibold text-slate-700 md:col-span-2">
-            ADMIN_SECRET
-            <input
-              className="mt-1 h-10 w-full border border-slate-300 px-3 font-mono text-sm"
-              value={adminSecret}
-              onChange={(e) => setAdminSecret(e.target.value)}
-              placeholder="Se envia en header x-admin-secret"
             />
           </label>
           <button

@@ -69,12 +69,6 @@ function rowFromServer(c: CourtDvrRow): RowDraft {
 }
 
 export default function AdminRecorderConfig() {
-  const [adminSecret, setAdminSecret] = useState<string>(() => {
-    const fromEnv = import.meta.env.PUBLIC_REPLAY_ADMIN_SECRET ?? "";
-    if (fromEnv) return String(fromEnv);
-    if (typeof window === "undefined") return "";
-    return window.localStorage.getItem("vj_admin_secret") ?? "";
-  });
   const [loading, setLoading] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [rows, setRows] = useState<RowDraft[]>([]);
@@ -92,18 +86,12 @@ export default function AdminRecorderConfig() {
   }, [statuses]);
 
   const loadData = useCallback(async (): Promise<void> => {
-    if (!adminSecret) {
-      setRows([]);
-      setStatuses([]);
-      setGlobalError(null);
-      return;
-    }
     setLoading(true);
     setGlobalError(null);
     try {
       const [courts, status] = await Promise.all([
-        fetchCourtsDvr(adminSecret),
-        fetchRecorderStatus(adminSecret).catch((err: unknown) => {
+        fetchCourtsDvr(),
+        fetchRecorderStatus().catch((err: unknown) => {
           setStatusError(String(err));
           return [] as RecorderHeartbeatRow[];
         }),
@@ -117,7 +105,7 @@ export default function AdminRecorderConfig() {
       setLoading(false);
       setStatusLoadingFirst(false);
     }
-  }, [adminSecret]);
+  }, []);
 
   useEffect(() => {
     void loadData();
@@ -126,10 +114,9 @@ export default function AdminRecorderConfig() {
   // Poll de status cada N segundos
   const pollRef = useRef<number | null>(null);
   useEffect(() => {
-    if (!adminSecret) return;
     const tick = async () => {
       try {
-        const status = await fetchRecorderStatus(adminSecret);
+        const status = await fetchRecorderStatus();
         setStatuses(status);
         setStatusError(null);
       } catch (err) {
@@ -143,7 +130,7 @@ export default function AdminRecorderConfig() {
         pollRef.current = null;
       }
     };
-  }, [adminSecret]);
+  }, []);
 
   function patchRow(slug: string, patch: Partial<RowDraft>): void {
     setRows((prev) =>
@@ -187,7 +174,7 @@ export default function AdminRecorderConfig() {
       prev.map((r) => (r.slug === slug ? { ...r, saving: true, error: null } : r)),
     );
     try {
-      const updated = await patchCourtDvr(adminSecret, slug, {
+      const updated = await patchCourtDvr(slug, {
         dvrChannel: channel,
         dvrSubtype: row.dvrSubtype,
         rtspUrlOverride: rtsp === "" ? null : rtsp,
@@ -223,7 +210,7 @@ export default function AdminRecorderConfig() {
   async function probeCamera(slug: string): Promise<void> {
     setCameraProbeBySlug((prev) => ({ ...prev, [slug]: { state: "loading" } }));
     try {
-      const result = await probeCourtDvr(adminSecret, slug);
+      const result = await probeCourtDvr(slug);
       if (result.ok) {
         setCameraProbeBySlug((prev) => ({ ...prev, [slug]: { state: "ok", result } }));
       } else {
@@ -241,34 +228,6 @@ export default function AdminRecorderConfig() {
         },
       }));
     }
-  }
-
-  function persistAdminSecret(v: string): void {
-    setAdminSecret(v);
-    if (typeof window !== "undefined") {
-      if (v) window.localStorage.setItem("vj_admin_secret", v);
-      else window.localStorage.removeItem("vj_admin_secret");
-    }
-  }
-
-  if (!adminSecret) {
-    return (
-      <div className="border border-amber-300 bg-amber-50 p-5">
-        <h3 className="text-sm font-black uppercase tracking-wider text-amber-800">
-          Falta admin secret
-        </h3>
-        <p className="mt-1 text-sm text-amber-800">
-          Pegá el valor de <code>PUBLIC_REPLAY_ADMIN_SECRET</code> para usar este panel.
-          Queda guardado en este navegador.
-        </p>
-        <input
-          type="password"
-          className="mt-3 w-full border border-amber-300 bg-white px-3 py-2 text-sm"
-          placeholder="admin secret"
-          onBlur={(e) => persistAdminSecret(e.target.value.trim())}
-        />
-      </div>
-    );
   }
 
   return (
@@ -524,7 +483,7 @@ export default function AdminRecorderConfig() {
             </p>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {rows.filter(r => r.recordingEnabled).map(row => (
-                <ManualRecordingCard key={row.slug} row={row} adminSecret={adminSecret} />
+                <ManualRecordingCard key={row.slug} row={row} />
               ))}
             </div>
           </div>
@@ -534,7 +493,7 @@ export default function AdminRecorderConfig() {
   );
 }
 
-function ManualRecordingCard({ row, adminSecret }: { row: RowDraft, adminSecret: string }) {
+function ManualRecordingCard({ row }: { row: RowDraft }) {
   const [request, setRequest] = useState<ManualRecordingRequest | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -543,7 +502,7 @@ function ManualRecordingCard({ row, adminSecret }: { row: RowDraft, adminSecret:
     setLoading(true);
     setError(null);
     try {
-      const req = await triggerManualRecord(adminSecret, row.slug, 60);
+      const req = await triggerManualRecord(row.slug, 60);
       setRequest(req);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -558,14 +517,14 @@ function ManualRecordingCard({ row, adminSecret }: { row: RowDraft, adminSecret:
 
     const interval = setInterval(async () => {
       try {
-        const updated = await getManualRecordStatus(adminSecret, request.id);
+        const updated = await getManualRecordStatus(request.id);
         setRequest(updated);
       } catch (err) {
         console.error("Error polling manual record status", err);
       }
     }, 3000);
     return () => clearInterval(interval);
-  }, [request, adminSecret]);
+  }, [request]);
 
   return (
     <div className="border border-slate-200 bg-slate-50 p-3 flex flex-col gap-3 rounded">

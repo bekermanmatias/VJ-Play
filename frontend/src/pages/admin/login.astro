@@ -1,0 +1,65 @@
+---
+import Layout from "@/layouts/Layout.astro";
+
+export const prerender = false;
+
+const errorParam = Astro.url.searchParams.get("error");
+const nextParam = Astro.url.searchParams.get("next") ?? "/admin";
+
+const errorMessages: Record<string, string> = {
+  "1": "Credenciales incorrectas",
+  rate: "Demasiados intentos. Probá de nuevo en unos minutos.",
+  unavailable: "Operación administrativa no disponible.",
+};
+const errorMessage = errorParam
+  ? (errorMessages[errorParam] ?? "No se pudo iniciar sesión.")
+  : null;
+---
+
+<Layout title="Administración | Varela Junior">
+  <main class="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-10">
+    <div class="w-full max-w-sm border border-slate-300 bg-white p-6 shadow-sm">
+      <p class="text-xs font-bold uppercase tracking-wider text-vj-green-600">
+        Administración
+      </p>
+      <h1 class="mt-1 text-2xl font-black text-slate-900">Acceso operadores</h1>
+      <p class="mt-2 text-sm text-slate-600">
+        Ingresá la contraseña administrativa del club.
+      </p>
+
+      {
+        errorMessage && (
+          <p
+            class="mt-4 border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700"
+            role="alert"
+          >
+            {errorMessage}
+          </p>
+        )
+      }
+
+      <form method="POST" action="/admin/api/login" class="mt-5 space-y-4">
+        <input type="hidden" name="next" value={nextParam} />
+        <label class="block">
+          <span class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">
+            Contraseña
+          </span>
+          <input
+            type="password"
+            name="password"
+            required
+            autocomplete="current-password"
+            autofocus
+            class="w-full border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-vj-green focus:outline-none"
+          />
+        </label>
+        <button
+          type="submit"
+          class="w-full bg-vj-green px-4 py-2.5 text-sm font-bold uppercase tracking-wider text-white hover:bg-vj-green-600"
+        >
+          Ingresar
+        </button>
+      </form>
+    </div>
+  </main>
+</Layout>

@@ -14,25 +14,13 @@ import {
 const REFRESH_MS = 15_000;
 
 export default function AdminRecorderStatusWidget() {
-  const [adminSecret, setAdminSecret] = useState<string>(() => {
-    const fromEnv = import.meta.env.PUBLIC_REPLAY_ADMIN_SECRET ?? "";
-    if (fromEnv) return String(fromEnv);
-    if (typeof window === "undefined") return "";
-    return window.localStorage.getItem("vj_admin_secret") ?? "";
-  });
   const [rows, setRows] = useState<RecorderHeartbeatRow[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
 
   const load = useCallback(async (): Promise<void> => {
-    if (!adminSecret) {
-      setError(null);
-      setRows([]);
-      setInitialLoading(false);
-      return;
-    }
     try {
-      const data = await fetchRecorderStatus(adminSecret);
+      const data = await fetchRecorderStatus();
       setRows(data);
       setError(null);
     } catch (err) {
@@ -40,14 +28,13 @@ export default function AdminRecorderStatusWidget() {
     } finally {
       setInitialLoading(false);
     }
-  }, [adminSecret]);
+  }, []);
 
   useEffect(() => {
     void load();
-    if (!adminSecret) return;
     const id = window.setInterval(() => void load(), REFRESH_MS);
     return () => window.clearInterval(id);
-  }, [adminSecret, load]);
+  }, [load]);
 
   const summary = useMemo(() => {
     const counts = { recording: 0, error: 0, idle: 0, paused: 0, other: 0 };
@@ -60,37 +47,6 @@ export default function AdminRecorderStatusWidget() {
     }
     return counts;
   }, [rows]);
-
-  function persistAdminSecret(v: string): void {
-    setAdminSecret(v);
-    if (typeof window !== "undefined") {
-      if (v) window.localStorage.setItem("vj_admin_secret", v);
-      else window.localStorage.removeItem("vj_admin_secret");
-    }
-  }
-
-  if (!adminSecret) {
-    return (
-      <div className="border border-amber-300 bg-amber-50 p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-amber-800">
-              Pegá admin secret para ver el estado
-            </p>
-            <p className="mt-1 text-xs text-amber-700">
-              Queda guardado en este navegador.
-            </p>
-          </div>
-        </div>
-        <input
-          type="password"
-          className="mt-2 w-full border border-amber-300 bg-white px-3 py-2 text-sm"
-          placeholder="admin secret"
-          onBlur={(e) => persistAdminSecret(e.target.value.trim())}
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="border border-slate-300 bg-white shadow-sm">

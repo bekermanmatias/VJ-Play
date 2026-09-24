@@ -18,15 +18,9 @@ import {
   adminListBanners,
   adminUpdateBanner,
   adminUploadBannerImage,
-  getBannersApiBase,
   type BannerUpsertInput,
   type HomeBanner,
 } from "@/utils/banners-api";
-import { getReplayAdminSecret } from "@/utils/replay-admin-secret";
-import { getReplayApiBaseFromEnv } from "@/utils/replay-api-base";
-
-const apiBase = getReplayApiBaseFromEnv();
-const adminSecret = getReplayAdminSecret();
 
 type FormState = {
   title: string;
@@ -91,7 +85,7 @@ export default function AdminBannersManager() {
     setLoading(true);
     setError(null);
     try {
-      const list = await adminListBanners(apiBase, adminSecret);
+      const list = await adminListBanners();
       setBanners(list.sort((a, b) => a.sortOrder - b.sortOrder));
     } catch (e) {
       setError((e as Error).message);
@@ -108,7 +102,7 @@ export default function AdminBannersManager() {
 
   const toggleActive = useCallback(async (b: HomeBanner) => {
     try {
-      const updated = await adminUpdateBanner(apiBase, adminSecret, b.id, { active: !b.active });
+      const updated = await adminUpdateBanner(b.id, { active: !b.active });
       setBanners((prev) => prev.map((x) => (x.id === updated.id ? updated : x)));
     } catch (e) {
       alert(`Error: ${(e as Error).message}`);
@@ -122,8 +116,8 @@ export default function AdminBannersManager() {
     if (!target) return;
     try {
       const [u1, u2] = await Promise.all([
-        adminUpdateBanner(apiBase, adminSecret, b.id, { sortOrder: target.sortOrder }),
-        adminUpdateBanner(apiBase, adminSecret, target.id, { sortOrder: b.sortOrder }),
+        adminUpdateBanner(b.id, { sortOrder: target.sortOrder }),
+        adminUpdateBanner(target.id, { sortOrder: b.sortOrder }),
       ]);
       setBanners((prev) => prev.map((x) => x.id === u1.id ? u1 : x.id === u2.id ? u2 : x));
     } catch (e) {
@@ -134,7 +128,7 @@ export default function AdminBannersManager() {
   const handleDelete = useCallback(async (b: HomeBanner) => {
     if (!confirm(`¿Eliminar el banner "${b.title}"?`)) return;
     try {
-      await adminDeleteBanner(apiBase, adminSecret, b.id);
+      await adminDeleteBanner(b.id);
       setBanners((prev) => prev.filter((x) => x.id !== b.id));
       if (editing?.id === b.id) { setEditing(null); setIsNew(false); }
     } catch (e) {
@@ -178,12 +172,12 @@ export default function AdminBannersManager() {
         sortOrder: form.sortOrder,
       };
       if (isNew) {
-        const created = await adminCreateBanner(apiBase, adminSecret, input);
+        const created = await adminCreateBanner(input);
         setBanners((prev) => [...prev, created].sort((a, b) => a.sortOrder - b.sortOrder));
         setEditing(created);
         setIsNew(false);
       } else if (editing) {
-        const updated = await adminUpdateBanner(apiBase, adminSecret, editing.id, input);
+        const updated = await adminUpdateBanner(editing.id, input);
         setBanners((prev) => prev.map((x) => x.id === updated.id ? updated : x).sort((a, b) => a.sortOrder - b.sortOrder));
         setEditing(updated);
       }
@@ -199,7 +193,7 @@ export default function AdminBannersManager() {
     if (!file || !editing) return;
     setUploading(true);
     try {
-      const updated = await adminUploadBannerImage(apiBase, adminSecret, editing.id, file);
+      const updated = await adminUploadBannerImage(editing.id, file);
       setBanners((prev) => prev.map((x) => x.id === updated.id ? updated : x));
       setEditing(updated);
     } catch (e) {

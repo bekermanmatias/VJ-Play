@@ -22,12 +22,8 @@ import {
   type News,
   type NewsCategory,
 } from "@/utils/news-api";
-import { getReplayAdminSecret } from "@/utils/replay-admin-secret";
-import { getReplayApiBaseFromEnv } from "@/utils/replay-api-base";
 
 const MAX_IMAGES = 5;
-const apiBase = getReplayApiBaseFromEnv();
-const adminSecret = getReplayAdminSecret();
 
 type FormState = {
   title: string;
@@ -105,17 +101,13 @@ export default function AdminNewsManager() {
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  const hasSecret = Boolean(adminSecret);
-  const hasApiBase = Boolean(apiBase);
-
   const refresh = useCallback(async () => {
-    if (!hasSecret || !hasApiBase) return;
     setLoading(true);
     setError(null);
     try {
       const [list, cats] = await Promise.all([
-        adminListNews(apiBase, adminSecret, { limit: 100 }),
-        adminListCategories(apiBase, adminSecret),
+        adminListNews({ limit: 100 }),
+        adminListCategories(),
       ]);
       setNews(list.news);
       setCategories(cats);
@@ -124,7 +116,7 @@ export default function AdminNewsManager() {
     } finally {
       setLoading(false);
     }
-  }, [hasApiBase, hasSecret]);
+  }, []);
 
   useEffect(() => {
     void refresh();
@@ -183,9 +175,9 @@ export default function AdminNewsManager() {
       };
       let saved: News;
       if (editing) {
-        saved = await adminUpdateNews(apiBase, adminSecret, editing.id, payload);
+        saved = await adminUpdateNews(editing.id, payload);
       } else {
-        saved = await adminCreateNews(apiBase, adminSecret, payload);
+        saved = await adminCreateNews(payload);
       }
       setSaveMsg("Guardado");
       setEditing(saved);
@@ -202,7 +194,7 @@ export default function AdminNewsManager() {
   const removeNews = async (n: News) => {
     if (!window.confirm(`¿Eliminar la noticia "${n.title}"?`)) return;
     try {
-      await adminDeleteNews(apiBase, adminSecret, n.id);
+      await adminDeleteNews(n.id);
       if (editing?.id === n.id) {
         cancelEdit();
       }
@@ -221,10 +213,10 @@ export default function AdminNewsManager() {
     setUploading(true);
     setSaveMsg(null);
     try {
-      await adminUploadNewsImage(apiBase, adminSecret, editing.id, file, {
+      await adminUploadNewsImage(editing.id, file, {
         setAsMain: editing.images.length === 0,
       });
-      const fresh = (await adminListNews(apiBase, adminSecret, { limit: 100 })).news;
+      const fresh = (await adminListNews({ limit: 100 })).news;
       setNews(fresh);
       const updated = fresh.find((n) => n.id === editing.id) ?? null;
       if (updated) setEditing(updated);
@@ -239,7 +231,7 @@ export default function AdminNewsManager() {
   const setImageAsMain = async (imageId: string) => {
     if (!editing) return;
     try {
-      const updated = await adminSetNewsImageMain(apiBase, adminSecret, editing.id, imageId);
+      const updated = await adminSetNewsImageMain(editing.id, imageId);
       setEditing(updated);
       await refresh();
     } catch (err) {
@@ -251,7 +243,7 @@ export default function AdminNewsManager() {
     if (!editing) return;
     if (!window.confirm("¿Eliminar esta imagen?")) return;
     try {
-      const updated = await adminDeleteNewsImage(apiBase, adminSecret, editing.id, imageId);
+      const updated = await adminDeleteNewsImage(editing.id, imageId);
       setEditing(updated);
       await refresh();
     } catch (err) {
@@ -265,22 +257,6 @@ export default function AdminNewsManager() {
     () => categories.filter((c) => c.active),
     [categories],
   );
-
-  if (!hasApiBase) {
-    return (
-      <div className="border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-        Falta configurar <code>PUBLIC_REPLAY_API_BASE</code>.
-      </div>
-    );
-  }
-
-  if (!hasSecret) {
-    return (
-      <div className="border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-        Falta configurar <code>PUBLIC_REPLAY_ADMIN_SECRET</code> en el frontend.
-      </div>
-    );
-  }
 
   return (
     <section className="space-y-6">

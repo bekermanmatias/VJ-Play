@@ -3,6 +3,7 @@ import {
   getDefaultReplayShiftConfigFromEnv,
 } from "@/utils/replay-shift-turnos";
 import { normalizeReplayApiBase } from "@/utils/replay-api-base";
+import { adminFetchJson } from "@/utils/admin-api";
 
 function normalizeApiResponse(json: unknown): ReplayShiftConfig {
   if (!json || typeof json !== "object") {
@@ -62,35 +63,16 @@ export async function loadReplayShiftConfig(apiBase: string): Promise<ReplayShif
 }
 
 export async function saveReplayShiftConfig(
-  apiBase: string,
-  adminSecret: string,
   body: Pick<ReplayShiftConfig, "shiftDurationSeconds" | "windowStartHour" | "windowEndHour">,
 ): Promise<ReplayShiftConfig> {
-  const base = normalizeReplayApiBase(apiBase);
-  if (!base) {
-    throw new Error("Falta PUBLIC_REPLAY_API_BASE");
-  }
-  const res = await fetch(`${base}/api/replays/shift-config`, {
+  const parsed = await adminFetchJson<unknown>("/replays/shift-config", {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      "x-admin-secret": adminSecret,
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       shiftDurationSeconds: body.shiftDurationSeconds,
       windowStartHour: body.windowStartHour,
       windowEndHour: body.windowEndHour,
     }),
   });
-  const text = await res.text();
-  if (!res.ok) {
-    throw new Error(text || `HTTP ${res.status}`);
-  }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(text) as unknown;
-  } catch {
-    throw new Error("Respuesta inválida del servidor");
-  }
   return normalizeApiResponse(parsed);
 }

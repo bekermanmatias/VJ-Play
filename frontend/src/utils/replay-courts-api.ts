@@ -1,5 +1,6 @@
 import type { ReplayCourtRow } from "@/utils/replay-courts-types";
 import { normalizeReplayApiBase } from "@/utils/replay-api-base";
+import { adminFetchJson } from "@/utils/admin-api";
 
 /** Si el API no responde (misma semántica que el fallback del backend). */
 export const FALLBACK_REPLAY_COURTS: ReplayCourtRow[] = [
@@ -144,38 +145,12 @@ export async function loadReplayCourts(apiBase: string): Promise<ReplayCourtsApi
 }
 
 export async function saveReplayCourts(
-  apiBase: string,
-  adminSecret: string,
   courts: { slug: string; label: string; sortOrder: number }[],
 ): Promise<ReplayCourtsApiPayload> {
-  const base = normalizeReplayApiBase(apiBase);
-  if (!base) {
-    throw new Error("Falta PUBLIC_REPLAY_API_BASE");
-  }
-  const res = await fetch(`${base}/api/replays/courts`, {
+  const parsed = await adminFetchJson<unknown>("/replays/courts", {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      "x-admin-secret": adminSecret,
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ courts }),
   });
-  const text = await res.text();
-  if (!res.ok) {
-    let msg = text;
-    try {
-      const p = JSON.parse(text) as { error?: string };
-      if (p.error) msg = p.error;
-    } catch {
-      /* use raw */
-    }
-    throw new Error(msg || `HTTP ${res.status}`);
-  }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(text) as unknown;
-  } catch {
-    throw new Error("Respuesta inválida del servidor");
-  }
   return normalizeCourtsPayload(parsed);
 }

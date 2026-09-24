@@ -8,6 +8,18 @@ import react from "@astrojs/react";
 export default defineConfig({
   site: "https://varelajunior.com.ar",
   output: "server",
+  security: {
+    // Dominios confiables para la validación de Host/Origin de Astro.
+    // Sin esto, Astro cae a un host "localhost" sin puerto y rechaza (403)
+    // cualquier POST de formulario, incluido el login admin.
+    // Debe incluir el dominio público y los hosts de desarrollo/preview.
+    allowedDomains: [
+      { hostname: "varelajunior.com.ar" },
+      { hostname: "www.varelajunior.com.ar" },
+      { hostname: "localhost" },
+      { hostname: "127.0.0.1" },
+    ],
+  },
   adapter: node({
     mode: "standalone"
   }),
