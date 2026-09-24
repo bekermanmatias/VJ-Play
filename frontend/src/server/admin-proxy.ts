@@ -60,6 +60,24 @@ export function isAllowedAdminProxyRequest(method: string, path: string): boolea
   );
 }
 
+/**
+ * Rechaza paths con encoding, backslashes, doble barra o traversal que podrían
+ * sortear la allowlist. El backend siempre recibe un path limpio y normalizado.
+ */
+export function isSafeAdminProxyPath(path: string): boolean {
+  const normalized = path.replace(/^\/+/, "");
+  if (normalized.length === 0) {
+    return false;
+  }
+  if (normalized.includes("%") || normalized.includes("\\")) {
+    return false;
+  }
+  if (normalized.includes("//")) {
+    return false;
+  }
+  return normalized.split("/").every((segment) => segment !== "." && segment !== "..");
+}
+
 /** Protección CSRF simple: para métodos mutativos exige Origin/Referer propio. */
 export function hasValidOrigin(request: Request): boolean {
   if (!MUTATING_METHODS.has(request.method.toUpperCase())) {
@@ -101,6 +119,28 @@ function jsonResponse(status: number, body: unknown): Response {
   });
 }
 
+/**
+ * Construye los headers hacia el backend.
+ *
+ * NO reenvía headers del navegador salvo `content-type` y `accept`; en
+ * particular ignora cualquier `x-admin-secret`, `cookie`, `authorization`,
+ * `host`, `x-forwarded-*`, `proxy-*` o `transfer-encoding` enviados por el
+ * cliente. El secreto administrativo lo establece el servidor.
+ */
+export function buildUpstreamHeaders(request: Request, secret: string): Headers {
+  const headers = new Headers();
+  headers.set("x-admin-secret", secret);
+  const contentType = request.headers.get("content-type");
+  if (contentType) {
+    headers.set("content-type", contentType);
+  }
+  const accept = request.headers.get("accept");
+  if (accept) {
+    headers.set("accept", accept);
+  }
+  return headers;
+}
+
 export interface ProxyContext {
   path: string;
   search: string;
@@ -118,6 +158,10 @@ export async function proxyAdminRequest(
     return jsonResponse(401, { error: "Sesión administrativa requerida" });
   }
 
+  if (!isSafeAdminProxyPath(path)) {
+    return jsonResponse(404, { error: "Recurso administrativo no encontrado" });
+  }
+
   if (!isAllowedAdminProxyRequest(method, path)) {
     return jsonResponse(404, { error: "Recurso administrativo no encontrado" });
   }
@@ -132,16 +176,7 @@ export async function proxyAdminRequest(
   }
 
   const upstreamUrl = `${getInternalApiBase()}/api/${path}${ctx.search ?? ""}`;
-  const headers = new Headers();
-  headers.set("x-admin-secret", secret);
-  const contentType = request.headers.get("content-type");
-  if (contentType) {
-    headers.set("content-type", contentType);
-  }
-  const accept = request.headers.get("accept");
-  if (accept) {
-    headers.set("accept", accept);
-  }
+  const headers = buildUpstreamHeaders(request, secret);
 
   let body: ArrayBuffer | undefined;
   if (MUTATING_METHODS.has(method)) {

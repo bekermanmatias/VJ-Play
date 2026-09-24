@@ -47,7 +47,7 @@ El deploy **no** crea noticias ni sube fotos solo. Los datos viven en **Supabase
    - Supabase → SQL Editor → pegar y ejecutar `backend/supabase/012_news.sql`.
 
 2. **Mismo `.env` en la VPS** que en local para datos compartidos:
-   - `SUPABASE_URL`, `SUPABASE_KEY`, `R2_*`, `R2_PUBLIC_BASE_URL`, `ADMIN_SECRET`.
+   - `SUPABASE_URL`, `SUPABASE_KEY`, `R2_*`, `R2_PUBLIC_BASE_URL`, `ADMIN_SECRET`, `ADMIN_SESSION_SECRET` (server-only; firma la sesión admin del panel).
 
 3. **Frontend** embebido con la URL pública del sitio al hacer build:
    - `PUBLIC_REPLAY_API_BASE=http://<IP_PUBLICA>` (sin barra final).

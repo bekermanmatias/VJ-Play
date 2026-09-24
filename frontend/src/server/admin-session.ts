@@ -12,6 +12,17 @@ export function getAdminSecret(): string {
   return (serverEnv("ADMIN_SECRET") ?? "").trim();
 }
 
+/**
+ * Secreto para firmar/verificar la sesión administrativa.
+ *
+ * Separado de ADMIN_SECRET (que autentica Astro → backend) cuando
+ * ADMIN_SESSION_SECRET está definido. Si no, cae a ADMIN_SECRET para no romper
+ * despliegues existentes. Rotarlo invalida las sesiones emitidas.
+ */
+export function getSessionSecret(): string {
+  return (serverEnv("ADMIN_SESSION_SECRET") ?? "").trim() || getAdminSecret();
+}
+
 export function isAdminConfigured(secret: string = getAdminSecret()): boolean {
   return secret.length > 0;
 }
@@ -53,7 +64,7 @@ function signPayload(payload: string, secret: string): string {
 /** Crea un token de sesión firmado con formato `<expiraEn>.<firmaHmac>`. */
 export function createSessionToken(
   nowMs: number = Date.now(),
-  secret: string = getAdminSecret(),
+  secret: string = getSessionSecret(),
 ): string {
   const expiresAt = Math.floor(nowMs / 1000) + SESSION_TTL_SECONDS;
   const payload = String(expiresAt);
@@ -64,7 +75,7 @@ export function createSessionToken(
 export function verifySessionToken(
   token: string | null | undefined,
   nowMs: number = Date.now(),
-  secret: string = getAdminSecret(),
+  secret: string = getSessionSecret(),
 ): boolean {
   if (!token || !isAdminConfigured(secret)) {
     return false;

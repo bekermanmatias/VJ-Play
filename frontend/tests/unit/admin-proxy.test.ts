@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { hasValidOrigin, isAllowedAdminProxyRequest } from "@/server/admin-proxy";
+import {
+  buildUpstreamHeaders,
+  hasValidOrigin,
+  isAllowedAdminProxyRequest,
+  isSafeAdminProxyPath,
+} from "@/server/admin-proxy";
 
 describe("isAllowedAdminProxyRequest", () => {
   it("acepta las rutas administrativas conocidas", () => {
@@ -61,5 +66,72 @@ describe("hasValidOrigin", () => {
       hasValidOrigin(fakeRequest("PATCH", { referer: "https://vj.example/admin/replays" })),
     ).toBe(true);
     expect(hasValidOrigin(fakeRequest("PATCH", { referer: "https://evil.example/x" }))).toBe(false);
+  });
+});
+
+describe("isSafeAdminProxyPath", () => {
+  it("acepta rutas normales", () => {
+    expect(isSafeAdminProxyPath("replays/admin/courts-dvr")).toBe(true);
+    expect(isSafeAdminProxyPath("/replays/admin/manual-record/abc")).toBe(true);
+    expect(isSafeAdminProxyPath("news/admin/123/images")).toBe(true);
+  });
+
+  it("rechaza traversal, percent-encoding y separadores raros", () => {
+    expect(isSafeAdminProxyPath("")).toBe(false);
+    expect(isSafeAdminProxyPath("/")).toBe(false);
+    expect(isSafeAdminProxyPath("replays/admin/../secreto")).toBe(false);
+    expect(isSafeAdminProxyPath("replays/admin/%2e%2e/secreto")).toBe(false);
+    expect(isSafeAdminProxyPath("replays\\admin\\courts-dvr")).toBe(false);
+    expect(isSafeAdminProxyPath("replays//admin")).toBe(false);
+    expect(isSafeAdminProxyPath("replays/./admin")).toBe(false);
+  });
+});
+
+describe("buildUpstreamHeaders", () => {
+  function fakeRequest(headers: Record<string, string> = {}): Request {
+    return { headers: new Headers(headers) } as unknown as Request;
+  }
+
+  it("establece x-admin-secret server-side", () => {
+    const headers = buildUpstreamHeaders(fakeRequest(), "server-secret");
+    expect(headers.get("x-admin-secret")).toBe("server-secret");
+  });
+
+  it("copia sólo content-type y accept", () => {
+    const headers = buildUpstreamHeaders(
+      fakeRequest({
+        "content-type": "application/json",
+        accept: "application/json",
+        "x-custom": "1",
+      }),
+      "s",
+    );
+    expect(headers.get("content-type")).toBe("application/json");
+    expect(headers.get("accept")).toBe("application/json");
+    expect(headers.get("x-custom")).toBeNull();
+  });
+
+  it("nunca reenvía headers sensibles del navegador", () => {
+    const headers = buildUpstreamHeaders(
+      fakeRequest({
+        cookie: "vj_admin_session=abc",
+        authorization: "Bearer x",
+        host: "evil.example",
+        "x-forwarded-for": "1.2.3.4",
+        "x-forwarded-host": "evil.example",
+        "proxy-authorization": "Basic x",
+        "transfer-encoding": "chunked",
+        "x-admin-secret": "client-value",
+      }),
+      "server-secret",
+    );
+    expect(headers.get("cookie")).toBeNull();
+    expect(headers.get("authorization")).toBeNull();
+    expect(headers.get("host")).toBeNull();
+    expect(headers.get("x-forwarded-for")).toBeNull();
+    expect(headers.get("x-forwarded-host")).toBeNull();
+    expect(headers.get("proxy-authorization")).toBeNull();
+    expect(headers.get("transfer-encoding")).toBeNull();
+    expect(headers.get("x-admin-secret")).toBe("server-secret");
   });
 });

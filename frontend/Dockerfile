@@ -1,19 +1,17 @@
 # syntax=docker/dockerfile:1
 ARG PUBLIC_REPLAY_API_BASE=http://localhost:4000
-ARG PUBLIC_REPLAY_ADMIN_SECRET=
 
-FROM node:20-bookworm-slim AS build
+FROM node:22-bookworm-slim AS build
 WORKDIR /app
 ARG PUBLIC_REPLAY_API_BASE
-ARG PUBLIC_REPLAY_ADMIN_SECRET
 ENV PUBLIC_REPLAY_API_BASE=${PUBLIC_REPLAY_API_BASE}
-ENV PUBLIC_REPLAY_ADMIN_SECRET=${PUBLIC_REPLAY_ADMIN_SECRET}
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
 RUN npm run build
+RUN npm prune --omit=dev
 
-FROM node:20-bookworm-slim AS run
+FROM node:22-bookworm-slim AS run
 WORKDIR /app
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0

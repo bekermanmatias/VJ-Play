@@ -58,8 +58,9 @@ services:
       HOST: 0.0.0.0
       PORT: "4321"
       INTERNAL_API_BASE: "http://backend:4000"
-      # Server-only: Astro SSR firma la sesión admin y llama al backend. Nunca llega al navegador.
+      # Server-only: Astro SSR llama al backend y firma la sesión admin. Nunca llegan al navegador.
       ADMIN_SECRET: ${ADMIN_SECRET}
+      ADMIN_SESSION_SECRET: ${ADMIN_SESSION_SECRET:-}
     expose:
       - "4321"
     healthcheck:

@@ -1,9 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 import {
   ADMIN_SESSION_COOKIE,
   SESSION_TTL_SECONDS,
   createSessionToken,
+  getSessionSecret,
   readSessionCookie,
   sessionCookieOptions,
   verifyAdminPassword,
@@ -87,5 +88,49 @@ describe("sessionCookieOptions", () => {
 
   it("secure=false fuera de producción", () => {
     expect(sessionCookieOptions(false).secure).toBe(false);
+  });
+});
+
+describe("getSessionSecret", () => {
+  const originalSession = process.env.ADMIN_SESSION_SECRET;
+  const originalAdmin = process.env.ADMIN_SECRET;
+
+  afterEach(() => {
+    if (originalSession === undefined) {
+      delete process.env.ADMIN_SESSION_SECRET;
+    } else {
+      process.env.ADMIN_SESSION_SECRET = originalSession;
+    }
+    if (originalAdmin === undefined) {
+      delete process.env.ADMIN_SECRET;
+    } else {
+      process.env.ADMIN_SECRET = originalAdmin;
+    }
+  });
+
+  it("prefiere ADMIN_SESSION_SECRET", () => {
+    process.env.ADMIN_SESSION_SECRET = "session-secret";
+    process.env.ADMIN_SECRET = "admin-secret";
+    expect(getSessionSecret()).toBe("session-secret");
+  });
+
+  it("cae a ADMIN_SECRET si no hay ADMIN_SESSION_SECRET", () => {
+    delete process.env.ADMIN_SESSION_SECRET;
+    process.env.ADMIN_SECRET = "admin-secret";
+    expect(getSessionSecret()).toBe("admin-secret");
+  });
+
+  it("devuelve vacío si no hay ningún secreto", () => {
+    delete process.env.ADMIN_SESSION_SECRET;
+    delete process.env.ADMIN_SECRET;
+    expect(getSessionSecret()).toBe("");
+  });
+
+  it("rotar la clave de sesión invalida los tokens emitidos", () => {
+    process.env.ADMIN_SESSION_SECRET = "session-secret-v1";
+    const token = createSessionToken(NOW);
+    expect(verifySessionToken(token, NOW)).toBe(true);
+    process.env.ADMIN_SESSION_SECRET = "session-secret-v2";
+    expect(verifySessionToken(token, NOW)).toBe(false);
   });
 });

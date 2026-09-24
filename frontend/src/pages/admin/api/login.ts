@@ -1,4 +1,6 @@
 import type { APIRoute } from "astro";
+import { getClientIp } from "@/server/admin-client-ip";
+import { sanitizeAdminRedirect } from "@/server/admin-redirect";
 import { checkRateLimit, resetRateLimit } from "@/server/admin-ratelimit";
 import {
   ADMIN_SESSION_COOKIE,
@@ -20,15 +22,6 @@ function redirectTo(location: string): Response {
   });
 }
 
-/** Solo permite destinos internos de /admin para evitar open redirect. */
-function sanitizeNext(raw: FormDataEntryValue | null): string {
-  const value = typeof raw === "string" ? raw : "";
-  if (value.startsWith("/admin") && !value.startsWith("//") && !value.includes("\\")) {
-    return value;
-  }
-  return "/admin";
-}
-
 export const POST: APIRoute = async ({ request, cookies, clientAddress }) => {
   if (!isAdminConfigured()) {
     return redirectTo("/admin/login?error=unavailable");
@@ -36,14 +29,15 @@ export const POST: APIRoute = async ({ request, cookies, clientAddress }) => {
 
   const form = await request.formData();
   const password = String(form.get("password") ?? "");
-  const next = sanitizeNext(form.get("next"));
+  const next = sanitizeAdminRedirect(form.get("next"));
 
-  let key = "unknown";
+  let fallbackIp: string | undefined;
   try {
-    key = clientAddress || "unknown";
+    fallbackIp = clientAddress;
   } catch {
-    key = "unknown";
+    fallbackIp = undefined;
   }
+  const key = getClientIp(request, fallbackIp);
 
   if (!checkRateLimit(key, LOGIN_RATE_LIMIT)) {
     return redirectTo("/admin/login?error=rate");
