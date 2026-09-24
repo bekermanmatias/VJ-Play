@@ -16,7 +16,8 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "test:responsive": "playwright test",
-    "test:storybook": "playwright test --config playwright.storybook.config.ts"
+    "test:storybook": "playwright test --config playwright.storybook.config.ts",
+    "test:unit": "vitest run"
   },
   "dependencies": {
     "@astrojs/node": "^9.5.5",

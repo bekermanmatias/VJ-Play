@@ -3,6 +3,7 @@ import {
   CheckCircle2,
   CircleDot,
   Loader2,
+  Play,
   RefreshCw,
   Save,
   ServerCog,
@@ -15,12 +16,21 @@ import {
   patchCourtDvr,
   probeCourtDvr,
   type CourtRtspProbeResult,
+  type CourtDvrRow,
   type RecorderHeartbeatRow,
   type ManualRecordingRequest,
   triggerManualRecord,
   getManualRecordStatus,
 } from "@/utils/recorder-admin-api";
-import { Play } from "lucide-react";
+import {
+  describeRecorderBadge,
+  describeRecorderIssue,
+  formatBytes,
+  formatDuration,
+  formatRelativeSeconds,
+  type RecorderIssue,
+  type RecorderTone,
+} from "@/utils/recorder-status";
 
 interface RowDraft {
   slug: string;
@@ -435,41 +445,67 @@ export default function AdminRecorderConfig() {
           </div>
         )}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {statuses.map((s) => (
-            <article
-              key={s.courtSlug}
-              className="border border-slate-300 bg-white p-4 shadow-sm"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-black text-slate-900">
-                    {s.courtLabel ?? s.courtSlug}
-                  </p>
-                  <p className="text-xs text-slate-500">{s.courtSlug}</p>
-                </div>
-                <StatusBadge row={s} />
-              </div>
-              <dl className="mt-3 space-y-1 text-xs text-slate-600">
-                <div className="flex justify-between gap-2">
-                  <dt className="text-slate-400">Último ping</dt>
-                  <dd className="font-semibold text-slate-700">
-                    {s.lastSeenAt ? `hace ${s.secondsSinceLastSeen ?? 0}s` : "nunca"}
-                  </dd>
-                </div>
-                <div className="flex justify-between gap-2">
-                  <dt className="text-slate-400">Último segmento</dt>
-                  <dd className="truncate font-semibold text-slate-700">
-                    {s.lastSegmentMatchKey ?? "—"}
-                  </dd>
-                </div>
-                {s.errorMessage && (
-                  <div className="bg-rose-50 px-2 py-1.5 text-[11px] font-semibold text-rose-700">
-                    {s.errorMessage}
+          {statuses.map((s) => {
+            const issue = describeRecorderIssue(s);
+            const recordingSince = s.status === "recording" ? s.currentSegmentStartedAt : null;
+            const recordingElapsed = elapsedSeconds(recordingSince);
+            return (
+              <article
+                key={s.courtSlug}
+                className="flex flex-col border border-slate-300 bg-white p-4 shadow-sm"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-black text-slate-900">
+                      {s.courtLabel ?? s.courtSlug}
+                    </p>
+                    <p className="text-xs text-slate-500">{s.courtSlug}</p>
                   </div>
-                )}
-              </dl>
-            </article>
-          ))}
+                  <StatusBadge row={s} />
+                </div>
+                <dl className="mt-3 space-y-1 text-xs text-slate-600">
+                  <InfoRow
+                    label="Último ping"
+                    value={formatRelativeSeconds(s.secondsSinceLastSeen)}
+                  />
+                  <InfoRow
+                    label="Grabando desde"
+                    value={
+                      recordingSince
+                        ? `${formatClock(recordingSince)}${
+                            recordingElapsed !== null
+                              ? ` · ${formatDuration(recordingElapsed)}`
+                              : ""
+                          }`
+                        : "—"
+                    }
+                  />
+                  <InfoRow label="Segmento actual" value={s.currentSegmentMatchKey ?? "—"} mono />
+                  <InfoRow label="Último segmento" value={s.lastSegmentMatchKey ?? "—"} mono />
+                  <InfoRow
+                    label="Subido"
+                    value={s.lastSegmentUploadedAt ? formatClock(s.lastSegmentUploadedAt) : "—"}
+                  />
+                  <InfoRow label="Tamaño" value={formatBytes(s.bytesWrittenLastSegment)} />
+                  <InfoRow
+                    label="Recorder"
+                    value={
+                      [s.recorderVersion, s.recorderHost].filter(Boolean).join(" · ") || "—"
+                    }
+                  />
+                </dl>
+                {issue && <IssueNote issue={issue} />}
+                <div className="mt-3 border-t border-slate-100 pt-2">
+                  <a
+                    href="/admin/replays"
+                    className="text-[11px] font-bold uppercase tracking-wider text-slate-600 underline decoration-slate-300 underline-offset-2 hover:text-vj-green"
+                  >
+                    Ir a moderación
+                  </a>
+                </div>
+              </article>
+            );
+          })}
         </div>
       </section>
 
@@ -627,6 +663,24 @@ function CameraProbeCell({
   );
 }
 
+const TONE_CLASS: Record<RecorderTone, string> = {
+  ok: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  warn: "bg-amber-50 text-amber-700 ring-amber-200",
+  error: "bg-rose-50 text-rose-700 ring-rose-200",
+  idle: "bg-sky-50 text-sky-700 ring-sky-200",
+  info: "bg-indigo-50 text-indigo-700 ring-indigo-200",
+  muted: "bg-slate-100 text-slate-600 ring-slate-200",
+};
+
+const TONE_ICON: Record<RecorderTone, typeof CircleDot> = {
+  ok: CheckCircle2,
+  warn: TriangleAlert,
+  error: TriangleAlert,
+  idle: CircleDot,
+  info: Loader2,
+  muted: CircleDot,
+};
+
 function StatusBadge({
   row,
   loading,
@@ -634,54 +688,61 @@ function StatusBadge({
   row: RecorderHeartbeatRow | undefined;
   loading?: boolean;
 }) {
-  if (loading) {
-    return (
-      <span className="inline-flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-500 ring-1 ring-slate-200">
-        <Loader2 size={11} className="animate-spin" /> ...
-      </span>
-    );
-  }
-  if (!row) {
-    return (
-      <span className="inline-flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-500 ring-1 ring-slate-200">
-        <CircleDot size={11} /> Sin datos
-      </span>
-    );
-  }
-  let cls = "bg-slate-100 text-slate-600 ring-slate-200";
-  let label: string = row.status;
-  let Icon = CircleDot;
-  if (row.status === "recording") {
-    cls = row.stale
-      ? "bg-amber-50 text-amber-700 ring-amber-200"
-      : "bg-emerald-50 text-emerald-700 ring-emerald-200";
-    label = row.stale ? "recording (stale)" : "recording";
-    Icon = row.stale ? TriangleAlert : CheckCircle2;
-  } else if (row.status === "error") {
-    cls = "bg-rose-50 text-rose-700 ring-rose-200";
-    label = "error";
-    Icon = TriangleAlert;
-  } else if (row.status === "idle") {
-    cls = "bg-sky-50 text-sky-700 ring-sky-200";
-    label = "fuera de horario";
-  } else if (row.status === "paused") {
-    cls = "bg-slate-100 text-slate-600 ring-slate-200";
-    label = "deshabilitada";
-  } else if (row.status === "starting") {
-    cls = "bg-indigo-50 text-indigo-700 ring-indigo-200";
-    label = "arrancando";
-    Icon = Loader2;
-  } else if (row.status === "unknown") {
-    cls = "bg-amber-50 text-amber-700 ring-amber-200";
-    label = "sin reportar";
-    Icon = TriangleAlert;
-  }
+  const badge = describeRecorderBadge(row, loading);
+  const Icon = TONE_ICON[badge.tone];
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider ring-1 ${cls}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider ring-1 ${TONE_CLASS[badge.tone]}`}
     >
-      <Icon size={11} className={row.status === "starting" ? "animate-spin" : ""} />
-      {label}
+      <Icon size={11} className={badge.spin ? "animate-spin" : ""} />
+      {badge.label}
     </span>
   );
+}
+
+function InfoRow({
+  label,
+  value,
+  mono,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+}) {
+  return (
+    <div className="flex justify-between gap-2">
+      <dt className="shrink-0 text-slate-400">{label}</dt>
+      <dd
+        className={`truncate text-right font-semibold text-slate-700 ${mono ? "font-mono" : ""}`}
+        title={value}
+      >
+        {value}
+      </dd>
+    </div>
+  );
+}
+
+function IssueNote({ issue }: { issue: RecorderIssue }) {
+  return (
+    <div className="mt-3 border border-rose-200 bg-rose-50 p-2.5">
+      <p className="text-[11px] font-black uppercase tracking-wider text-rose-800">
+        {issue.title}
+      </p>
+      <p className="mt-1 text-[11px] font-semibold text-rose-700">{issue.detail}</p>
+      <p className="mt-1 text-[11px] text-rose-700/90">{issue.action}</p>
+    </div>
+  );
+}
+
+function formatClock(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+}
+
+function elapsedSeconds(iso: string | null): number | null {
+  if (!iso) return null;
+  const ms = new Date(iso).getTime();
+  if (Number.isNaN(ms)) return null;
+  return Math.max(0, Math.floor((Date.now() - ms) / 1000));
 }

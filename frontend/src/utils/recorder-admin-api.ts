@@ -27,9 +27,13 @@ export interface RecorderHeartbeatRow {
   secondsSinceLastSeen: number | null;
   stale: boolean;
   currentSegmentMatchKey: string | null;
+  currentSegmentStartedAt: string | null;
   lastSegmentMatchKey: string | null;
   lastSegmentUploadedAt: string | null;
+  bytesWrittenLastSegment: number | null;
   errorMessage: string | null;
+  recorderVersion: string | null;
+  recorderHost: string | null;
   recordingEnabled: boolean;
 }
 

@@ -11,6 +11,7 @@ import {
 } from "./ffmpeg-segment.service.js";
 import {
   cleanupLocal,
+  deriveMatchKey,
   upsertReplayAsset,
   uploadSegmentToR2,
 } from "./upload.service.js";
@@ -36,8 +37,11 @@ interface WorkerState {
   knownSizes: Map<string, number>;
   uploadedKeys: Set<string>;
   inFlightUploads: Set<string>;
+  currentSegmentPath: string | null;
+  currentSegmentStartedAt: string | null;
   lastSegmentMatchKey: string | null;
   lastSegmentUploadedAt: string | null;
+  lastSegmentBytes: number | null;
   lastError: string | null;
   consecutiveFailures: number;
 }
@@ -57,8 +61,11 @@ export function startCourtWorker(court: ResolvedCourt): CourtWorkerHandle {
     knownSizes: new Map(),
     uploadedKeys: new Set(),
     inFlightUploads: new Set(),
+    currentSegmentPath: null,
+    currentSegmentStartedAt: null,
     lastSegmentMatchKey: null,
     lastSegmentUploadedAt: null,
+    lastSegmentBytes: null,
     lastError: null,
     consecutiveFailures: 0,
   };
@@ -68,9 +75,11 @@ export function startCourtWorker(court: ResolvedCourt): CourtWorkerHandle {
     void sendHeartbeat({
       courtSlug: court.slug,
       status: deriveStatus(state),
-      currentSegmentMatchKey: deriveCurrentSegmentMatchKey(state),
+      currentSegmentMatchKey: deriveCurrentSegmentMatchKey(state, court.slug),
+      currentSegmentStartedAt: state.currentSegmentStartedAt,
       lastSegmentMatchKey: state.lastSegmentMatchKey,
       lastSegmentUploadedAt: state.lastSegmentUploadedAt,
+      bytesWrittenLastSegment: state.lastSegmentBytes,
       errorMessage: state.lastError,
     });
   }, env.heartbeat.intervalSeconds * 1000);
@@ -158,6 +167,10 @@ export function startCourtWorker(court: ResolvedCourt): CourtWorkerHandle {
     // grabando ahora: NO lo subimos hasta que aparezca uno más nuevo.
     const sorted = [...closed].sort();
     const active = newestKey(nextSizes);
+    if (active !== state.currentSegmentPath) {
+      state.currentSegmentPath = active;
+      state.currentSegmentStartedAt = active ? new Date().toISOString() : null;
+    }
     const toUpload = sorted.filter((p) => p !== active);
 
     for (const localPath of toUpload) {
@@ -180,6 +193,7 @@ export function startCourtWorker(court: ResolvedCourt): CourtWorkerHandle {
       state.uploadedKeys.add(localPath);
       state.lastSegmentMatchKey = seg.matchKey;
       state.lastSegmentUploadedAt = new Date().toISOString();
+      state.lastSegmentBytes = seg.bytes;
       log.info("segmento procesado", { matchKey: seg.matchKey });
       await cleanupLocal(localPath);
     } catch (err) {
@@ -198,6 +212,8 @@ export function startCourtWorker(court: ResolvedCourt): CourtWorkerHandle {
         state.ffmpegHandle = null;
       }
     }
+    state.currentSegmentPath = null;
+    state.currentSegmentStartedAt = null;
   }
 
   return {
@@ -216,10 +232,17 @@ function deriveStatus(state: WorkerState): "recording" | "starting" | "error" | 
   return "starting";
 }
 
-function deriveCurrentSegmentMatchKey(_state: WorkerState): string | null {
-  // El "actual" lo sabemos por el archivo más nuevo. Lo dejamos null por ahora;
-  // se puede derivar leyendo el filename más reciente en watchSegments.
-  return null;
+function deriveCurrentSegmentMatchKey(
+  state: WorkerState,
+  courtSlug: string,
+): string | null {
+  if (!state.currentSegmentPath) return null;
+  try {
+    return deriveMatchKey(courtSlug, state.currentSegmentPath);
+  } catch {
+    // El archivo recién apareció y todavía no tiene el nombre esperado.
+    return null;
+  }
 }
 
 function newestKey(sizes: Map<string, number>): string | null {

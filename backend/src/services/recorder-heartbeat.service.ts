@@ -22,15 +22,21 @@ export interface RecorderHeartbeatRow {
   /** True si pasó más de N segundos desde el último heartbeat. */
   stale: boolean;
   currentSegmentMatchKey: string | null;
+  /** ISO. Inicio (aprox.) del segmento que se está grabando. null si no hay segmento activo. */
+  currentSegmentStartedAt: string | null;
   lastSegmentMatchKey: string | null;
   lastSegmentUploadedAt: string | null;
+  /** Tamaño en bytes del último segmento subido. null si todavía no subió ninguno. */
+  bytesWrittenLastSegment: number | null;
   errorMessage: string | null;
+  recorderVersion: string | null;
+  recorderHost: string | null;
   recordingEnabled: boolean;
 }
 
 const STALE_AFTER_SECONDS = 120;
 
-interface RawJoin {
+export interface RawJoin {
   slug: string;
   label: string;
   recording_enabled: boolean | null;
@@ -38,9 +44,13 @@ interface RawJoin {
     last_seen_at: string | null;
     status: string | null;
     current_segment_match_key: string | null;
+    current_segment_started_at: string | null;
     last_segment_match_key: string | null;
     last_segment_uploaded_at: string | null;
+    bytes_written_last_segment: number | null;
     error_message: string | null;
+    recorder_version: string | null;
+    recorder_host: string | null;
   }> | null;
 }
 
@@ -50,11 +60,15 @@ function ensureSupabase(): void {
   }
 }
 
-function toRow(r: RawJoin): RecorderHeartbeatRow {
+/**
+ * Mapea una fila cruda (join replay_courts + recorder_heartbeat) al modelo que
+ * consume el panel admin. Es pura para poder testearla sin Supabase.
+ */
+export function mapHeartbeatRow(r: RawJoin, nowMs: number = Date.now()): RecorderHeartbeatRow {
   const hb = r.recorder_heartbeat?.[0] ?? null;
   const lastSeen = hb?.last_seen_at ?? null;
   const secondsSince = lastSeen
-    ? Math.max(0, Math.floor((Date.now() - new Date(lastSeen).getTime()) / 1000))
+    ? Math.max(0, Math.floor((nowMs - new Date(lastSeen).getTime()) / 1000))
     : null;
   const enabled = r.recording_enabled ?? false;
 
@@ -78,9 +92,13 @@ function toRow(r: RawJoin): RecorderHeartbeatRow {
     secondsSinceLastSeen: secondsSince,
     stale,
     currentSegmentMatchKey: hb?.current_segment_match_key ?? null,
+    currentSegmentStartedAt: hb?.current_segment_started_at ?? null,
     lastSegmentMatchKey: hb?.last_segment_match_key ?? null,
     lastSegmentUploadedAt: hb?.last_segment_uploaded_at ?? null,
+    bytesWrittenLastSegment: hb?.bytes_written_last_segment ?? null,
     errorMessage: hb?.error_message ?? null,
+    recorderVersion: hb?.recorder_version ?? null,
+    recorderHost: hb?.recorder_host ?? null,
     recordingEnabled: enabled,
   };
 }
@@ -104,9 +122,13 @@ export async function listRecorderHeartbeats(): Promise<RecorderHeartbeatRow[]> 
         last_seen_at,
         status,
         current_segment_match_key,
+        current_segment_started_at,
         last_segment_match_key,
         last_segment_uploaded_at,
-        error_message
+        bytes_written_last_segment,
+        error_message,
+        recorder_version,
+        recorder_host
       )
     `,
     )
@@ -122,7 +144,7 @@ export async function listRecorderHeartbeats(): Promise<RecorderHeartbeatRow[]> 
     throw new HttpError(503, 'No se pudo leer el estado de grabación');
   }
   const rows = (data ?? []) as RawJoin[];
-  return rows.map(toRow);
+  return rows.map((r) => mapHeartbeatRow(r));
 }
 
 async function fallbackWithoutHeartbeatTable(): Promise<RecorderHeartbeatRow[]> {
@@ -142,9 +164,13 @@ async function fallbackWithoutHeartbeatTable(): Promise<RecorderHeartbeatRow[]> 
     secondsSinceLastSeen: null,
     stale: false,
     currentSegmentMatchKey: null,
+    currentSegmentStartedAt: null,
     lastSegmentMatchKey: null,
     lastSegmentUploadedAt: null,
+    bytesWrittenLastSegment: null,
     errorMessage: null,
+    recorderVersion: null,
+    recorderHost: null,
     recordingEnabled: !!r.recording_enabled,
   }));
 }
