@@ -1,12 +1,11 @@
 import {
-  type FormEvent,
   type ReactNode,
   useCallback,
   useEffect,
   useMemo,
   useState,
 } from "react";
-import { X } from "lucide-react";
+import { X, CreditCard, ExternalLink } from "lucide-react";
 import MatchPlayerZoom from "@/components/replays/MatchPlayerZoom";
 import ReplayMatchBlock from "@/components/replays/ReplayMatchBlock";
 
@@ -20,10 +19,8 @@ type Props = {
   onClose?: () => void;
   /** Token inicial opcional (ej. apertura en otra pestaña). */
   initialSessionToken?: string | null;
-  /** Si true, sólo valida código y retorna token sin cargar video localmente. */
-  authorizeOnly?: boolean;
-  /** Callback al validar código en modo authorizeOnly. */
-  onAuthorized?: (payload: { sessionToken: string }) => void;
+  /** Access token de pago (link permanente). */
+  accessToken?: string | null;
   clockLabel: string;
   /** Poster por defecto (antes de resolver URL desde API). */
   posterFallback: string;
@@ -44,6 +41,24 @@ function storageKeyFor(matchKey: string): string {
   return `vj_replay_sess:${matchKey}`;
 }
 
+function formatPrice(amount: number): string {
+  return new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency: "ARS",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+const REPLAY_PRICE = (() => {
+  const raw = import.meta.env.PUBLIC_REPLAY_PRICE_ARS;
+  if (raw) {
+    const n = Number.parseFloat(raw);
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+  return 3500;
+})();
+
 export default function MatchReplayGate({
   matchKey,
   apiBase,
@@ -51,32 +66,24 @@ export default function MatchReplayGate({
   embedCinema = false,
   onClose,
   initialSessionToken = null,
-  authorizeOnly = false,
-  onAuthorized,
+  accessToken: propAccessToken = null,
   clockLabel,
   posterFallback,
 }: Props) {
   const base = useMemo(() => apiBase.trim().replace(/\/$/, ""), [apiBase]);
   const hasApi = base.length > 0;
-  const whatsappUrl = import.meta.env.PUBLIC_REPLAY_WHATSAPP_URL?.trim() ?? "";
-  const [numericMatchId, setNumericMatchId] = useState<number | null>(null);
-  const matchRequestMessage = `Hola! Quiero solicitar el código del partido.\nID del partido: ${numericMatchId ?? "-"}`;
-  const whatsappRequestUrl = useMemo(() => {
-    if (!whatsappUrl) return "";
-    const separator = whatsappUrl.includes("?") ? "&" : "?";
-    return `${whatsappUrl}${separator}text=${encodeURIComponent(matchRequestMessage)}`;
-  }, [matchRequestMessage, whatsappUrl]);
 
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [posterUrl, setPosterUrl] = useState<string | null>(null);
   const [fullMatchSizeBytes, setFullMatchSizeBytes] = useState<number | null>(null);
   const [streamLoading, setStreamLoading] = useState(false);
-  const [verifyLoading, setVerifyLoading] = useState(false);
-  const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [matchExists, setMatchExists] = useState<boolean | null>(null);
   const [existsLoading, setExistsLoading] = useState(false);
+
+  // --- Payment state ---
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
   const persistSession = useCallback(
     (token: string) => {
@@ -100,7 +107,6 @@ export default function MatchReplayGate({
     setVideoUrl(null);
     setPosterUrl(null);
     setFullMatchSizeBytes(null);
-    setCode("");
     setError(null);
   }, [matchKey]);
 
@@ -142,14 +148,12 @@ export default function MatchReplayGate({
     [base, clearSession],
   );
 
+  // --- Check if match exists ---
   useEffect(() => {
-    if (!base) {
-      return;
-    }
+    if (!base) return;
     let cancelled = false;
     setExistsLoading(true);
     setMatchExists(null);
-    setNumericMatchId(null);
     setError(null);
     const url = new URL(`${base}/api/replays/access/exists`);
     url.searchParams.set("matchKey", matchKey);
@@ -157,40 +161,63 @@ export default function MatchReplayGate({
       .then(async (res) => {
         const body = (await res.json().catch(() => null)) as {
           exists?: boolean;
-          numericId?: number;
           error?: string;
         } | null;
         if (cancelled) return;
-        if (!res.ok) {
-          throw new Error(body?.error ?? "No se pudo validar el partido");
-        }
+        if (!res.ok) throw new Error(body?.error ?? "No se pudo validar el partido");
         setMatchExists(body?.exists === true);
-        setNumericMatchId(typeof body?.numericId === "number" ? body.numericId : null);
       })
       .catch((e) => {
         if (cancelled) return;
         setMatchExists(false);
-        setNumericMatchId(null);
         setError(e instanceof Error ? e.message : "No se pudo validar el partido");
       })
       .finally(() => {
         if (!cancelled) setExistsLoading(false);
       });
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [base, matchKey]);
 
+  // --- Auto-authenticate from accessToken (payment link) ---
   useEffect(() => {
-    if (!base || matchExists !== true) {
-      return;
-    }
-    // En modo "sólo autorización" no debe autorestaurar sesión ni cargar video local.
-    // Este flujo se usa dentro del modal de /replays para luego navegar a /replays/:id.
-    if (authorizeOnly) {
-      return;
-    }
+    if (!base || matchExists !== true) return;
+    const token = propAccessToken;
+    if (!token) return;
+
+    let cancelled = false;
+    setStreamLoading(true);
+    setError(null);
+
+    void fetch(`${base}/api/replays/payment/access`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ accessToken: token }),
+    })
+      .then(async (res) => {
+        const body = (await res.json().catch(() => null)) as {
+          sessionToken?: string;
+          error?: string;
+        } | null;
+        if (cancelled) return;
+        if (!res.ok || !body?.sessionToken) {
+          throw new Error(body?.error ?? "No se pudo validar el acceso");
+        }
+        persistSession(body.sessionToken);
+        return loadStream(body.sessionToken);
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        setError(e instanceof Error ? e.message : "No se pudo validar el acceso");
+        setStreamLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [base, matchExists, propAccessToken, persistSession, loadStream]);
+
+  // --- Restore session from sessionStorage (only if no accessToken) ---
+  useEffect(() => {
+    if (!base || matchExists !== true) return;
+    if (propAccessToken) return; // access token flow takes precedence
     if (typeof initialSessionToken === "string" && initialSessionToken.trim() !== "") {
       setSessionToken(initialSessionToken);
       void loadStream(initialSessionToken);
@@ -198,59 +225,59 @@ export default function MatchReplayGate({
     }
     try {
       const raw = sessionStorage.getItem(storageKeyFor(matchKey));
-      if (!raw) {
-        return;
-      }
+      if (!raw) return;
       const parsed = JSON.parse(raw) as { matchKey?: string; token?: string };
-      if (parsed.matchKey !== matchKey || typeof parsed.token !== "string") {
-        return;
-      }
+      if (parsed.matchKey !== matchKey || typeof parsed.token !== "string") return;
       setSessionToken(parsed.token);
       void loadStream(parsed.token);
     } catch {
       /* ignore */
     }
-    // Solo restauración al montar / cambiar partido (evita loops por loadStream).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authorizeOnly, base, initialSessionToken, loadStream, matchExists, matchKey]);
+  }, [base, initialSessionToken, matchExists, matchKey, propAccessToken]);
 
-  const onSubmit = async (ev: FormEvent) => {
-    ev.preventDefault();
+  // --- Initiate payment ---
+  const onBuyAccess = async () => {
     if (!hasApi) {
-      setError("El acceso a replays no esta disponible en este momento. Intentalo nuevamente en unos minutos.");
+      setError("El servicio de replays no está disponible en este momento.");
       return;
     }
-    setVerifyLoading(true);
+    setPaymentLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${base}/api/replays/access/verify`, {
+      const res = await fetch(`${base}/api/replays/payment/create-preference`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ matchKey, code }),
+        body: JSON.stringify({ matchKey }),
       });
-      const body = (await res.json().catch(() => null)) as
-        | { sessionToken?: string; error?: string }
-        | null;
-
-      if (!res.ok || !body?.sessionToken || typeof body.sessionToken !== "string") {
-        throw new Error(body?.error ?? "Código incorrecto");
+      const body = (await res.json().catch(() => null)) as {
+        initPoint?: string;
+        accessToken?: string;
+        error?: string;
+      } | null;
+      if (!res.ok || !body?.initPoint) {
+        throw new Error(body?.error ?? "No se pudo crear el pago");
       }
-
-      if (authorizeOnly) {
-        onAuthorized?.({ sessionToken: body.sessionToken });
-        return;
+      // Save the access token for the return URL
+      if (body.accessToken) {
+        try {
+          sessionStorage.setItem(`vj_replay_payment:${matchKey}`, body.accessToken);
+        } catch { /* ignore */ }
       }
-      persistSession(body.sessionToken);
-      await loadStream(body.sessionToken);
+      // Redirect to Mercado Pago checkout
+      window.location.href = body.initPoint;
     } catch (e) {
-      setError(e instanceof Error ? e.message : "No se pudo validar el código");
+      setError(e instanceof Error ? e.message : "No se pudo iniciar el pago");
     } finally {
-      setVerifyLoading(false);
+      setPaymentLoading(false);
     }
   };
 
+
+
   const resolvedPoster = posterUrl ?? posterFallback;
 
+  // --- Loading state ---
   if (existsLoading) {
     const loadingCard = (
       <div className="mx-auto w-full max-w-md border border-slate-200 bg-white p-6 text-center shadow-lg">
@@ -260,6 +287,7 @@ export default function MatchReplayGate({
     return wrapCinemaEmbed(cinema && embedCinema, loadingCard);
   }
 
+  // --- Not found ---
   if (matchExists === false) {
     const notFoundCard = (
       <div className="mx-auto w-full max-w-md border border-rose-200 bg-white p-6 shadow-lg">
@@ -279,6 +307,7 @@ export default function MatchReplayGate({
     return wrapCinemaEmbed(cinema && embedCinema, notFoundCard);
   }
 
+  // --- Video loaded → show player ---
   if (videoUrl) {
     if (cinema) {
       const player = (
@@ -314,7 +343,7 @@ export default function MatchReplayGate({
             onClick={() => clearSession()}
             className="border border-slate-300 px-3 py-2 text-xs font-bold uppercase tracking-wider text-slate-700 transition hover:bg-slate-50"
           >
-            Salir / otro código
+            Salir
           </button>
         </div>
         <ReplayMatchBlock
@@ -330,7 +359,8 @@ export default function MatchReplayGate({
     );
   }
 
-  if (cinema && sessionToken && (verifyLoading || streamLoading)) {
+  // --- Cinema loading state ---
+  if (cinema && sessionToken && (streamLoading)) {
     const openingState = (
       <div className="flex min-h-dvh w-full items-center justify-center bg-black text-sm font-semibold text-white">
         Cargando video...
@@ -346,6 +376,7 @@ export default function MatchReplayGate({
     return openingState;
   }
 
+  // --- Payment gate (replaces code entry) ---
   const gateCard = (
     <div
       className="relative mx-auto w-full max-w-md border border-slate-200 bg-white p-6 shadow-lg"
@@ -362,7 +393,10 @@ export default function MatchReplayGate({
         </button>
       )}
       <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Acceso al replay</p>
-      <h2 className="mt-2 text-xl font-black tracking-tight text-slate-900">Ingresá código del partido</h2>
+      <h2 className="mt-2 text-xl font-black tracking-tight text-slate-900">Comprá el acceso a tu partido</h2>
+      <p className="mt-2 text-sm text-slate-600">
+        Pagá con Mercado Pago y recibí un link para ver y descargar tu partido desde cualquier dispositivo.
+      </p>
 
       {!hasApi && (
         <p className="mt-4 border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-900">
@@ -370,21 +404,11 @@ export default function MatchReplayGate({
         </p>
       )}
 
-      <form className="mt-6 space-y-4" onSubmit={onSubmit}>
-        <label className="block">
-          <span className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-600">Código</span>
-          <input
-            value={code}
-            onChange={(e) => {
-              setCode(e.target.value);
-              setError(null);
-            }}
-            autoComplete="one-time-code"
-            inputMode="text"
-            placeholder="Ej: DEMO1234"
-            className="h-12 w-full border border-slate-300 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-vj-green"
-          />
-        </label>
+      <div className="mt-6 space-y-4">
+        <div className="flex items-center justify-between border border-slate-200 bg-slate-50 px-4 py-3">
+          <span className="text-sm font-semibold text-slate-700">Replay del partido</span>
+          <span className="text-lg font-black text-slate-900">{formatPrice(REPLAY_PRICE)}</span>
+        </div>
 
         {error && (
           <p className="border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-800" role="alert">
@@ -393,39 +417,33 @@ export default function MatchReplayGate({
         )}
 
         <button
-          type="submit"
-          disabled={verifyLoading || streamLoading || code.trim().length < 4 || !hasApi}
-          className="flex h-12 w-full items-center justify-center bg-vj-green text-sm font-black uppercase tracking-wider text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
+          type="button"
+          onClick={onBuyAccess}
+          disabled={paymentLoading || streamLoading || !hasApi}
+          className="flex h-12 w-full items-center justify-center gap-2 bg-[#009ee3] text-sm font-black uppercase tracking-wider text-white transition hover:bg-[#007eb5] disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {verifyLoading || streamLoading ? "Verificando..." : "Ver partido"}
+          {paymentLoading || streamLoading ? (
+            "Procesando..."
+          ) : (
+            <>
+              <CreditCard size={18} />
+              Pagar con Mercado Pago
+            </>
+          )}
         </button>
+
         {!hasApi && (
           <p className="text-center text-xs font-medium text-slate-500">Temporalmente fuera de servicio.</p>
         )}
-      </form>
+      </div>
 
-      {sessionToken && streamLoading && (
-        <p className="mt-4 text-center text-sm font-semibold text-slate-600">Cargando video…</p>
-      )}
-
-      {whatsappRequestUrl ? (
-        <p className="mt-5 text-center text-xs font-semibold text-slate-600">
-          Si no contás con este código,{" "}
-          <a
-            href={whatsappRequestUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-black text-[#25D366] underline underline-offset-2"
-          >
-            solicitálo por WhatsApp
-          </a>
-          .
+      <div className="mt-5 flex items-start gap-2 border-t border-slate-200 pt-4">
+        <ExternalLink size={14} className="mt-0.5 flex-shrink-0 text-slate-400" />
+        <p className="text-xs text-slate-500">
+          Al pagar, recibirás un <span className="font-bold text-slate-700">link permanente</span> para acceder
+          desde cualquier dispositivo sin volver a pagar.
         </p>
-      ) : (
-        <p className="mt-5 text-center text-xs font-semibold text-slate-500">
-          WhatsApp no configurado. Definí <span className="font-bold">PUBLIC_REPLAY_WHATSAPP_URL</span> para habilitar este acceso.
-        </p>
-      )}
+      </div>
     </div>
   );
 

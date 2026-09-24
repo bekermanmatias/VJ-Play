@@ -197,4 +197,20 @@ export const env = {
   replayFallbackPosterUrl:
     optionalEnv('REPLAY_FALLBACK_POSTER_URL') ??
     'https://images.unsplash.com/photo-1627615922102-6b7ef5f0ec55?auto=format&fit=crop&w=1400&q=70',
+
+  /** Mercado Pago — pasarela de pago para acceso a replays. */
+  mpAccessToken: optionalEnv('MP_ACCESS_TOKEN'),
+  /** Clave secreta del webhook de Mercado Pago (validación de x-signature). Backend only. */
+  mpWebhookSecret: optionalEnv('MP_WEBHOOK_SECRET'),
+  /** Moneda de los pagos de replay. */
+  replayCurrency: 'ARS' as const,
+  /** Precio del replay en ARS (default $3500). */
+  replayPriceArs: (() => {
+    const raw = optionalEnv('REPLAY_PRICE_ARS');
+    if (!raw) return 3500;
+    const n = Number.parseFloat(raw);
+    return Number.isFinite(n) && n > 0 ? n : 3500;
+  })(),
+  /** URL pública del sitio (para back_urls de Mercado Pago). Ej: https://miclub.com */
+  publicSiteUrl: optionalEnv('PUBLIC_SITE_URL') ?? 'http://localhost:4321',
 } as const;

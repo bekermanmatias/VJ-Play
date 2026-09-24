@@ -1,0 +1,218 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import TopBar from "@/components/TopBar.astro";
+import Navbar from "@/components/Navbar.astro";
+import { getReplayApiBaseFromEnv } from "@/utils/replay-api-base";
+
+export const prerender = false;
+
+const apiBase = getReplayApiBaseFromEnv();
+const token = Astro.url.searchParams.get("token") ?? "";
+const statusParam = Astro.url.searchParams.get("status") ?? "";
+---
+
+<Layout title="Pago del Replay | Club Social Varela Junior">
+  <TopBar />
+  <Navbar />
+
+  <main class="min-h-[calc(100vh-7rem)] bg-white">
+    <div class="mx-auto max-w-lg px-4 py-12 sm:px-6 lg:px-8">
+      <div id="pago-container" data-api-base={apiBase} data-token={token} data-status={statusParam}>
+        <!-- Hydrated by client script below -->
+        <div class="border border-slate-200 bg-white p-6 text-center shadow-lg">
+          <p class="text-sm font-semibold text-slate-700">Verificando estado del pago...</p>
+        </div>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  const container = document.getElementById("pago-container");
+  if (container) {
+    const apiBase = (container.dataset.apiBase ?? "").replace(/\/$/, "");
+    const token = container.dataset.token ?? "";
+    const statusParam = container.dataset.status ?? "";
+
+    async function checkPaymentStatus() {
+      if (!token) {
+        renderError("No se encontró el token de pago. Volvé al buscador e intentá nuevamente.");
+        return;
+      }
+
+      if (statusParam === "failure") {
+        renderError("El pago no se completó. Podés intentar nuevamente desde el buscador de partidos.");
+        return;
+      }
+
+      // Poll payment status
+      let attempts = 0;
+      const maxAttempts = 30;
+      const pollInterval = 3000;
+
+      async function poll() {
+        try {
+          const url = new URL(`${apiBase}/api/replays/payment/status`);
+          url.searchParams.set("accessToken", token);
+          const res = await fetch(url.toString());
+          const body = await res.json().catch(() => null) as {
+            status?: string;
+            matchKey?: string;
+            accessLink?: string;
+            error?: string;
+          } | null;
+
+          if (!res.ok) {
+            throw new Error(body?.error ?? "No se pudo verificar el pago");
+          }
+
+          if (body?.status === "approved") {
+            renderSuccess(body.accessLink ?? `${window.location.origin}/replays/ver?token=${token}`);
+            return;
+          }
+
+          if (body?.status === "rejected" || body?.status === "cancelled") {
+            renderError("El pago fue rechazado. Podés intentar nuevamente desde el buscador de partidos.");
+            return;
+          }
+
+          // Still pending
+          attempts++;
+          if (attempts >= maxAttempts) {
+            renderPending();
+            return;
+          }
+
+          renderPolling(attempts);
+          setTimeout(poll, pollInterval);
+        } catch (e) {
+          renderError(e instanceof Error ? e.message : "Error al verificar el pago");
+        }
+      }
+
+      renderPolling(0);
+      poll();
+    }
+
+    function renderPolling(attempt: number) {
+      container!.innerHTML = `
+        <div class="border border-slate-200 bg-white p-8 text-center shadow-lg">
+          <div class="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-[#009ee3]"></div>
+          <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#009ee3]">Mercado Pago</p>
+          <h2 class="mt-2 text-xl font-black tracking-tight text-slate-900">Procesando tu pago</h2>
+          <p class="mt-2 text-sm text-slate-600">
+            Estamos verificando el estado del pago. No cierres esta página.
+          </p>
+        </div>
+      `;
+    }
+
+    function renderSuccess(accessLink: string) {
+      container!.innerHTML = `
+        <div class="border border-emerald-200 bg-white p-8 shadow-lg">
+          <div class="text-center">
+            <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100">
+              <svg class="h-7 w-7 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+              </svg>
+            </div>
+            <p class="text-xs font-bold uppercase tracking-[0.2em] text-emerald-700">¡Pago aprobado!</p>
+            <h2 class="mt-2 text-xl font-black tracking-tight text-slate-900">Tu replay está listo</h2>
+            <p class="mt-2 text-sm text-slate-600">
+              Guardá este link para acceder desde cualquier dispositivo sin volver a pagar.
+            </p>
+          </div>
+
+          <div class="mt-6 space-y-3">
+            <div class="flex items-center gap-2 border border-slate-200 bg-slate-50 px-3 py-2">
+              <input
+                id="access-link-input"
+                type="text"
+                readonly
+                value="${accessLink}"
+                class="flex-1 bg-transparent text-xs font-mono text-slate-700 outline-none"
+              />
+              <button
+                id="copy-link-btn"
+                type="button"
+                class="flex-shrink-0 border border-slate-300 bg-white px-2 py-1 text-xs font-bold uppercase tracking-wider text-slate-700 transition hover:bg-slate-100"
+              >
+                Copiar
+              </button>
+            </div>
+
+            <a
+              href="${accessLink}"
+              class="flex h-12 w-full items-center justify-center bg-vj-green text-sm font-black uppercase tracking-wider text-white transition hover:bg-vj-green/90"
+            >
+              Ver mi partido
+            </a>
+          </div>
+
+          <p class="mt-4 text-center text-xs text-slate-500">
+            Este link funciona mientras el video esté disponible (~7 días).
+          </p>
+        </div>
+      `;
+
+      // Copy button handler
+      const copyBtn = document.getElementById("copy-link-btn");
+      const linkInput = document.getElementById("access-link-input") as HTMLInputElement | null;
+      copyBtn?.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(linkInput?.value ?? accessLink);
+          if (copyBtn) copyBtn.textContent = "¡Copiado!";
+          setTimeout(() => { if (copyBtn) copyBtn.textContent = "Copiar"; }, 2500);
+        } catch { /* ignore */ }
+      });
+    }
+
+    function renderPending() {
+      container!.innerHTML = `
+        <div class="border border-amber-200 bg-white p-8 shadow-lg">
+          <div class="text-center">
+            <p class="text-xs font-bold uppercase tracking-[0.2em] text-amber-700">Pago pendiente</p>
+            <h2 class="mt-2 text-xl font-black tracking-tight text-slate-900">Tu pago está siendo procesado</h2>
+            <p class="mt-2 text-sm text-slate-600">
+              Mercado Pago está procesando tu pago. Una vez aprobado, podrás acceder al replay desde este link:
+            </p>
+            <div class="mt-4 flex items-center gap-2 border border-slate-200 bg-slate-50 px-3 py-2">
+              <input
+                type="text"
+                readonly
+                value="${window.location.origin}/replays/ver?token=${token}"
+                class="flex-1 bg-transparent text-xs font-mono text-slate-700 outline-none"
+              />
+            </div>
+            <a
+              href="/replays"
+              class="mt-5 inline-flex h-11 w-full items-center justify-center bg-vj-green px-4 text-sm font-black uppercase tracking-wider text-white transition hover:bg-vj-green/90"
+            >
+              Volver al buscador
+            </a>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderError(message: string) {
+      container!.innerHTML = `
+        <div class="border border-rose-200 bg-white p-8 shadow-lg">
+          <div class="text-center">
+            <p class="text-xs font-bold uppercase tracking-[0.2em] text-rose-700">Error</p>
+            <h2 class="mt-2 text-xl font-black tracking-tight text-slate-900">Hubo un problema</h2>
+            <p class="mt-2 text-sm text-slate-600">${message}</p>
+            <a
+              href="/replays"
+              class="mt-5 inline-flex h-11 w-full items-center justify-center bg-vj-green px-4 text-sm font-black uppercase tracking-wider text-white transition hover:bg-vj-green/90"
+            >
+              Volver al buscador
+            </a>
+          </div>
+        </div>
+      `;
+    }
+
+    checkPaymentStatus();
+  }
+</script>

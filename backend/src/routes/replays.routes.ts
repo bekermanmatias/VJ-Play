@@ -15,6 +15,12 @@ import {
   postReplayAccessVerify,
 } from '../controllers/replay-access.controller.js';
 import {
+  postPaymentCreatePreference,
+  postPaymentWebhook,
+  postPaymentAccess,
+  getPaymentStatusEndpoint,
+} from '../controllers/replay-payment.controller.js';
+import {
   getCourts,
   putCourts,
 } from '../controllers/replay-courts.controller.js';
@@ -40,6 +46,7 @@ replaysRouter.put('/shift-config', requireAdminSecret, putShiftConfig);
 replaysRouter.get('/courts', getCourts);
 replaysRouter.put('/courts', requireAdminSecret, putCourts);
 
+// --- Acceso legacy por código (se mantiene para compatibilidad) ---
 replaysRouter.post('/access/verify', postReplayAccessVerify);
 replaysRouter.get('/access/exists', getReplayAccessExists);
 replaysRouter.get('/access/match-by-id', getReplayAccessMatchById);
@@ -53,6 +60,12 @@ replaysRouter.patch('/access/clips/:clipId', patchReplayAccessClip);
 replaysRouter.delete('/access/clips/:clipId', deleteReplayAccessClip);
 replaysRouter.post('/access/codes', requireAdminSecret, postReplayAccessCodes);
 replaysRouter.get('/admin/matches', requireAdminSecret, getReplayAdminMatches);
+
+// --- Pagos Mercado Pago ---
+replaysRouter.post('/payment/create-preference', postPaymentCreatePreference);
+replaysRouter.post('/payment/webhook', postPaymentWebhook);
+replaysRouter.post('/payment/access', postPaymentAccess);
+replaysRouter.get('/payment/status', getPaymentStatusEndpoint);
 
 replaysRouter.get('/admin/courts-dvr', requireAdminSecret, getCourtsDvr);
 replaysRouter.patch('/admin/courts-dvr/:slug', requireAdminSecret, patchCourtDvr);

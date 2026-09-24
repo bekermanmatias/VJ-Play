@@ -2,7 +2,8 @@
 import Layout from "@/layouts/Layout.astro";
 import TopBar from "@/components/TopBar.astro";
 import Navbar from "@/components/Navbar.astro";
-import ReplaysVerPartido from "@/components/replays/ReplaysVerPartido";
+import ReplaysVerPartido from "@/components/replays/ReplaysVerPartido";
+import { buildLastSevenDaysOptions } from "@/utils/replay-date-options";
 
 /**
  * Videos destacados (máx. 3, embebidos desde YouTube).
@@ -43,7 +44,7 @@ const ytClips: { videoId: string; title: string }[] = [
 
         <div class="mt-6 border border-slate-200 border-l-4 border-l-vj-green bg-white" data-reveal data-reveal-delay="150">
           <div class="p-5 sm:p-6 lg:p-8">
-            <ReplaysVerPartido client:load />
+            <ReplaysVerPartido initialDates={buildLastSevenDaysOptions()} client:load />
           </div>
           <p class="border-t border-slate-200 px-5 py-4 text-xs text-slate-500 sm:px-6 lg:px-8">
             Solo podés buscar partidos de los últimos 7 días. Las grabaciones se eliminan automáticamente
@@ -114,5 +115,4 @@ const ytClips: { videoId: string; title: string }[] = [
       </section>
     </div>
   </main>
-</Layout>
-
+</Layout>

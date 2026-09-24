@@ -23,3 +23,11 @@ export function getSupabase(): SupabaseClient {
   }
   return client;
 }
+
+/**
+ * Sólo para tests: inyecta (o limpia con `null`) el cliente Supabase para
+ * evitar conexiones reales. No usar en código de producción.
+ */
+export function __setSupabaseClientForTests(next: SupabaseClient | null): void {
+  client = next;
+}

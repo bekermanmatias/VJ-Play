@@ -5,6 +5,8 @@ type Props = {
   apiBase: string;
   cinema?: boolean;
   matchId?: number | null;
+  /** Access token from payment link (UUID). */
+  accessToken?: string | null;
 };
 
 type MatchLookup = {
@@ -23,16 +25,23 @@ function CinemaPlayer({
   matchKey,
   apiBase,
   clockLabel,
+  accessToken,
 }: {
   matchKey: string;
   apiBase: string;
   clockLabel: string;
+  accessToken: string | null;
 }) {
   const [check, setCheck] = useState<"checking" | "ok" | "missing">("checking");
 
   const [initialToken, setInitialToken] = useState<string | null>(null);
 
   useEffect(() => {
+    // If we have an accessToken from URL, always allow access
+    if (accessToken) {
+      setCheck("ok");
+      return;
+    }
     try {
       const urlParams = new URLSearchParams(window.location.search);
       const urlToken = urlParams.get('t');
@@ -61,7 +70,7 @@ function CinemaPlayer({
     } catch {
       setCheck("missing");
     }
-  }, [matchKey]);
+  }, [matchKey, accessToken]);
 
   useEffect(() => {
     if (check === "missing" && typeof window !== "undefined") {
@@ -82,6 +91,7 @@ function CinemaPlayer({
       matchKey={matchKey}
       apiBase={apiBase}
       cinema
+      accessToken={accessToken}
       clockLabel={clockLabel}
       posterFallback={POSTER_FALLBACK}
       initialSessionToken={initialToken}
@@ -89,7 +99,7 @@ function CinemaPlayer({
   );
 }
 
-export default function ReplayPartidoById({ apiBase, cinema = false, matchId = null }: Props) {
+export default function ReplayPartidoById({ apiBase, cinema = false, matchId = null, accessToken = null }: Props) {
   const base = useMemo(() => apiBase.trim().replace(/\/$/, ""), [apiBase]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -197,6 +207,7 @@ export default function ReplayPartidoById({ apiBase, cinema = false, matchId = n
         matchKey={lookup.matchKey}
         apiBase={base}
         clockLabel={clockLabel}
+        accessToken={accessToken}
       />
     );
   }
@@ -223,6 +234,7 @@ export default function ReplayPartidoById({ apiBase, cinema = false, matchId = n
           matchKey={lookup.matchKey}
           apiBase={base}
           cinema={false}
+          accessToken={accessToken}
           clockLabel={clockLabel}
           posterFallback={POSTER_FALLBACK}
         />
