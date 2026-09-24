@@ -1,5 +1,4 @@
-import { useMemo, useState } from "react";
-import type { FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { buildReplayMatchKey } from "@/utils/replay-match-key";
 import { getReplayApiBaseFromEnv } from "@/utils/replay-api-base";
 

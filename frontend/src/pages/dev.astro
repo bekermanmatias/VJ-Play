@@ -3,6 +3,11 @@ import Layout from "@/layouts/Layout.astro";
 import TopBar from "@/components/TopBar.astro";
 import Navbar from "@/components/Navbar.astro";
 import DevReplayLab from "@/components/replays/DevReplayLab";
+
+// Herramienta de QA interno: nunca debe renderizarse en producción.
+if (import.meta.env.PROD) {
+  return Astro.redirect("/");
+}
 ---
 
 <Layout title="Dev Tools | Replays">
