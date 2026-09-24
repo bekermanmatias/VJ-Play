@@ -12,6 +12,8 @@ import { createHmac } from 'node:crypto';
 
 import { env } from '../config/env.js';
 import { __setSupabaseClientForTests } from '../config/supabase.js';
+import { getWebhookNotificationDetails } from '../controllers/replay-payment.controller.js';
+import { getReplayStreamPayload } from './replay-access.service.js';
 import {
   createPaymentPreference,
   getAccessByToken,
@@ -33,10 +35,11 @@ function makeSupabaseMock(config: {
   asset?: Row | null;
   approved?: Row | null;
   pending?: Row | null;
+  pendingSequence?: (Row | null)[];
   payment?: Row | null;
   byExternalRef?: Row | null;
   byAccessToken?: Row | null;
-  insertError?: { message: string } | null;
+  insertError?: { message: string; code?: string } | null;
   updateError?: { message: string } | null;
 }) {
   const calls: { update: Row[]; insert: Row[]; deletes: number } = {
@@ -44,6 +47,7 @@ function makeSupabaseMock(config: {
     insert: [],
     deletes: 0,
   };
+  let pendingReadCount = 0;
 
   function tableFor(name: string): Row | null {
     if (name === 'replay_assets') return config.asset ?? null;
@@ -80,7 +84,11 @@ function makeSupabaseMock(config: {
         return { data: config.approved ?? null, error: null };
       }
       if (state.filters.mp_status === 'pending') {
-        return { data: config.pending ?? null, error: null };
+        const result = config.pendingSequence
+          ? config.pendingSequence[Math.min(pendingReadCount, config.pendingSequence.length - 1)]
+          : config.pending;
+        pendingReadCount += 1;
+        return { data: result ?? null, error: null };
       }
       if (state.filters.external_reference !== undefined) {
         return { data: config.byExternalRef ?? null, error: null };
@@ -152,19 +160,30 @@ function paymentRow(overrides: Row = {}): Row {
 }
 
 let originalFetch: typeof globalThis.fetch;
+let originalAccessToken: string | undefined;
 let originalSecret: string | undefined;
+let originalSupabaseUrl: string | undefined;
+let originalSupabaseKey: string | undefined;
 
 beforeEach(() => {
   originalFetch = globalThis.fetch;
+  originalAccessToken = env.mpAccessToken;
   originalSecret = env.mpWebhookSecret as string | undefined;
+  originalSupabaseUrl = env.supabaseUrl;
+  originalSupabaseKey = env.supabaseKey;
   // Garantizar configuración mínima sin depender del .env real.
   (env as { mpAccessToken?: string }).mpAccessToken = 'TEST-access-token';
   (env as { mpWebhookSecret?: string }).mpWebhookSecret = 'webhook-secret';
+  (env as { supabaseUrl?: string }).supabaseUrl = 'https://supabase.test.invalid';
+  (env as { supabaseKey?: string }).supabaseKey = 'test-supabase-key';
 });
 
 afterEach(() => {
   globalThis.fetch = originalFetch;
+  (env as { mpAccessToken?: string }).mpAccessToken = originalAccessToken;
   (env as { mpWebhookSecret?: string }).mpWebhookSecret = originalSecret;
+  (env as { supabaseUrl?: string }).supabaseUrl = originalSupabaseUrl;
+  (env as { supabaseKey?: string }).supabaseKey = originalSupabaseKey;
   __setSupabaseClientForTests(null);
   mock.restoreAll();
 });
@@ -178,8 +197,8 @@ describe('isValidWebhookSignature', () => {
   const dataId = '123456';
   const requestId = 'req-abc';
 
-  function sign(ts: string, id: string, reqId: string, s: string): string {
-    const manifest = `id:${id};request-id:${reqId};ts:${ts};`;
+  function sign(ts: string, id: string, reqId: string | undefined, s: string): string {
+    const manifest = `id:${id};${reqId ? `request-id:${reqId};` : ''}ts:${ts};`;
     return createHmac('sha256', s).update(manifest).digest('hex');
   }
 
@@ -190,6 +209,34 @@ describe('isValidWebhookSignature', () => {
       isValidWebhookSignature({
         signatureHeader: `ts=${ts},v1=${v1}`,
         requestIdHeader: requestId,
+        dataId,
+        secret,
+      }),
+      true,
+    );
+  });
+
+  it('normaliza a minúsculas data.id alfanumérico según el manifiesto oficial', () => {
+    const ts = '1704908010';
+    const v1 = sign(ts, 'ab12cd34', requestId, secret);
+    assert.equal(
+      isValidWebhookSignature({
+        signatureHeader: `ts=${ts},v1=${v1}`,
+        requestIdHeader: requestId,
+        dataId: 'AB12CD34',
+        secret,
+      }),
+      true,
+    );
+  });
+
+  it('omite request-id del manifiesto cuando el header no viene', () => {
+    const ts = '1704908010';
+    const v1 = sign(ts, dataId, undefined, secret);
+    assert.equal(
+      isValidWebhookSignature({
+        signatureHeader: `ts=${ts},v1=${v1}`,
+        requestIdHeader: undefined,
         dataId,
         secret,
       }),
@@ -239,6 +286,28 @@ describe('isValidWebhookSignature', () => {
         secret,
       }),
       false,
+    );
+  });
+});
+
+describe('origen de data.id del webhook', () => {
+  it('usa el data.id del query aunque el body tenga otro id', () => {
+    assert.deepEqual(
+      getWebhookNotificationDetails(
+        { type: 'payment', 'data.id': 'signed-query-id' },
+        { type: 'payment', data: { id: 'untrusted-body-id' } },
+      ),
+      { type: 'payment', dataId: 'signed-query-id' },
+    );
+  });
+
+  it('no acepta el id del body cuando falta el data.id del query', () => {
+    assert.deepEqual(
+      getWebhookNotificationDetails(
+        { type: 'payment' },
+        { type: 'payment', data: { id: 'body-only-id' } },
+      ),
+      { type: 'payment', dataId: '' },
     );
   });
 });
@@ -295,8 +364,8 @@ describe('createPaymentPreference', () => {
         items: { unit_price: number; currency_id: string }[];
         external_reference: string;
       };
-      assert.equal(body.items[0].unit_price, env.replayPriceArs);
-      assert.equal(body.items[0].currency_id, 'ARS');
+      assert.equal(body.items[0]!.unit_price, env.replayPriceArs);
+      assert.equal(body.items[0]!.currency_id, 'ARS');
       assert.equal(body.external_reference, EXTERNAL_REF);
       return jsonResponse({
         id: 'pref-1',
@@ -310,7 +379,7 @@ describe('createPaymentPreference', () => {
     assert.equal(result.accessToken, ACCESS_TOKEN);
     assert.equal(result.status, 'pending');
     assert.equal(calls.insert.length, 1);
-    assert.equal(calls.insert[0].amount, env.replayPriceArs);
+    assert.equal(calls.insert[0]!.amount, env.replayPriceArs);
   });
 
   it('rechaza un matchKey inválido', async () => {
@@ -368,6 +437,54 @@ describe('createPaymentPreference', () => {
     assert.equal(fetchMock.mock.calls.length, 0);
     assert.equal(calls.insert.length, 0);
   });
+
+  it('recupera una reserva concurrente ya creada sin crear otra preferencia', async () => {
+    const { client, calls } = makeSupabaseMock({
+      asset: { match_key: MATCH_KEY },
+      pendingSequence: [
+        null,
+        {
+          access_token: ACCESS_TOKEN,
+          mp_preference_id: 'pref-race',
+          init_point: 'https://mp/race',
+        },
+      ],
+      insertError: { code: '23505', message: 'duplicate key' },
+    });
+    __setSupabaseClientForTests(client as never);
+
+    const fetchMock = mock.fn();
+    globalThis.fetch = fetchMock as never;
+
+    const result = await createPaymentPreference({ matchKey: MATCH_KEY });
+    assert.equal(result.status, 'pending');
+    assert.equal(result.initPoint, 'https://mp/race');
+    assert.equal(result.accessToken, ACCESS_TOKEN);
+    assert.equal(calls.insert.length, 1);
+    assert.equal(fetchMock.mock.calls.length, 0);
+  });
+
+  it('no crea una segunda preferencia mientras otra reserva concurrente está en curso', async () => {
+    const { client, calls } = makeSupabaseMock({
+      asset: { match_key: MATCH_KEY },
+      pendingSequence: [null, { access_token: ACCESS_TOKEN, init_point: null }],
+      insertError: { code: '23505', message: 'duplicate key' },
+    });
+    __setSupabaseClientForTests(client as never);
+
+    const fetchMock = mock.fn();
+    globalThis.fetch = fetchMock as never;
+
+    await assert.rejects(
+      () => createPaymentPreference({ matchKey: MATCH_KEY }),
+      (error: unknown) => {
+        assert.equal((error as { statusCode?: number }).statusCode, 409);
+        return true;
+      },
+    );
+    assert.equal(calls.insert.length, 1);
+    assert.equal(fetchMock.mock.calls.length, 0);
+  });
 });
 
 /* ------------------------------------------------------------------ */
@@ -399,8 +516,8 @@ describe('processPaymentWebhook', () => {
     const result = await processPaymentWebhook({ type: 'payment', dataId: '987654' });
     assert.equal(result.updated, true);
     assert.equal(calls.update.length, 1);
-    assert.equal(calls.update[0].mp_status, 'approved');
-    assert.ok(calls.update[0].approved_at);
+    assert.equal(calls.update[0]!.mp_status, 'approved');
+    assert.ok(calls.update[0]!.approved_at);
   });
 
   it('ignora tipos que no son payment', async () => {
@@ -454,10 +571,44 @@ describe('processPaymentWebhook', () => {
     assert.equal(calls.update.length, 0);
   });
 
+  it('falla cerrado si el monto no viene en la respuesta de MP', async () => {
+    const { client, calls } = makeSupabaseMock({ byExternalRef: paymentRow() });
+    __setSupabaseClientForTests(client as never);
+    globalThis.fetch = mock.fn(async () =>
+      jsonResponse(mpPayment({ transaction_amount: undefined })),
+    ) as never;
+
+    const result = await processPaymentWebhook({ type: 'payment', dataId: '987654' });
+    assert.equal(result.updated, false);
+    assert.equal(calls.update.length, 0);
+  });
+
   it('ignora cuando la moneda no coincide', async () => {
     const { client, calls } = makeSupabaseMock({ byExternalRef: paymentRow() });
     __setSupabaseClientForTests(client as never);
     globalThis.fetch = mock.fn(async () => jsonResponse(mpPayment({ currency_id: 'USD' }))) as never;
+
+    const result = await processPaymentWebhook({ type: 'payment', dataId: '987654' });
+    assert.equal(result.updated, false);
+    assert.equal(calls.update.length, 0);
+  });
+
+  it('falla cerrado si currency_id no viene en la respuesta de MP', async () => {
+    const { client, calls } = makeSupabaseMock({ byExternalRef: paymentRow() });
+    __setSupabaseClientForTests(client as never);
+    globalThis.fetch = mock.fn(async () =>
+      jsonResponse(mpPayment({ currency_id: undefined })),
+    ) as never;
+
+    const result = await processPaymentWebhook({ type: 'payment', dataId: '987654' });
+    assert.equal(result.updated, false);
+    assert.equal(calls.update.length, 0);
+  });
+
+  it('falla cerrado si la respuesta server-to-server tiene otro payment id', async () => {
+    const { client, calls } = makeSupabaseMock({ byExternalRef: paymentRow() });
+    __setSupabaseClientForTests(client as never);
+    globalThis.fetch = mock.fn(async () => jsonResponse(mpPayment({ id: 123 }))) as never;
 
     const result = await processPaymentWebhook({ type: 'payment', dataId: '987654' });
     assert.equal(result.updated, false);
@@ -476,6 +627,28 @@ describe('processPaymentWebhook', () => {
     assert.equal(calls.update.length, 0);
   });
 
+  it('falla cerrado si falta metadata de compra', async () => {
+    const { client, calls } = makeSupabaseMock({ byExternalRef: paymentRow() });
+    __setSupabaseClientForTests(client as never);
+    globalThis.fetch = mock.fn(async () => jsonResponse(mpPayment({ metadata: undefined }))) as never;
+
+    const result = await processPaymentWebhook({ type: 'payment', dataId: '987654' });
+    assert.equal(result.updated, false);
+    assert.equal(calls.update.length, 0);
+  });
+
+  it('falla cerrado si metadata.access_token no coincide con la compra', async () => {
+    const { client, calls } = makeSupabaseMock({ byExternalRef: paymentRow() });
+    __setSupabaseClientForTests(client as never);
+    globalThis.fetch = mock.fn(async () =>
+      jsonResponse(mpPayment({ metadata: { match_key: MATCH_KEY, access_token: 'otro-token' } })),
+    ) as never;
+
+    const result = await processPaymentWebhook({ type: 'payment', dataId: '987654' });
+    assert.equal(result.updated, false);
+    assert.equal(calls.update.length, 0);
+  });
+
   it('marca rejected', async () => {
     const { client, calls } = makeSupabaseMock({ byExternalRef: paymentRow() });
     __setSupabaseClientForTests(client as never);
@@ -483,7 +656,7 @@ describe('processPaymentWebhook', () => {
 
     const result = await processPaymentWebhook({ type: 'payment', dataId: '987654' });
     assert.equal(result.updated, true);
-    assert.equal(calls.update[0].mp_status, 'rejected');
+    assert.equal(calls.update[0]!.mp_status, 'rejected');
   });
 
   it('marca cancelled', async () => {
@@ -493,7 +666,7 @@ describe('processPaymentWebhook', () => {
 
     const result = await processPaymentWebhook({ type: 'payment', dataId: '987654' });
     assert.equal(result.updated, true);
-    assert.equal(calls.update[0].mp_status, 'cancelled');
+    assert.equal(calls.update[0]!.mp_status, 'cancelled');
   });
 
   it('es idempotente ante un webhook repetido del mismo estado aprobado', async () => {
@@ -553,6 +726,27 @@ describe('acceso por access token', () => {
 
   it('emite sesión para un pago aprobado', async () => {
     const { client } = makeSupabaseMock({
+      asset: { video_url: 'https://media.example.test/replay.mp4', poster_url: null },
+      byAccessToken: {
+        match_key: MATCH_KEY,
+        mp_status: 'approved',
+        amount: 3500,
+        approved_at: '2026-01-01T00:00:00.000Z',
+      },
+    });
+    __setSupabaseClientForTests(client as never);
+    globalThis.fetch = mock.fn(async () => new Response(null, { status: 200 })) as never;
+
+    const result = await issueSessionFromAccessToken({ accessToken: ACCESS_TOKEN });
+    assert.ok(result.sessionToken);
+    assert.equal(result.matchKey, MATCH_KEY);
+    const { verifyReplaySessionToken } = await import('./replay-session-token.js');
+    assert.equal(verifyReplaySessionToken(result.sessionToken, env.jwtSessionSecret)?.paymentAccess, true);
+  });
+
+  it('no emite sesión aprobada si el replay ya no está disponible', async () => {
+    const { client } = makeSupabaseMock({
+      asset: null,
       byAccessToken: {
         match_key: MATCH_KEY,
         mp_status: 'approved',
@@ -562,9 +756,77 @@ describe('acceso por access token', () => {
     });
     __setSupabaseClientForTests(client as never);
 
-    const result = await issueSessionFromAccessToken({ accessToken: ACCESS_TOKEN });
-    assert.ok(result.sessionToken);
-    assert.equal(result.matchKey, MATCH_KEY);
+    await assert.rejects(
+      () => issueSessionFromAccessToken({ accessToken: ACCESS_TOKEN }),
+      /El replay ya no está disponible/,
+    );
+  });
+
+  it('no emite sesión si la URL del replay ya no está disponible', async () => {
+    const { client } = makeSupabaseMock({
+      asset: { video_url: 'https://media.example.test/deleted.mp4', poster_url: null },
+      byAccessToken: {
+        match_key: MATCH_KEY,
+        mp_status: 'approved',
+        amount: 3500,
+        approved_at: '2026-01-01T00:00:00.000Z',
+      },
+    });
+    __setSupabaseClientForTests(client as never);
+    globalThis.fetch = mock.fn(async () => new Response(null, { status: 404 })) as never;
+
+    await assert.rejects(
+      () => issueSessionFromAccessToken({ accessToken: ACCESS_TOKEN }),
+      /El replay ya no está disponible/,
+    );
+  });
+
+  it('vuelve a comprobar el asset al resolver un stream pagado', async () => {
+    const config: { asset: Row | null; byAccessToken: Row } = {
+      asset: { video_url: 'https://media.example.test/replay.mp4', poster_url: null },
+      byAccessToken: {
+        match_key: MATCH_KEY,
+        mp_status: 'approved',
+        amount: 3500,
+        approved_at: '2026-01-01T00:00:00.000Z',
+      },
+    };
+    const { client } = makeSupabaseMock(config);
+    __setSupabaseClientForTests(client as never);
+    globalThis.fetch = mock.fn(async () => new Response(null, { status: 200 })) as never;
+    const access = await issueSessionFromAccessToken({ accessToken: ACCESS_TOKEN });
+
+    config.asset = null;
+    await assert.rejects(
+      () => getReplayStreamPayload({ authorizationHeader: `Bearer ${access.sessionToken}` }),
+      /El replay ya no está disponible/,
+    );
+  });
+
+  it('vuelve a denegar un stream pagado si el objeto remoto desapareció', async () => {
+    const { client } = makeSupabaseMock({
+      asset: { video_url: 'https://media.example.test/replay.mp4', poster_url: null },
+      byAccessToken: {
+        match_key: MATCH_KEY,
+        mp_status: 'approved',
+        amount: 3500,
+        approved_at: '2026-01-01T00:00:00.000Z',
+      },
+    });
+    __setSupabaseClientForTests(client as never);
+    let headChecks = 0;
+    globalThis.fetch = mock.fn(async (_url: string | URL, init?: RequestInit) => {
+      assert.equal(init?.method, 'HEAD');
+      headChecks += 1;
+      return new Response(null, { status: headChecks === 1 ? 200 : 410 });
+    }) as never;
+    const access = await issueSessionFromAccessToken({ accessToken: ACCESS_TOKEN });
+
+    await assert.rejects(
+      () => getReplayStreamPayload({ authorizationHeader: `Bearer ${access.sessionToken}` }),
+      /El replay ya no está disponible/,
+    );
+    assert.equal(headChecks, 2);
   });
 
   it('expone el estado y link de acceso en el polling', async () => {

@@ -323,6 +323,84 @@ async function fetchReplayAssets(matchKey: string): Promise<{
   };
 }
 
+/** Strict asset lookup for paid sessions: never substitute the generic fallback. */
+export async function fetchReplayAssetsForPaidAccess(matchKey: string): Promise<{
+  videoUrl: string;
+  posterUrl: string | null;
+}> {
+  if (!env.supabaseUrl || !env.supabaseKey) {
+    throw new HttpError(503, 'No se pudo verificar la disponibilidad del replay');
+  }
+
+  const sb = getSupabase();
+  const { data, error } = await sb
+    .from('replay_assets')
+    .select('video_url,poster_url')
+    .eq('match_key', matchKey)
+    .maybeSingle();
+
+  if (error) {
+    console.error('[replay-assets-paid]', error.message);
+    throw new HttpError(503, 'No se pudo verificar la disponibilidad del replay');
+  }
+
+  if (!data || typeof data.video_url !== 'string' || data.video_url.trim() === '') {
+    throw new HttpError(404, 'El replay ya no está disponible');
+  }
+
+  const videoUrl = data.video_url.trim();
+  if (!(await isPaidReplayUrlAvailable(videoUrl))) {
+    throw new HttpError(404, 'El replay ya no está disponible');
+  }
+
+  return {
+    videoUrl,
+    posterUrl:
+      typeof data.poster_url === 'string' && data.poster_url.trim() !== ''
+        ? data.poster_url
+        : null,
+  };
+}
+
+/** Comprueba el recurso remoto sólo para accesos pagos; no usa el fallback legacy. */
+async function isPaidReplayUrlAvailable(rawUrl: string): Promise<boolean> {
+  let url: URL;
+  try {
+    url = new URL(rawUrl);
+  } catch {
+    return false;
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    return false;
+  }
+
+  const timeoutMs = 8000;
+  async function probe(init: RequestInit): Promise<Response | null> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(url, { ...init, redirect: 'follow', signal: controller.signal });
+    } catch {
+      return null;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  const head = await probe({ method: 'HEAD' });
+  if (head?.ok) return true;
+  if (head && (head.status === 404 || head.status === 410)) return false;
+
+  // Some object hosts do not implement HEAD; a one-byte range establishes availability.
+  const range = await probe({ method: 'GET', headers: { Range: 'bytes=0-0' } });
+  if (!range) return false;
+  try {
+    return range.ok && range.status !== 204;
+  } finally {
+    void range.body?.cancel().catch(() => undefined);
+  }
+}
+
 /**
  * Obtiene el tamaño del archivo remoto (HEAD o petición Range mínima).
  * Si el servidor no informa tamaño, devuelve null sin lanzar.
@@ -464,7 +542,9 @@ export async function getReplayStreamPayload(params: {
     throw new HttpError(401, 'Sesión inválida o expirada');
   }
 
-  const assets = await fetchReplayAssets(claims.mk);
+  const assets = claims.paymentAccess
+    ? await fetchReplayAssetsForPaidAccess(claims.mk)
+    : await fetchReplayAssets(claims.mk);
   const videoSizeBytes = await probeRemoteVideoContentLength(assets.videoUrl);
   return { ...assets, videoSizeBytes };
 }

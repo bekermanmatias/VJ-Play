@@ -25,6 +25,24 @@ export const postPaymentCreatePreference = asyncHandler(async (req: Request, res
   res.json(result);
 });
 
+export function getWebhookNotificationDetails(
+  query: Record<string, unknown>,
+  body: unknown,
+): { type: string; dataId: string } {
+  const queryType = typeof query.type === 'string' ? query.type : '';
+  const dataId = typeof query['data.id'] === 'string' ? query['data.id'] : '';
+  const jsonBody = body as { type?: unknown; action?: unknown } | null;
+  const bodyType = typeof jsonBody?.type === 'string' ? jsonBody.type : '';
+  const actionIsPayment =
+    typeof jsonBody?.action === 'string' && jsonBody.action.includes('payment');
+
+  // Mercado Pago firma data.id en el query string. El body nunca puede sustituirlo.
+  return {
+    type: queryType || bodyType || (actionIsPayment ? 'payment' : ''),
+    dataId,
+  };
+}
+
 /**
  * POST /api/replays/payment/webhook
  * Notificación de Mercado Pago.
@@ -32,28 +50,10 @@ export const postPaymentCreatePreference = asyncHandler(async (req: Request, res
  * Valida `x-signature` antes de procesar: firma inválida → 401 y no se toca ningún pago.
  */
 export const postPaymentWebhook = asyncHandler(async (req: Request, res: Response) => {
-  // Formato webhook v2 (JSON body): { type: "payment", data: { id: "..." } }
-  const jsonBody = req.body as { type?: unknown; data?: { id?: unknown }; action?: unknown } | null;
-  const queryType = typeof req.query.type === 'string' ? req.query.type : '';
-  const queryId = typeof req.query['data.id'] === 'string' ? req.query['data.id'] : '';
-
-  let type = '';
-  let dataId = '';
-
-  if (jsonBody?.data?.id) {
-    // Webhook v2 format
-    type = typeof jsonBody.type === 'string' ? jsonBody.type : 'payment';
-    dataId = String(jsonBody.data.id);
-  } else if (queryType && queryId) {
-    // IPN format (query params)
-    type = queryType;
-    dataId = queryId;
-  } else if (typeof jsonBody?.action === 'string' && jsonBody.action.includes('payment')) {
-    // Alternative webhook format
-    type = 'payment';
-    const idFromBody = (jsonBody as { data?: { id?: unknown } }).data?.id;
-    dataId = idFromBody ? String(idFromBody) : '';
-  }
+  const { type, dataId } = getWebhookNotificationDetails(
+    req.query as Record<string, unknown>,
+    req.body,
+  );
 
   // Validación de origen obligatoria antes de cualquier procesamiento.
   const signatureOk = isValidWebhookSignature({

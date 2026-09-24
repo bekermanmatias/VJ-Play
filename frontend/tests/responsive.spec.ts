@@ -4,14 +4,14 @@ import { buildLastSevenDaysOptions } from "../src/utils/replay-date-options";
 const widths = [375, 768, 1024, 1279, 1280, 1440, 1920];
 const routes = ["/", "/deportes/futbol-infantil", "/deportes/natacion-jubilados", "/espacios/quincho", "/noticias", "/contacto", "/replays"];
 
-test("las fechas de replays siguen el dÃ­a argentino al cruzar medianoche UTC", () => {
+test("las fechas de replays siguen el día argentino al cruzar medianoche UTC", () => {
   const dates = buildLastSevenDaysOptions(new Date("2026-09-24T00:01:00Z"));
-  expect(dates[0]).toEqual({ value: "2026-09-23", label: "Hoy â€” miÃ©, 23/09/2026" });
+  expect(dates[0]).toEqual({ value: "2026-09-23", label: "Hoy — mié, 23/09/2026" });
   expect(dates[6].value).toBe("2026-09-17");
 });
 
 for (const width of widths) {
-  test(`pÃ¡ginas pÃºblicas y navegaciÃ³n a ${width}px`, async ({ page }) => {
+  test(`páginas públicas y navegación a ${width}px`, async ({ page }) => {
     const pageErrors: string[] = [];
     page.on("pageerror", (error) => pageErrors.push(error.message));
     await page.setViewportSize({ width, height: 900 });
@@ -20,12 +20,12 @@ for (const width of widths) {
       expect(response?.status(), route).toBe(200);
       await expect(page.locator("main, #home-hero").first()).toBeVisible();
       if (route === "/deportes/natacion-jubilados") {
-        await expect(page.getByRole("heading", { level: 1 })).toContainText("NATACIÃ“N JUBILADOS");
+        await expect(page.getByRole("heading", { level: 1 })).toContainText("NATACIÓN JUBILADOS");
         await expect(page.getByRole("heading", { level: 2, name: /Horarios/i })).toBeVisible();
       }
       if (route === "/replays") {
         await expect(page.getByLabel("Cancha")).toBeVisible();
-        await expect(page.getByLabel("DÃ­a")).toBeVisible();
+        await expect(page.getByLabel("Día")).toBeVisible();
         await expect(page.getByRole("button", { name: /COMPRAR REPLAY/ })).toBeDisabled();
       }
       // scrollWidth on elements exposes clipping masked by overflow-x: hidden on html/body.
@@ -48,7 +48,7 @@ for (const width of widths) {
       await expect(toggle).toHaveAttribute("aria-expanded", "true");
       const mobileMenu = page.locator("[data-mobile-menu-panel]");
       await mobileMenu.locator("summary").filter({ hasText: "Pileta" }).first().click();
-      await expect(mobileMenu.getByRole("link", { name: "NataciÃ³n Jubilados" })).toBeVisible();
+      await expect(mobileMenu.getByRole("link", { name: "Natación Jubilados" })).toBeVisible();
       await page.keyboard.press("Escape");
       await expect(toggle).toHaveAttribute("aria-expanded", "false");
     } else {
@@ -101,7 +101,7 @@ test("teclado en los dos lados del breakpoint del header", async ({ page }) => {
   const pileta = panel.locator("summary").filter({ hasText: "Pileta" }).first();
   await pileta.focus();
   await page.keyboard.press("Space");
-  await expect(panel.getByRole("link", { name: "NataciÃ³n NiÃ±os" })).toBeVisible();
+  await expect(panel.getByRole("link", { name: "Natación Niños" })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(toggle).toBeFocused();
   await expect(toggle).toHaveAttribute("aria-expanded", "false");
@@ -111,15 +111,15 @@ test("teclado en los dos lados del breakpoint del header", async ({ page }) => {
   await expect(deportes).toHaveAttribute("aria-expanded", "true");
   await expect(page.locator("#desktop-dropdown-0 a").first()).toBeVisible();
   await page.keyboard.press("ArrowDown");
-  await expect(page.getByRole("link", { name: "FÃºtbol Infantil" }).first()).toBeFocused();
+  await expect(page.getByRole("link", { name: "Fútbol Infantil" }).first()).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(deportes).toBeFocused();
   await expect(deportes).toHaveAttribute("aria-expanded", "false");
   await page.keyboard.press("Enter");
-  await expect(page.getByRole("link", { name: "FÃºtbol Infantil" }).first()).toBeFocused();
+  await expect(page.getByRole("link", { name: "Fútbol Infantil" }).first()).toBeFocused();
   await page.keyboard.press("Tab");
   await page.keyboard.press("Shift+Tab");
-  await expect(page.getByRole("link", { name: "FÃºtbol Infantil" }).first()).toBeFocused();
+  await expect(page.getByRole("link", { name: "Fútbol Infantil" }).first()).toBeFocused();
 });
 
 for (const width of [1100, 1200, 1366]) {
@@ -154,7 +154,7 @@ test("foto ausente usa fallback institucional", async ({ page }) => {
   expect(pageResponse?.status()).toBe(200);
   const photo = page.locator("main img[data-vj-image]").first();
   await expect(photo).toHaveAttribute("src", "/images/deportes/placeholder.svg");
-  await expect(photo).toHaveAttribute("alt", "FÃºtbol infantil â€” Club Social Varela Junior");
+  await expect(photo).toHaveAttribute("alt", "Fútbol infantil — Club Social Varela Junior");
   await expect.poll(() => photo.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
   const fallbackResponse = await page.request.get("/images/deportes/placeholder.svg");
   expect(fallbackResponse.status()).toBe(200);
@@ -164,12 +164,12 @@ test("foto ausente usa fallback institucional", async ({ page }) => {
   expect(fallback).not.toContain("Foto del deporte");
 });
 
-test("fallback de Quincho mantiene alt contextual y etiqueta genÃ©rica", async ({ page }) => {
+test("fallback de Quincho mantiene alt contextual y etiqueta genérica", async ({ page }) => {
   const pageResponse = await page.goto("/espacios/quincho");
   expect(pageResponse?.status()).toBe(200);
   const photo = page.locator("main img[data-vj-image]").first();
   await expect(photo).toHaveAttribute("src", "/images/deportes/placeholder.svg");
-  await expect(photo).toHaveAttribute("alt", "Quincho â€” Club Social Varela Junior");
+  await expect(photo).toHaveAttribute("alt", "Quincho — Club Social Varela Junior");
   await expect.poll(() => photo.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(1200);
   const fallbackResponse = await page.request.get("/images/deportes/placeholder.svg");
   expect(fallbackResponse.status()).toBe(200);
@@ -179,7 +179,7 @@ test("fallback de Quincho mantiene alt contextual y etiqueta genÃ©rica", async
   expect(fallback).not.toContain("Foto del deporte");
 });
 
-test("imagen local vÃ¡lida de Home carga sin activar fallback", async ({ page }) => {
+test("imagen local válida de Home carga sin activar fallback", async ({ page }) => {
   const pageResponse = await page.goto("/");
   expect(pageResponse?.status()).toBe(200);
   const image = page.locator('#home-hero img[data-vj-image][src="/images/padel.png"]');
@@ -188,7 +188,7 @@ test("imagen local vÃ¡lida de Home carga sin activar fallback", async ({ page 
   await expect(image).not.toHaveAttribute("src", "/images/deportes/placeholder.svg");
 });
 
-test("replays habilita la compra al completar cancha, dÃ­a y turno", async ({ page }) => {
+test("replays habilita la compra al completar cancha, día y turno", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 900 });
   await page.goto("/replays");
   const cancha = page.getByLabel("Cancha");
@@ -199,7 +199,7 @@ test("replays habilita la compra al completar cancha, dÃ­a y turno", async ({ 
   await expect.poll(() => turno.locator("option").count()).toBeGreaterThan(1);
   await cancha.selectOption({ index: 1 });
   await turno.selectOption({ index: 1 });
-  await expect(page.getByLabel("DÃ­a")).not.toHaveValue("");
+  await expect(page.getByLabel("Día")).not.toHaveValue("");
   await expect(buy).toBeEnabled();
   await buy.focus();
   await expect(buy).toBeFocused();
@@ -211,7 +211,7 @@ test("replays habilita la compra al completar cancha, dÃ­a y turno", async ({ 
 
 const PAYMENT_TOKEN = "11111111-1111-1111-1111-111111111111";
 
-test("pago con token invÃ¡lido muestra error sin aprobar", async ({ page }) => {
+test("pago con token inválido muestra error sin aprobar", async ({ page }) => {
   await page.route("**/api/replays/payment/status*", async (route) => {
     await route.fulfill({
       status: 404,
@@ -220,7 +220,7 @@ test("pago con token invÃ¡lido muestra error sin aprobar", async ({ page }) =>
     });
   });
   await page.goto(`/replays/pago?token=${PAYMENT_TOKEN}`);
-  await expect(page.getByText(/hubo un problema|no se encontrÃ³|error/i).first()).toBeVisible();
+  await expect(page.getByText(/hubo un problema|no se encontró|error/i).first()).toBeVisible();
 });
 
 test("pago aprobado muestra el link de acceso", async ({ page }) => {
@@ -255,7 +255,7 @@ test("pago rechazado muestra error", async ({ page }) => {
   await expect(page.getByText(/rechaz|no se complet|error/i).first()).toBeVisible({ timeout: 15_000 });
 });
 
-test("ver con token invÃ¡lido muestra link invÃ¡lido o error", async ({ page }) => {
+test("ver con token inválido muestra link inválido o error", async ({ page }) => {
   await page.route("**/api/replays/payment/access", async (route) => {
     await route.fulfill({
       status: 404,

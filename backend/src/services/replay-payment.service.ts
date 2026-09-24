@@ -3,6 +3,7 @@ import { env } from '../config/env.js';
 import { getSupabase } from '../config/supabase.js';
 import { HttpError } from '../errors/http-error.js';
 import { normalizeMatchKey } from '../utils/normalize-replay-access.js';
+import { fetchReplayAssetsForPaidAccess } from './replay-access.service.js';
 import {
   signReplaySessionToken,
 } from './replay-session-token.js';
@@ -18,7 +19,7 @@ type MpPreferenceResponse = {
 };
 
 type MpPaymentResponse = {
-  id: number;
+  id: number | string;
   status: string;
   status_detail: string;
   external_reference: string | null;
@@ -116,7 +117,7 @@ type SignatureValidationInput = {
 
 /**
  * Valida el header `x-signature` según el mecanismo documentado por Mercado Pago.
- * Manifiesto: `id:[data.id];request-id:[x-request-id];ts:[ts];`
+ * Manifiesto: `id:[data.id];[request-id:[x-request-id];]ts:[ts];`
  * El valor esperado es HMAC-SHA256(secret, manifest) en hex, comparado con `v1`.
  */
 export function isValidWebhookSignature(input: SignatureValidationInput): boolean {
@@ -143,7 +144,12 @@ export function isValidWebhookSignature(input: SignatureValidationInput): boolea
     return false;
   }
 
-  const manifest = `id:${dataId.toLowerCase()};request-id:${requestIdHeader ?? ''};ts:${ts};`;
+  const manifestParts = [`id:${dataId.toLowerCase()}`];
+  if (requestIdHeader) {
+    manifestParts.push(`request-id:${requestIdHeader}`);
+  }
+  manifestParts.push(`ts:${ts}`);
+  const manifest = `${manifestParts.join(';')};`;
   const expected = createHmac('sha256', secret).update(manifest).digest('hex');
 
   const a = Buffer.from(v1, 'utf8');
@@ -252,6 +258,32 @@ export async function createPaymentPreference(params: {
     .select('id,access_token,external_reference')
     .single();
 
+  if (insertErr?.code === '23505') {
+    // Un índice único parcial por match_key arbitra requests concurrentes.
+    // Si otra request ya reservó la compra, reutilizar su checkout o pedir retry
+    // mientras la preferencia todavía se está creando; nunca crear otro cobro.
+    const { data: concurrentPending, error: concurrentErr } = await sb
+      .from('replay_payments')
+      .select('access_token,mp_preference_id,init_point')
+      .eq('match_key', mk)
+      .eq('mp_status', 'pending')
+      .maybeSingle();
+
+    if (concurrentErr) {
+      console.error('[mp-create-preference] concurrent pending lookup', concurrentErr.message);
+      throw new HttpError(503, 'No se pudo verificar el pago existente');
+    }
+    if (concurrentPending?.init_point) {
+      return {
+        preferenceId: concurrentPending.mp_preference_id ?? '',
+        initPoint: concurrentPending.init_point,
+        accessToken: concurrentPending.access_token,
+        status: 'pending',
+      };
+    }
+    throw new HttpError(409, 'Ya se está creando un checkout para este replay; intentá nuevamente');
+  }
+
   if (insertErr || !payment) {
     console.error('[mp-create-preference] insert', insertErr?.message);
     throw new HttpError(503, 'No se pudo crear el registro de pago');
@@ -333,7 +365,7 @@ export async function createPaymentPreference(params: {
 /* ------------------------------------------------------------------ */
 
 async function fetchPaymentFromMp(paymentId: string): Promise<MpPaymentResponse> {
-  const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+  const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${encodeURIComponent(paymentId)}`, {
     headers: {
       Authorization: `Bearer ${env.mpAccessToken}`,
     },
@@ -373,6 +405,10 @@ export async function processPaymentWebhook(params: {
   // Consultar el pago en Mercado Pago para obtener datos verificados (server-to-server).
   const mpPayment = await fetchPaymentFromMp(params.dataId);
   const paymentId = String(mpPayment.id);
+  if (paymentId.toLowerCase() !== params.dataId.toLowerCase()) {
+    console.warn('[mp-webhook] payment id no coincide con data.id firmado');
+    return { updated: false, reason: 'payment id distinto a data.id' };
+  }
 
   const externalRef = mpPayment.external_reference;
   if (!externalRef) {
@@ -406,26 +442,31 @@ export async function processPaymentWebhook(params: {
     return { updated: false, reason: 'payment id distinto' };
   }
 
-  const metadata = mpPayment.metadata ?? null;
-  if (metadata && typeof metadata.match_key === 'string') {
-    const metaMatch = normalizeMatchKey(metadata.match_key);
-    if (metaMatch !== payment.match_key) {
-      console.warn('[mp-webhook] match_key de metadata no coincide');
-      return { updated: false, reason: 'match_key distinto' };
-    }
+  const metadata = mpPayment.metadata;
+  if (
+    !metadata ||
+    typeof metadata.match_key !== 'string' ||
+    normalizeMatchKey(metadata.match_key) !== payment.match_key ||
+    typeof metadata.access_token !== 'string' ||
+    metadata.access_token !== payment.access_token
+  ) {
+    console.warn('[mp-webhook] metadata de compra ausente o no coincide');
+    return { updated: false, reason: 'metadata distinta' };
   }
 
   // Validar importe y moneda contra los valores guardados en el backend.
   const expectedAmount = Number(payment.amount);
   const incomingAmount = mpPayment.transaction_amount;
-  if (typeof incomingAmount === 'number' && Number.isFinite(incomingAmount)) {
-    if (Math.abs(incomingAmount - expectedAmount) > 0.01) {
-      console.warn('[mp-webhook] monto no coincide', incomingAmount, expectedAmount);
-      return { updated: false, reason: 'monto distinto' };
-    }
+  if (
+    typeof incomingAmount !== 'number' ||
+    !Number.isFinite(incomingAmount) ||
+    Math.abs(incomingAmount - expectedAmount) > 0.01
+  ) {
+    console.warn('[mp-webhook] monto ausente o no coincide');
+    return { updated: false, reason: 'monto distinto' };
   }
-  if (mpPayment.currency_id && mpPayment.currency_id !== payment.currency) {
-    console.warn('[mp-webhook] moneda no coincide', mpPayment.currency_id, payment.currency);
+  if (mpPayment.currency_id !== payment.currency) {
+    console.warn('[mp-webhook] moneda ausente o no coincide');
     return { updated: false, reason: 'moneda distinta' };
   }
 
@@ -525,10 +566,12 @@ export async function issueSessionFromAccessToken(params: {
     throw new HttpError(402, 'El pago aún no fue aprobado');
   }
 
+  await fetchReplayAssetsForPaidAccess(access.matchKey);
+
   const now = Math.floor(Date.now() / 1000);
   const exp = now + env.replaySessionTtlSeconds;
   const sessionToken = signReplaySessionToken(
-    { mk: access.matchKey, iat: now, exp },
+    { mk: access.matchKey, iat: now, exp, paymentAccess: true },
     env.jwtSessionSecret,
   );
 

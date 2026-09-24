@@ -6,6 +6,8 @@ export type ReplaySessionClaims = {
   iat: number;
   /** Unix timestamp (seconds) */
   exp: number;
+  /** Marks sessions that must not use the generic fallback video. */
+  paymentAccess?: true;
 };
 
 export function signReplaySessionToken(
@@ -71,5 +73,6 @@ export function verifyReplaySessionToken(
     return null;
   }
 
-  return { mk, iat, exp };
+  const paymentAccess = (parsed as { paymentAccess?: unknown }).paymentAccess;
+  return paymentAccess === true ? { mk, iat, exp, paymentAccess: true } : { mk, iat, exp };
 }
