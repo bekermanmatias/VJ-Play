@@ -1,0 +1,28 @@
+---
+interface Props {
+  src?: string;
+  alt: string;
+  class?: string;
+  width?: number;
+  height?: number;
+  sizes?: string;
+  loading?: "lazy" | "eager";
+  decoding?: "async" | "sync" | "auto";
+}
+const { src, alt, class: extraClass, width, height, sizes, loading = "lazy", decoding = "async" } = Astro.props;
+// Resolve the public asset at request time so Vite doesn't treat this public/ URL
+// as a source asset while transforming the Astro component.
+const fallbackSrc = new URL("/images/deportes/placeholder.svg", Astro.url).pathname;
+---
+<img
+  src={src || fallbackSrc}
+  alt={alt}
+  width={width}
+  height={height}
+  sizes={sizes}
+  loading={loading}
+  decoding={decoding}
+  class={extraClass}
+  data-vj-image
+  onerror={`if(!this.dataset.fallbackApplied){this.dataset.fallbackApplied='true';this.src='${fallbackSrc}'}else{this.style.visibility='hidden'}`}
+/>

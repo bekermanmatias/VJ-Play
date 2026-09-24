@@ -3,13 +3,11 @@ import {
   fetchPublicNews,
   getNewsApiBase,
   NEWS_DEPORTE_PREVIEW_SIZE,
-  newsCategoryLabel,
-  newsDate,
-  newsHref,
-  newsImageOrPlaceholder,
   noticiasListHref,
   type News,
 } from "@/utils/news-api";
+import NewsCard from "@/components/news/NewsCard";
+import Eyebrow from "@/components/ui/Eyebrow.astro";
 
 interface Props {
   /** Slug del deporte (= categoría) en news_categories. */
@@ -46,7 +44,7 @@ const verMasHref = noticiasListHref({ categorySlug });
   <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
     <header class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between" data-reveal>
       <div>
-        <p class="text-xs font-bold uppercase tracking-[0.22em] text-vj-green">Novedades</p>
+        <Eyebrow label="Novedades" />
         <h2 class="mt-2 text-3xl font-black uppercase tracking-tight text-slate-900 sm:text-4xl">
           Noticias sobre {displayName}
         </h2>
@@ -86,41 +84,7 @@ const verMasHref = noticiasListHref({ categorySlug });
       hasNews && (
         <>
           <div class="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3" data-reveal data-reveal-delay="150">
-            {news.map((n) => (
-              <article class="group flex flex-col overflow-hidden border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
-                <a href={newsHref(n)} class="block">
-                  <div class="aspect-[16/10] w-full bg-slate-100 overflow-hidden">
-                    <img
-                      src={newsImageOrPlaceholder(n)}
-                      alt={n.images[0]?.altText ?? n.title}
-                      class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  </div>
-                </a>
-                <div class="flex flex-1 flex-col p-5">
-                  <div class="flex items-center justify-between gap-3">
-                    <span class="text-[11px] font-bold uppercase tracking-[0.18em] text-vj-green">
-                      {newsCategoryLabel(n)}
-                    </span>
-                    <span class="shrink-0 text-[11px] text-slate-400">
-                      {newsDate(n)}
-                    </span>
-                  </div>
-                  <h3 class="mt-2 text-lg font-extrabold leading-snug text-slate-900">
-                    <a href={newsHref(n)} class="hover:underline">
-                      {n.title}
-                    </a>
-                  </h3>
-                  {n.summary && (
-                    <p class="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-600">
-                      {n.summary}
-                    </p>
-                  )}
-                </div>
-              </article>
-            ))}
+            {news.map((n) => <NewsCard news={n} />)}
           </div>
 
           {

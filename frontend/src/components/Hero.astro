@@ -2,6 +2,7 @@
 // Hero dinámico: carga los banners del home en SSR (Server-Side Rendering)
 // para evitar que aparezca un estado de "cargando" (spinner) en la web.
 import { getNewsApiBase } from "@/utils/news-api";
+import ImageFallback from "@/components/ui/ImageFallback.astro";
 
 type Banner = {
   id: string;
@@ -80,7 +81,7 @@ try {
           </a>
         )}
         {b.imageUrl && (
-          <img
+          <ImageFallback
             src={b.imageUrl}
             alt={b.title}
             class="absolute inset-0 h-full w-full object-cover"

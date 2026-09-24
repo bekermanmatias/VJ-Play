@@ -1,0 +1,22 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import TopBar from "@/components/TopBar.astro";
+import Navbar from "@/components/Navbar.astro";
+import { getSedeBySlug } from "@/data/sedes";
+
+const sede = getSedeBySlug(Astro.params.slug ?? "");
+if (!sede) return Astro.redirect("/club/institucional");---
+
+<Layout title={`${sede.name} | Club Social Varela Junior`} description={`${sede.name} del Club Social Varela Junior.`}>
+  <TopBar />
+  <Navbar />
+  <main>
+    <section class="bg-slate-950 py-16 sm:py-24">
+      <div class="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:items-start lg:px-8">
+        <div><p class="text-xs font-bold uppercase tracking-[0.22em] text-vj-green">{sede.location}</p><h1 class="mt-3 font-display text-5xl font-extrabold uppercase tracking-wide text-white sm:text-6xl">{sede.name}</h1><div class="mt-6 h-0.5 w-14 bg-vj-green"></div><p class="mt-6 text-lg leading-relaxed text-slate-300">{sede.description}</p><div class="mt-8 flex flex-wrap gap-3">{sede.amenities.map((amenity) => <span class="border border-slate-700 px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-300">{amenity}</span>)}</div></div>
+        <img src={sede.image} alt={sede.imageAlt} class="aspect-[4/3] w-full object-cover" />
+      </div>
+    </section>
+    <section class="bg-white py-16 sm:py-24"><div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"><h2 class="font-display text-4xl font-extrabold uppercase text-slate-900">Galería</h2><p class="mt-3 text-slate-600">Próximamente vas a encontrar acá las fotos de esta sede.</p>{sede.gallery.length > 0 && <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{sede.gallery.map((photo) => <figure><img src={photo.src} alt={photo.alt} class="aspect-[4/3] w-full object-cover" />{photo.caption && <figcaption class="mt-2 text-sm text-slate-600">{photo.caption}</figcaption>}</figure>)}</div>}</div></section>
+  </main>
+</Layout>

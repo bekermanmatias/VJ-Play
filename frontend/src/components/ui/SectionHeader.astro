@@ -1,0 +1,17 @@
+---
+import Eyebrow from "./Eyebrow.astro";
+interface Props {
+  id?: string;
+  eyebrow: string;
+  title: string;
+  theme?: "light" | "dark";
+  align?: "left" | "center";
+  class?: string;
+}
+const { id, eyebrow, title, theme = "light", align = "left", class: extraClass } = Astro.props;
+---
+<header class:list={[align === "center" && "text-center", extraClass]} data-reveal>
+  <Eyebrow label={eyebrow} />
+  <h2 id={id} class:list={["vj-display-title mt-2 text-4xl font-extrabold sm:text-5xl", theme === "dark" ? "text-white" : "text-slate-900"]}>{title}</h2>
+  <slot />
+</header>

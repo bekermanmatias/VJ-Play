@@ -1,0 +1,31 @@
+---
+import ImageFallback from "@/components/ui/ImageFallback.astro";
+import Eyebrow from "@/components/ui/Eyebrow.astro";
+
+interface Props {
+  id: string;
+  eyebrow: string;
+  title: string;
+  imageSrc: string;
+  imageAlt: string;
+  imageWidth: number;
+  imageHeight: number;
+}
+const { id, eyebrow, title, imageSrc, imageAlt, imageWidth, imageHeight } = Astro.props;
+---
+<section class="grid w-full grid-cols-1 lg:min-h-[min(50vw,720px)] lg:grid-cols-2" aria-labelledby={id}>
+  <div class="flex min-h-[420px] min-w-0 flex-col justify-between bg-slate-900 px-6 py-12 text-slate-200 sm:px-10 lg:min-h-[min(50vw,720px)] lg:px-14 lg:py-16 xl:px-16">
+    <div data-reveal>
+      <Eyebrow label={eyebrow} />
+      <h1 id={id} class="vj-display-title mt-3 break-words text-5xl font-normal leading-[0.95] text-white sm:text-6xl xl:text-7xl">{title}</h1>
+      <slot name="description" />
+      <slot name="details" />
+    </div>
+    <div class="mt-10 max-w-xl space-y-5 border-t border-slate-700 pt-8" data-reveal data-reveal-delay="200">
+      <slot name="contact" />
+    </div>
+  </div>
+  <div class="relative min-h-[min(100vw,480px)] self-stretch bg-slate-800 lg:min-h-0">
+    <ImageFallback src={imageSrc} alt={imageAlt} width={imageWidth} height={imageHeight} sizes="(min-width: 1024px) 50vw, 100vw" class="absolute inset-0 size-full object-cover object-center" loading="eager" />
+  </div>
+</section>

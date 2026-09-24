@@ -1,5 +1,8 @@
 ---
-const sedes = [
+const sedes: Array<{
+  name: string; location: string; description: string; image: string; imageAlt: string;
+  amenities: { label: string; icon: string }[]; highlight?: string;
+}> = [
   {
     name: "Sede Central",
     location: "Av. San Martín",
@@ -101,14 +104,13 @@ const sedes = [
               class="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent lg:bg-gradient-to-r lg:from-transparent lg:to-slate-900/20"
               aria-hidden="true"
             ></div>
-
-            {/* Hectares highlight badge */}
             {sede.highlight && (
               <div class="absolute bottom-4 right-4 flex items-center gap-2 bg-vj-green px-4 py-2 shadow-lg sm:bottom-6 sm:right-6">
                 <span class="font-display text-2xl font-extrabold text-white sm:text-3xl">{sede.highlight}</span>
                 <span class="text-xs font-bold uppercase tracking-wider text-white/80">de predio</span>
               </div>
             )}
+
           </div>
 
           <!-- Info -->

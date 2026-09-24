@@ -808,10 +808,16 @@ export const deportesNav: { label: string; href: string }[] = deportes.map((d) =
 /**
  * Agrupaciones de la navegación principal.
  */
+export type NavItem = {
+  label: string;
+  href: string;
+  children?: NavItem[];
+};
+
 export type NavGroup = {
   label: string;
   href: string;
-  items: { label: string; href: string }[];
+  items: NavItem[];
 };
 
 function deporteHref(slug: string): string {

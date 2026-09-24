@@ -8,6 +8,8 @@ import {
   newsImageOrPlaceholder,
   type News,
 } from "@/utils/news-api";
+import Eyebrow from "@/components/ui/Eyebrow.astro";
+import ImageFallback from "@/components/ui/ImageFallback.astro";
 
 const apiBase = getNewsApiBase();
 let news: News[] = [];
@@ -31,7 +33,7 @@ const hasNews = news.length > 0;
   <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
     <header class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between" data-reveal>
       <div>
-        <p class="text-xs font-bold uppercase tracking-[0.22em] text-vj-green">Novedades</p>
+        <Eyebrow label="Novedades" />
         <h2
           id="home-noticias-title"
           class="mt-2 text-4xl font-black uppercase tracking-tight text-slate-900 sm:text-5xl"
@@ -73,7 +75,7 @@ const hasNews = news.length > 0;
               href={newsHref(featured)}
               class="group relative block aspect-[16/11] overflow-hidden bg-slate-900 ring-1 ring-slate-200 transition lg:aspect-auto"
             >
-              <img
+              <ImageFallback
                 src={newsImageOrPlaceholder(featured)}
                 alt={featured.images[0]?.altText ?? featured.title}
                 class="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
@@ -111,7 +113,7 @@ const hasNews = news.length > 0;
                   class="group flex items-stretch gap-4 py-4 transition hover:bg-slate-50 sm:gap-5"
                 >
                   <div class="relative aspect-[4/3] w-28 shrink-0 overflow-hidden bg-slate-100 sm:w-36">
-                    <img
+                    <ImageFallback
                       src={newsImageOrPlaceholder(n)}
                       alt={n.images[0]?.altText ?? n.title}
                       class="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"

@@ -9,6 +9,14 @@ export const clubNav: NavGroup = {
     { label: "Institucional", href: "/club/institucional" },
     { label: "Historia", href: "/club/historia" },
     { label: "Autoridades", href: "/club/autoridades" },
+    {
+      label: "Sedes",
+      href: "#",
+      children: [
+        { label: "Sede Central", href: "/club/sedes/sede-central" },
+        { label: "Campo de Deportes", href: "/club/sedes/campo-deportes" },
+      ],
+    },
   ],
 };
 

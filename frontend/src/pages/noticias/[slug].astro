@@ -2,6 +2,7 @@
 import Layout from "@/layouts/Layout.astro";
 import TopBar from "@/components/TopBar.astro";
 import Navbar from "@/components/Navbar.astro";
+import ImageFallback from "@/components/ui/ImageFallback.astro";
 import {
   fetchPublicNews,
   fetchPublicNewsBySlug,
@@ -88,7 +89,7 @@ const headLabel = headCat ? headCat.label : "Noticias";
                 data-lightbox-alt={main.altText ?? news.title}
                 aria-label="Ampliar imagen"
               >
-                <img
+                <ImageFallback
                   src={main.url}
                   alt={main.altText ?? news.title}
                   class="mx-auto h-auto w-full max-w-[640px] object-cover"
@@ -128,7 +129,7 @@ const headLabel = headCat ? headCat.label : "Noticias";
                     data-lightbox-alt={img.altText ?? news.title}
                     aria-label="Ampliar imagen"
                   >
-                    <img
+                    <ImageFallback
                       src={img.url}
                       alt={img.altText ?? news.title}
                       class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
@@ -182,7 +183,7 @@ const headLabel = headCat ? headCat.label : "Noticias";
                       href={newsHref(n)}
                       class="group relative block aspect-[16/10] overflow-hidden bg-slate-900"
                     >
-                      <img
+                       <ImageFallback
                         src={img}
                         alt={n.title}
                         class="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"

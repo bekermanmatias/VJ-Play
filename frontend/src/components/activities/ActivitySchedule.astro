@@ -1,0 +1,52 @@
+---
+import type { DeportePageData } from "@/data/deportes";
+interface Props {
+  title?: string;
+  items?: string[];
+  groups?: DeportePageData["scheduleGroups"];
+}
+const { title, items, groups } = Astro.props;
+---
+{title && ((items?.length ?? 0) > 0 || (groups?.length ?? 0) > 0) && (
+  <div class="mt-8 max-w-xl">
+    <h2 class="text-sm font-bold uppercase tracking-wide text-white">{title}</h2>
+    {groups?.length ? (
+      <ul class="mt-4 space-y-4">
+        {groups.map((group) => (
+          <li class="flex gap-3 text-sm text-slate-300 sm:text-base">
+            <span class="mt-2 inline-flex h-2.5 w-2.5 shrink-0 bg-vj-green" aria-hidden="true" />
+            <div class="min-w-0">
+              <h3 class="font-bold text-white">{group.title}</h3>
+              {group.groups?.length ? (
+                <ul class="mt-2 space-y-3">
+                  {group.groups.map((subgroup) => (
+                    <li>
+                      <h4 class="font-semibold text-white">{subgroup.title}</h4>
+                      {subgroup.entries?.length ? (
+                        <ul class="mt-1 space-y-1.5">
+                          {subgroup.entries.map((entry) => <li><span class="font-semibold text-white">{entry.label}</span>{" — "}{entry.value}</li>)}
+                        </ul>
+                      ) : (
+                        <ul class="mt-1 space-y-1.5">{subgroup.lines.map((line) => <li>{line}</li>)}</ul>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : group.entries?.length ? (
+                <ul class="mt-1 space-y-1.5">
+                  {group.entries.map((entry) => <li>{entry.label === "Horario" ? entry.value : <><span class="font-semibold text-white">{entry.label}</span>{" — "}{entry.value}</>}</li>)}
+                </ul>
+              ) : (
+                <ul class="mt-1 space-y-1.5">{group.lines.map((line) => <li>{line}</li>)}</ul>
+              )}
+            </div>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <ul class="mt-3 space-y-2">
+        {items?.map((item) => <li class="flex items-center gap-3 text-sm text-slate-300 sm:text-base"><span class="inline-flex h-2.5 w-2.5 shrink-0 bg-vj-green" aria-hidden="true" />{item}</li>)}
+      </ul>
+    )}
+  </div>
+)}

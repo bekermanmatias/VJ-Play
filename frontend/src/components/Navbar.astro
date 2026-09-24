@@ -57,12 +57,12 @@ const linkTitle = (label: string): string | undefined => {
     </a>
 
     <!-- Links centrales -->
-    <ul class="hidden lg:flex items-center gap-0.5 ml-auto">
+    <ul class="hidden xl:flex items-center gap-0.5 ml-auto">
       {
-        navDropdowns.map((grupo) => {
+        navDropdowns.map((grupo, index) => {
           const groupActive = isGroupActive(grupo);
           return (
-            <li class="relative group">
+            <li class="relative group" data-desktop-dropdown>
               <button
                 type="button"
                 class:list={[
@@ -73,6 +73,7 @@ const linkTitle = (label: string): string | undefined => {
                 ]}
                 aria-haspopup="true"
                 aria-expanded="false"
+                aria-controls={`desktop-dropdown-${index}`}
               >
                 {grupo.label}
                 <svg
@@ -90,29 +91,39 @@ const linkTitle = (label: string): string | undefined => {
                 </svg>
               </button>
 
-              <div class="invisible opacity-0 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 transition-all duration-150 absolute left-1/2 top-full z-50 -translate-x-1/2 pt-3">
-                <div class="overflow-hidden border border-slate-200 bg-white shadow-xl">
+              <div id={`desktop-dropdown-${index}`} class="invisible opacity-0 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 transition-all duration-150 absolute left-1/2 top-full z-50 -translate-x-1/2 pt-3" data-dropdown-panel>
+                <div class="border border-slate-200 bg-white shadow-xl">
                   <ul class="grid w-[22rem] grid-cols-1">
                     {grupo.items.map((item) => {
                       const active = isItemActive(item.href);
+                      const hasChildren = Boolean(item.children?.length);
                       return (
-                        <li class="-mb-px border-b border-slate-200 last:border-b-0">
-                          <a
-                            href={item.href}
-                            aria-current={active ? "page" : undefined}
-                            class:list={[
-                              "block px-6 py-3.5 text-sm font-bold uppercase tracking-wide transition-colors",
-                              active
-                                ? "bg-slate-100 text-vj-green"
-                                : "text-slate-700 hover:bg-slate-50 hover:text-vj-green",
-                            ]}
-                          >
-                            {item.label}
-                          </a>
+                        <li class="relative -mb-px border-b border-slate-200 last:border-b-0 group/sedes">
+                          {hasChildren ? (
+                             <button type="button" class="flex w-full items-center justify-between px-6 py-3.5 text-left text-sm font-bold uppercase tracking-wide text-vj-green transition-colors hover:bg-slate-50" aria-haspopup="true" aria-expanded="false" aria-controls={`desktop-submenu-${index}-${item.label.replace(/\s+/g, "-")}`}>
+                              {item.label}
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+                            </button>
+                          ) : (
+                            <a href={item.href} aria-current={active ? "page" : undefined} class:list={["block px-6 py-3.5 text-sm font-bold uppercase tracking-wide transition-colors", active ? "bg-slate-100 text-vj-green" : "text-slate-700 hover:bg-slate-50 hover:text-vj-green"]}>
+                              {item.label}
+                            </a>
+                          )}
+                          {hasChildren && (
+                             <div id={`desktop-submenu-${index}-${item.label.replace(/\s+/g, "-")}`} class="invisible absolute left-full top-0 z-50 w-64 opacity-0 transition-all duration-150 group-hover/sedes:visible group-hover/sedes:opacity-100 group-focus-within/sedes:visible group-focus-within/sedes:opacity-100">
+                              <div class="overflow-hidden border border-slate-200 bg-white shadow-xl">
+                                <ul>
+                                  {item.children!.map((child) => {
+                                    const childActive = isItemActive(child.href);
+                                    return <li class="border-b border-slate-200 last:border-b-0"><a href={child.href} aria-current={childActive ? "page" : undefined} class:list={["block px-6 py-3.5 text-sm font-bold uppercase tracking-wide transition-colors", childActive ? "bg-slate-100 text-vj-green" : "text-slate-700 hover:bg-slate-50 hover:text-vj-green"]}>{child.label}</a></li>;
+                                  })}
+                                </ul>
+                              </div>
+                            </div>
+                          )}
                         </li>
                       );
-                    })}
-                  </ul>
+                    })}</ul>
                 </div>
               </div>
             </li>
@@ -159,11 +170,11 @@ const linkTitle = (label: string): string | undefined => {
     </ul>
 
     <!-- Herramientas -->
-    <div class="ml-auto flex items-center gap-1 sm:gap-2 lg:ml-3">
+    <div class="ml-auto flex items-center gap-1 sm:gap-2 xl:ml-3">
       <!-- Toggle del menú mobile -->
       <button
         type="button"
-        class="lg:hidden p-2 text-slate-700 hover:text-vj-green hover:bg-slate-50 transition-colors"
+        class="xl:hidden p-2 text-slate-700 hover:text-vj-green hover:bg-slate-50 transition-colors"
         aria-label="Abrir menú"
         aria-expanded="false"
         aria-controls="mobile-menu-panel"
@@ -208,7 +219,7 @@ const linkTitle = (label: string): string | undefined => {
 <!-- ═══ Menú mobile fullscreen (fuera del header, position: fixed) ═══ -->
 <div
   id="mobile-menu-panel"
-  class="mobile-menu-fullscreen lg:hidden"
+  class="mobile-menu-fullscreen xl:hidden"
   data-mobile-menu-panel
   data-state="closed"
   aria-label="Menu movil principal"
@@ -279,21 +290,25 @@ const linkTitle = (label: string): string | undefined => {
               <ul class="mt-1 space-y-0.5 pb-1">
                 {grupo.items.map((item) => {
                   const active = isItemActive(item.href);
-                  return (
-                    <li>
-                      <a
-                        href={item.href}
-                        class:list={[
-                          "mobile-menu-link",
-                          active && "mobile-menu-link--active",
-                        ]}
-                        aria-current={active ? "page" : undefined}
-                        data-mobile-menu-link
-                      >
-                        {item.label}
-                      </a>
-                    </li>
-                  );
+                  if (item.children?.length) {
+                    return (
+                      <li>
+                        <details class="mobile-menu-group">
+                          <summary class="mobile-menu-link flex items-center justify-between text-vj-green">
+                            <span>{item.label}</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+                          </summary>
+                          <ul class="ml-4 border-l border-slate-700 pb-1">
+                            {item.children.map((child) => {
+                              const childActive = isItemActive(child.href);
+                              return <li><a href={child.href} class:list={["mobile-menu-link", childActive && "mobile-menu-link--active"]} aria-current={childActive ? "page" : undefined} data-mobile-menu-link>{child.label}</a></li>;
+                            })}
+                          </ul>
+                        </details>
+                      </li>
+                    );
+                  }
+                  return <li><a href={item.href} class:list={["mobile-menu-link", active && "mobile-menu-link--active"]} aria-current={active ? "page" : undefined} data-mobile-menu-link>{item.label}</a></li>;
                 })}
               </ul>
             </div>
@@ -327,8 +342,8 @@ const linkTitle = (label: string): string | undefined => {
 
 <script>
   (() => {
-    const toggle = document.querySelector("[data-mobile-menu-toggle]");
-    const panel = document.querySelector("[data-mobile-menu-panel]");
+    const toggle = document.querySelector<HTMLButtonElement>("[data-mobile-menu-toggle]");
+    const panel = document.querySelector<HTMLElement>("[data-mobile-menu-panel]");
     const closeBtn = document.querySelector("[data-mobile-menu-close]");
     const links = document.querySelectorAll("[data-mobile-menu-link]");
     const openIcon = document.querySelector("[data-mobile-menu-icon-open]");
@@ -340,7 +355,7 @@ const linkTitle = (label: string): string | undefined => {
     let resizeTimer = 0;
 
     /* ── Abrir / Cerrar ── */
-    const setState = (open) => {
+    const setState = (open: boolean) => {
       if (open === isOpen) return;
       isOpen = open;
 
@@ -363,6 +378,7 @@ const linkTitle = (label: string): string | undefined => {
       if (open) {
         document.documentElement.style.overflow = "hidden";
         document.body.style.overflow = "hidden";
+        panel.querySelector<HTMLElement>("[data-mobile-menu-close]")?.focus();
       } else {
         document.documentElement.style.overflow = "";
         document.body.style.overflow = "";
@@ -380,7 +396,7 @@ const linkTitle = (label: string): string | undefined => {
     });
 
     // Botón X dentro del panel fullscreen
-    closeBtn?.addEventListener("click", closeMenu);
+    closeBtn?.addEventListener("click", () => { closeMenu(); toggle.focus(); });
 
     // Links cierran el menú al navegar
     links.forEach((link) => link.addEventListener("click", closeMenu));
@@ -391,6 +407,47 @@ const linkTitle = (label: string): string | undefined => {
         closeMenu();
         toggle.focus();
       }
+      if (e.key === "Tab" && isOpen) {
+        const focusable = Array.from(panel.querySelectorAll<HTMLElement>('a[href], button, summary'))
+          .filter((element) => element.getClientRects().length > 0);
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first && last) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last && first) { e.preventDefault(); first.focus(); }
+      }
+    });
+
+    document.querySelectorAll<HTMLElement>("[data-desktop-dropdown]").forEach((group) => {
+      const button = group.querySelector<HTMLButtonElement>(":scope > button");
+      const update = () => {
+        button?.setAttribute("aria-expanded", String(!group.dataset.closed && (group.matches(":hover") || group.contains(document.activeElement))));
+        group.querySelectorAll<HTMLButtonElement>('button[aria-controls^="desktop-submenu-"]').forEach((nested) => {
+          nested.setAttribute("aria-expanded", String(!group.dataset.closed && nested.parentElement?.matches(":hover, :focus-within")));
+        });
+      };
+      const focusFirstItem = () => {
+        delete group.dataset.closed;
+        requestAnimationFrame(() => group.querySelector<HTMLElement>("[data-dropdown-panel] a, [data-dropdown-panel] button")?.focus());
+      };
+      group.addEventListener("mouseenter", update);
+      group.addEventListener("mouseleave", update);
+      group.addEventListener("focusin", update);
+      group.addEventListener("focusout", () => window.setTimeout(() => {
+        if (!group.contains(document.activeElement)) delete group.dataset.closed;
+        update();
+      }, 0));
+      button?.addEventListener("click", focusFirstItem);
+      group.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+        e.preventDefault();
+        group.dataset.closed = "true";
+        button?.focus();
+        button?.setAttribute("aria-expanded", "false");
+      });
+      group.addEventListener("mouseleave", () => { delete group.dataset.closed; });
+      button?.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowDown") { e.preventDefault(); focusFirstItem(); }
+      });
     });
 
     // Custom event
@@ -400,13 +457,17 @@ const linkTitle = (label: string): string | undefined => {
     window.addEventListener("resize", () => {
       clearTimeout(resizeTimer);
       resizeTimer = window.setTimeout(() => {
-        if (window.innerWidth >= 1024) setState(false);
+        if (window.innerWidth >= 1280) setState(false);
       }, 100);
     });
   })();
 </script>
 
 <style>
+  [data-desktop-dropdown][data-closed="true"] > [data-dropdown-panel] { visibility: hidden; opacity: 0; }
+  @media (min-width: 1280px) and (max-width: 1300px) {
+    .group\/sedes > div[id^="desktop-submenu-"] { left: auto; right: 100%; }
+  }
   /* ═══ Panel fullscreen ═══ */
   .mobile-menu-fullscreen {
     position: fixed;

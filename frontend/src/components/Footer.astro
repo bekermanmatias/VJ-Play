@@ -9,12 +9,12 @@ const quickLinks = [
   { label: "Contacto", href: "/#contacto" },
 ];
 
-const footerNavColumns = [navDropdowns.slice(0, 2), navDropdowns.slice(2, 4)];
+const footerNavColumns = navDropdowns.map((group) => [group]);
 ---
 
 <footer class="border-t border-slate-800 bg-slate-950 text-slate-200">
-  <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-12">
-    <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-[1.2fr_0.8fr_1fr_1fr_0.9fr] lg:gap-10" data-reveal>
+  <div class="mx-auto max-w-[90rem] px-4 py-10 sm:px-6 lg:px-8 lg:py-12">
+    <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-x-8 lg:gap-y-10 xl:grid-cols-[1.2fr_0.8fr_0.9fr_0.9fr_0.9fr_0.9fr_0.75fr_1fr] xl:gap-x-7" data-reveal>
       <section class="max-w-xs">
         <a href="/" class="inline-flex items-center gap-3" aria-label="Club Social Varela Junior - Inicio">
           <img
@@ -59,16 +59,27 @@ const footerNavColumns = [navDropdowns.slice(0, 2), navDropdowns.slice(2, 4)];
                     {group.label}
                   </h3>
                   <ul class="mt-3 space-y-1.5">
-                    {group.items.map((item) => (
-                      <li>
-                        <a
-                          href={item.href}
-                          class="text-sm font-semibold text-slate-300 transition hover:text-vj-green"
-                        >
-                          {item.label}
-                        </a>
-                      </li>
-                    ))}
+                    {group.items.map((item) =>
+                      item.children?.length ? (
+                        <li>
+                          <span class="text-sm font-semibold text-slate-300">{item.label}</span>
+                          <ul class="mt-1.5 space-y-1.5 border-l border-slate-800 pl-3">
+                            {item.children.map((child) => (
+                              <li><a href={child.href} class="text-sm font-semibold text-slate-300 transition hover:text-vj-green">{child.label}</a></li>
+                            ))}
+                          </ul>
+                        </li>
+                      ) : item.href !== "#" ? (
+                        <li><a href={item.href} class="text-sm font-semibold text-slate-300 transition hover:text-vj-green">{item.label}</a></li>
+                      ) : (
+                        <li>
+                          <span class="cursor-not-allowed text-sm font-semibold text-slate-500" aria-disabled="true">
+                            {item.label}
+                            <span class="ml-1 text-[10px] uppercase tracking-wider text-slate-600">Próximamente</span>
+                          </span>
+                        </li>
+                      ),
+                    )}
                   </ul>
                 </div>
               ))
@@ -83,7 +94,7 @@ const footerNavColumns = [navDropdowns.slice(0, 2), navDropdowns.slice(2, 4)];
           {
             [
               { href: "mailto:info@varelajunior.com.ar", label: "info@varelajunior.com.ar" },
-              { href: "tel:+5491100000000", label: "+54 9 11 0000-0000" },
+              { href: "tel:+5491153640616", label: "011 5364-0616" },
             ].map((item) => (
               <li>
                 <a href={item.href} class="font-semibold transition hover:text-vj-green">
@@ -92,7 +103,7 @@ const footerNavColumns = [navDropdowns.slice(0, 2), navDropdowns.slice(2, 4)];
               </li>
             ))
           }
-          <li class="text-slate-400">Varela, Buenos Aires, Argentina</li>
+          <li class="text-slate-400">Av. Gral. José de San Martín 3275, Florencio Varela</li>
         </ul>
       </section>
     </div>
