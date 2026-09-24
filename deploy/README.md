@@ -17,41 +17,24 @@ Stack listo para **probar y subir** back + front en una VM (créditos $300 o fre
 - Docker + Compose (ver `infra/vps-setup-docker.sh`).
 - Firewall GCP: permitir **TCP 80** (y 22 SSH).
 
-## Pasos rápidos (GCP)
+## Preparación inicial de VPS
 
-1. Crear VM (`e2-small` recomendado para prueba con Docker; `e2-micro` solo back+front).
-2. En la VM:
+La publicación automatizada actual requiere una VPS preparada; el workflow no crea infraestructura ni configura firewall/DNS.
 
-```bash
-git clone <tu-repo> /opt/vjplay/source
-cd /opt/vjplay/source
-sudo bash infra/vps-setup-docker.sh
-# Cerrar sesión y volver a entrar si agregaste el usuario al grupo docker
+1. Crear una VM Ubuntu/Debian con Docker Engine, Compose plugin, `curl`, `tar` y usuario de deploy con acceso a Docker.
+2. Crear `/opt/vjplay` y copiar `deploy/.env.example` como `/opt/vjplay/.env`; completar los valores runtime sin versionarlos. Deben definirse `ADMIN_SECRET` y `ADMIN_SESSION_SECRET` distintos.
+3. Si las imágenes GHCR son privadas, ejecutar `docker login ghcr.io` en la VPS con un token de solo lectura `read:packages`.
+4. Configurar SSH dedicado, restringido y con clave de host verificada; configurar `VPS_KNOWN_HOSTS` en GitHub. El workflow no ejecuta `ssh-keyscan`.
 
-cd deploy
-cp .env.example .env
-nano .env   # SITE_HOST y PUBLIC_REPLAY_API_BASE = http://IP_PUBLICA
-docker compose up -d --build
-docker compose ps
-curl -s http://127.0.0.1/health
-```
-
-3. En el navegador: `http://IP_PUBLICA` (replays, admin, etc.).
+Para pruebas locales se puede usar `docker compose up -d --build` desde `deploy/`; la VPS de producción debe actualizarse mediante el release SHA manual de GitHub Actions descrito abajo, no con `git pull` ni tags mutables.
 
 ## Recorder + WireGuard
 
-El recorder necesita ver el DVR en la LAN del club. **WireGuard va en el host**, no en Docker:
+El recorder necesita ver el DVR en la LAN del club. **WireGuard va en el host**, no en Docker. Su configuración y ciclo de vida son independientes del release web; el workflow de VPS no inicia ni actualiza ese servicio.
 
 1. Configurar `wg0` según `docs/MIKROTIK-WIREGUARD.md` y `docs/VPS-DEPLOY.md` §3.
 2. Probar: `ping 192.168.88.10` desde la VM.
-3. Levantar recorder:
-
-```bash
-cd /opt/vjplay/source/deploy
-docker compose --profile recorder up -d --build
-```
-
-`network_mode: host` hace que el contenedor use la red del host (incluido `wg0`).
+3. El recorder usa `network_mode: host`, por lo que ve la red del host (incluido `wg0`). Para operarlo, usar de forma explícita el Compose registry-only y un SHA publicado, junto con `/opt/vjplay/.env`; no usar `--build` desde una carpeta de release web.
 
 ## Rebuild tras cambiar URLs del front
 
@@ -62,72 +45,48 @@ docker compose build --no-cache frontend
 docker compose up -d
 ```
 
-## Build en tu PC → push → pull en la VPS (recomendado)
+Guía complementaria de WireGuard y la VM: `docs/VPS-DEPLOY.md`.
 
-Evita compilar Astro en una **e2-micro**. Las imágenes se arman en tu máquina y la VM solo las baja.
+## CI y releases a VPS con GitHub Actions + GHCR
 
-### 1. Docker Hub (o GHCR)
+El único pipeline de publicación es `.github/workflows/deploy-vps.yml`:
 
-1. Creá cuenta en [Docker Hub](https://hub.docker.com/) y un repo **público** (o privado + `docker login` en la VPS).
-2. En **tu PC**, en `deploy/.env`:
+- Pull requests y pushes a `staging`/`main` ejecutan lint, typecheck, tests y builds de frontend, backend y recorder.
+- Los pushes a `staging` y `main` publican los tres contenedores en GHCR con el SHA completo del commit. Los tags `staging`/`main` son alias; no se usan para elegir una versión en producción.
+- No hay una VPS de staging configurada en el repositorio: el branch `staging` valida y publica imágenes, pero no despliega.
+- Producción **no se despliega al hacer push**. Desde Actions, ejecutar manualmente el workflow en la rama `main`, indicar un SHA completo alcanzable desde `main` y activar `deploy_production`. El job requiere el environment `production`, que debe configurarse en **Settings → Environments** con reviewers/approval antes de habilitar releases.
+- La VPS descarga configuración versionada del mismo SHA y usa imágenes con ese SHA exacto. El deploy no ejecuta migraciones ni actualiza/reinicia el servicio `recorder`. El seed SQL de staging permanece como workflow separado y explícito.
 
-```env
-IMAGE_REGISTRY=docker.io/tuusuario
-IMAGE_TAG=latest
-PUBLIC_REPLAY_API_BASE=http://IP_PUBLICA_DE_LA_VPS
-SITE_HOST=http://IP_PUBLICA_DE_LA_VPS
-CORS_ORIGINS=http://IP_PUBLICA_DE_LA_VPS
-# … resto de secretos igual que en la VPS
-```
+Los antiguos workflows de deploy a Cloudflare Pages y Cloud Run se retiraron: Pages recibía un build SSR de Astro no compatible con hosting estático; Cloud Run podía desplegar backend independientemente y ejecutar migraciones automáticamente. El publisher separado del recorder también se consolidó en el pipeline GHCR.
 
-3. Login y build+push (PowerShell, desde `deploy/`):
+### Preparar la VPS (Ubuntu/Debian)
 
-```powershell
-docker login
-.\scripts\build-push.ps1
-# Con recorder: .\scripts\build-push.ps1 -WithRecorder
-```
+1. Instalar Docker Engine, Docker Compose plugin y `curl`; dar al usuario de deploy acceso a Docker.
+2. Crear el directorio raíz, por defecto `/opt/vjplay`, y guardar la configuración runtime en `/opt/vjplay/.env` (basarse en `deploy/.env.example`). No se sube ni versiona ese archivo.
+3. Configurar `ADMIN_SECRET` y `ADMIN_SESSION_SECRET` con valores distintos, además de las credenciales backend de Supabase/R2 y las variables runtime requeridas. Los secretos de Mercado Pago, si se utilizan, permanecen únicamente en este `.env` del backend; nunca en GitHub build args.
+4. Para paquetes GHCR privados, autenticar Docker en la VPS con un token de solo lectura (`read:packages`) antes del release. Para paquetes públicos no hace falta.
+5. Configurar acceso SSH dedicado y restringido. El workflow exige una clave de host fijada previamente; no hace `ssh-keyscan` durante el release.
 
-Linux/macOS: `chmod +x scripts/build-push.sh && ./scripts/build-push.sh`
+### Configurar GitHub
 
-Sube: `tuusuario/vjplay-backend`, `tuusuario/vjplay-frontend` (y `vjplay-recorder` si aplica).
+En **Settings → Secrets and variables → Actions**, configurar:
 
-### 2. En la VPS (sin `--build`)
+| Tipo | Nombre | Uso |
+|---|---|---|
+| Secret | `VPS_HOST` | Host/IP SSH de la VPS |
+| Secret | `VPS_USER` | Usuario con acceso Docker |
+| Secret | `VPS_SSH_KEY` | Clave privada dedicada del workflow |
+| Secret | `VPS_KNOWN_HOSTS` | Línea(s) `known_hosts` verificada(s) fuera del workflow (`[host]:puerto` si no es 22) |
+| Secret | `VPS_SSH_PORT` | Opcional; default 22 |
+| Variable | `VPS_DEPLOY_PATH` | Raíz de deploy en VPS; default `/opt/vjplay` |
+| Variable | `PUBLIC_REPLAY_API_BASE` | URL pública no secreta embebida en frontend build |
 
-Mismo `IMAGE_REGISTRY` e `IMAGE_TAG` en `deploy/.env`:
+El `GITHUB_TOKEN` del job recibe `packages: write` para publicar GHCR. **No** configurar `ADMIN_SECRET`, `ADMIN_SESSION_SECRET`, credenciales Supabase/R2 ni credenciales de pagos como build args o variables de build. Compose exige ambos secretos admin al iniciar frontend; estarán en `.env` runtime de la VPS.
 
-```bash
-cd /opt/vjplay/source/deploy
-git pull
-docker login   # solo si las imágenes son privadas
-./scripts/vps-pull-up.sh
-# Con recorder: ./scripts/vps-pull-up.sh --recorder
-```
+### Release, salud y rollback
 
-Equivalente manual:
+El deploy copia solo los archivos `deploy/` trackeados del SHA solicitado, preserva `/opt/vjplay/.env` y las named volumes, descarga las imágenes del SHA, y actualiza explícitamente `backend`, `frontend` y `caddy`. Hace reintentos de `/health` y `/`; si falla, intenta volver al último SHA exitoso registrado. En el primer release gestionado todavía no hay SHA previo y no existe rollback automático; debe prepararse una versión operativa conocida antes de usar este pipeline en producción.
 
-```bash
-docker compose -f docker-compose.yml -f docker-compose.registry.yml pull
-docker compose -f docker-compose.yml -f docker-compose.registry.yml up -d
-```
+Para rollback posterior, ejecutar el workflow manual seleccionando el SHA conocido (debe seguir siendo ancestro de `main`). La configuración de TLS no está incluida en `deploy/Caddyfile`: hoy publica HTTP por el puerto 80; no exponer credenciales sobre una red insegura y configurar TLS en una tarea separada antes del uso público sensible.
 
-### 3. Actualizar después de cambios en el código
-
-En la PC: `git pull` → `.\scripts\build-push.ps1` (sube tag `latest` o cambiá `IMAGE_TAG`).
-
-En la VPS: `git pull` → `./scripts/vps-pull-up.sh`.
-
-Si cambiás `PUBLIC_REPLAY_API_BASE`, rebuild del front en la PC (el script ya hace `build` completo).
-
-## Variables clave
-
-| Variable | Dónde |
-|----------|--------|
-| `IMAGE_REGISTRY` | PC + VPS (`docker.io/usuario` o `ghcr.io/usuario`) |
-| `IMAGE_TAG` | PC + VPS (ej. `latest`) |
-| `VJ_RUNTIME=vps` | backend + recorder |
-| `PUBLIC_REPLAY_API_BASE` | build frontend en la PC (= URL que ve el usuario) |
-| `CORS_ORIGINS` | backend (= mismo origen que el sitio) |
-| Secretos Supabase/R2 | `.env` compartido |
-
-Guía completa de la VM: `docs/VPS-DEPLOY.md`.
+El workflow no contacta la VPS salvo en un `workflow_dispatch` de producción aprobado. No hace `git pull/reset` en la VPS, no compila allí, no ejecuta migraciones y no modifica el servicio ni el volumen persistente del recorder.

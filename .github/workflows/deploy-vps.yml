@@ -1,0 +1,227 @@
+name: CI, publish images, and release VPS
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+    branches: [main, staging]
+  workflow_dispatch:
+    inputs:
+      release_sha:
+        description: Full commit SHA to build (must be reachable from main for production release)
+        required: true
+        type: string
+      deploy_production:
+        description: Deploy this SHA to the protected production VPS
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.release_sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - name: Validate public API build URL
+        env:
+          PUBLIC_REPLAY_API_BASE: ${{ vars.PUBLIC_REPLAY_API_BASE }}
+        run: |
+          node -e 'const value = process.env.PUBLIC_REPLAY_API_BASE; let url; try { url = new URL(value); } catch { throw new Error("PUBLIC_REPLAY_API_BASE must be an absolute HTTP(S) URL"); } if (!/^https?:$/.test(url.protocol)) throw new Error("PUBLIC_REPLAY_API_BASE must use HTTP or HTTPS");'
+      - run: npm run lint
+        working-directory: frontend
+      - run: npm run typecheck
+        working-directory: frontend
+      - run: npm run test:unit
+        working-directory: frontend
+      - run: npm run build
+        working-directory: frontend
+        env:
+          PUBLIC_REPLAY_API_BASE: ${{ vars.PUBLIC_REPLAY_API_BASE }}
+
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.release_sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+        working-directory: backend
+      - run: npm run typecheck
+        working-directory: backend
+      - run: npm test
+        working-directory: backend
+      - run: npm run build
+        working-directory: backend
+
+  recorder:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.release_sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: recorder/package-lock.json
+      - run: npm ci
+        working-directory: recorder
+      - run: npm run typecheck
+        working-directory: recorder
+      - run: npm run build
+        working-directory: recorder
+
+  publish:
+    needs: [frontend, backend, recorder]
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      release_sha: ${{ steps.release.outputs.sha }}
+      image_owner: ${{ steps.release.outputs.owner }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.release_sha || github.sha }}
+          fetch-depth: 0
+      - name: Validate release commit and owner
+        id: release
+        env:
+          REQUESTED_SHA: ${{ github.event_name == 'workflow_dispatch' && inputs.release_sha || github.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: |
+          set -euo pipefail
+          [[ "$REQUESTED_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "release_sha must be a full 40-character SHA" >&2; exit 1; }
+          [[ "$(git rev-parse HEAD)" == "$REQUESTED_SHA" ]] || { echo "Checked out SHA does not match release_sha" >&2; exit 1; }
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            git fetch origin main
+            git merge-base --is-ancestor "$REQUESTED_SHA" origin/main || { echo "Production release SHA must be reachable from main" >&2; exit 1; }
+          fi
+          OWNER="$(printf '%s' "$REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')"
+          echo "sha=$REQUESTED_SHA" >> "$GITHUB_OUTPUT"
+          echo "owner=$OWNER" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Select image tags
+        id: tags
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          IMAGE_OWNER: ${{ steps.release.outputs.owner }}
+          RELEASE_SHA: ${{ steps.release.outputs.sha }}
+        run: |
+          set -euo pipefail
+          suffix=""
+          if [[ "$EVENT_NAME" == "push" ]]; then suffix=",ghcr.io/$IMAGE_OWNER/vjplay-backend:$REF_NAME"; fi
+          echo "backend=ghcr.io/$IMAGE_OWNER/vjplay-backend:$RELEASE_SHA$suffix" >> "$GITHUB_OUTPUT"
+          if [[ "$EVENT_NAME" == "push" ]]; then suffix=",ghcr.io/$IMAGE_OWNER/vjplay-frontend:$REF_NAME"; fi
+          echo "frontend=ghcr.io/$IMAGE_OWNER/vjplay-frontend:$RELEASE_SHA$suffix" >> "$GITHUB_OUTPUT"
+          if [[ "$EVENT_NAME" == "push" ]]; then suffix=",ghcr.io/$IMAGE_OWNER/vjplay-recorder:$REF_NAME"; fi
+          echo "recorder=ghcr.io/$IMAGE_OWNER/vjplay-recorder:$RELEASE_SHA$suffix" >> "$GITHUB_OUTPUT"
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ steps.tags.outputs.backend }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          build-args: |
+            PUBLIC_REPLAY_API_BASE=${{ vars.PUBLIC_REPLAY_API_BASE }}
+          tags: ${{ steps.tags.outputs.frontend }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./recorder
+          push: true
+          tags: ${{ steps.tags.outputs.recorder }}
+
+  deploy-production:
+    needs: [publish]
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy_production && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: vjplay-production
+      cancel-in-progress: false
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.publish.outputs.release_sha }}
+          fetch-depth: 0
+      - name: Validate VPS configuration
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_PORT: ${{ secrets.VPS_SSH_PORT || '22' }}
+          VPS_DEPLOY_PATH: ${{ vars.VPS_DEPLOY_PATH || '/opt/vjplay' }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          [[ "$VPS_HOST" =~ ^[A-Za-z0-9.-]+$ ]] || { echo "Invalid VPS_HOST" >&2; exit 1; }
+          [[ "$VPS_USER" =~ ^[A-Za-z_][A-Za-z0-9_-]*$ ]] || { echo "Invalid VPS_USER" >&2; exit 1; }
+          [[ "$VPS_SSH_PORT" =~ ^[0-9]{1,5}$ ]] && (( VPS_SSH_PORT > 0 && VPS_SSH_PORT < 65536 )) || { echo "Invalid VPS_SSH_PORT" >&2; exit 1; }
+          [[ "$VPS_DEPLOY_PATH" =~ ^/[A-Za-z0-9._/-]+$ && "$VPS_DEPLOY_PATH" != "/" && "$VPS_DEPLOY_PATH" != *".."* && "$VPS_DEPLOY_PATH" != *"//"* ]] || { echo "Invalid VPS_DEPLOY_PATH" >&2; exit 1; }
+          [[ -n "$VPS_KNOWN_HOSTS" ]] || { echo "VPS_KNOWN_HOSTS is required; do not use ssh-keyscan during deployment" >&2; exit 1; }
+          [[ -n "$VPS_SSH_KEY" ]] || { echo "VPS_SSH_KEY is required" >&2; exit 1; }
+      - name: Configure pinned SSH host key
+        env:
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Install deployment SSH key
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          install -m 600 /dev/null "$HOME/.ssh/id_vjplay"
+          printf '%s\n' "$VPS_SSH_KEY" > "$HOME/.ssh/id_vjplay"
+      - name: Package exact deployment configuration
+        env:
+          RELEASE_SHA: ${{ needs.publish.outputs.release_sha }}
+        run: git archive --format=tar.gz --output "$RUNNER_TEMP/deploy-$RELEASE_SHA.tar.gz" "$RELEASE_SHA" deploy
+      - name: Upload and activate release
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_PORT: ${{ secrets.VPS_SSH_PORT || '22' }}
+          VPS_DEPLOY_PATH: ${{ vars.VPS_DEPLOY_PATH || '/opt/vjplay' }}
+          RELEASE_SHA: ${{ needs.publish.outputs.release_sha }}
+          IMAGE_OWNER: ${{ needs.publish.outputs.image_owner }}
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/deploy-$RELEASE_SHA.tar.gz"
+          remote_archive="/tmp/vjplay-deploy-$RELEASE_SHA.tar.gz"
+          scp -i "$HOME/.ssh/id_vjplay" -P "$VPS_SSH_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes "$archive" "$VPS_USER@$VPS_HOST:$remote_archive"
+          printf -v remote_command 'bash -s -- %q %q %q' "$VPS_DEPLOY_PATH" "$RELEASE_SHA" "$IMAGE_OWNER"
+          ssh -i "$HOME/.ssh/id_vjplay" -p "$VPS_SSH_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes "$VPS_USER@$VPS_HOST" "$remote_command" < deploy/scripts/deploy-release.sh
